@@ -11,10 +11,10 @@ from LazyLuna import Mini_LL
 def clinical_result_pandas_table(cases1, cases2, with_dices=True, contour_names=['lv_endo','lv_myo','rv_endo']):
     row_dict = dict()
     row_counter = 0
-    columns=['case']
+    columns=['case', 'reader1', 'reader2']
     for cr in cases1[0].crs: columns += [cr.name+' '+cases1[0].reader_name, cr.name+' '+cases2[0].reader_name, cr.name+' difference']
     for c1,c2 in zip(cases1, cases2):
-        row = [c1.case_name]
+        row = [c1.case_name, c1.reader_name, c2.reader_name]
         for cr1, cr2 in zip(c1.crs, c2.crs):
             row += [cr1.get_cr(), cr2.get_cr(), cr1.get_cr_diff(cr2)]
         row_dict['row_'+str(row_counter).zfill(5)] = row
