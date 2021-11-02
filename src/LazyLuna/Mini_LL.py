@@ -132,8 +132,8 @@ class SAX_CINE_Annotation(Annotation):
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo', 'lv_pamu',
                               'rv_endo', 'rv_epi', 'rv_myo', 'rv_pamu']
         self.point_names   = ['sacardialRefPoint']
-        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() else (-1,-1)#1.98,1.98
-        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() else (-1,-1)
+        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
+        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
 
 
 
@@ -479,7 +479,7 @@ class RVSAX_MYO(Clinical_Result):
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_RV_ED_Category)][0]
 
     def get_cr(self, string=False):
-        cr = 1.05 * self.cat.get_volume('lv_myo', self.cat.phase)
+        cr = 1.05 * self.cat.get_volume('rv_myo', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
 
     def get_cr_diff(self, other, string=False):
@@ -520,7 +520,7 @@ class RVSAX_EF(Clinical_Result):
     def get_cr(self, string=False):
         esv = self.cat_es.get_volume('rv_endo', self.cat_es.phase)
         edv = self.cat_ed.get_volume('rv_endo', self.cat_ed.phase) + 10**-9
-        return "{:.2f}".format((edv-esv)/edv) if string else (edv-esv)/edv
+        return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
 
     def get_cr_diff(self, other, string=False):
         cr_diff = self.get_cr()-other.get_cr()
@@ -560,7 +560,7 @@ class LVSAX_EF(Clinical_Result):
     def get_cr(self, string=False):
         esv = self.cat_es.get_volume('lv_endo', self.cat_es.phase)
         edv = self.cat_ed.get_volume('lv_endo', self.cat_ed.phase) + 10**-9
-        return "{:.2f}".format((edv-esv)/edv) if string else (edv-esv)/edv
+        return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
 
     def get_cr_diff(self, other, string=False):
         cr_diff = self.get_cr()-other.get_cr()
