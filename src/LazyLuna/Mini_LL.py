@@ -207,6 +207,10 @@ class SAX_slice_phase_Category:
         dat = list(self.depthandtime2sop.keys())
         self.nr_phases = max(dat, key=itemgetter(1))[1]+1
         self.nr_slices = max(dat, key=itemgetter(0))[0]+1
+        
+    def get_dcm(self, slice_nr, phase_nr):
+        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        return self.case.load_dcm(sop)
 
     def get_anno(self, slice_nr, phase_nr):
         sop = self.depthandtime2sop[(slice_nr, phase_nr)]

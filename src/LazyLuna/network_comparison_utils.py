@@ -118,3 +118,19 @@ def SAX_candlelight_plot(gs_cases, name2cases, store_path=''):
     fig.savefig(os.path.join(store_path,'candlelight_test.png'), dpi=100, 
                 facecolor="#FFFFFF")
     
+    
+
+def metrics_per_slice_phase(cases1, cases2):
+    dfs = []
+    for c1,c2 in zip(cases1, cases2):
+        cc = Mini_LL.Case_Comparison(c1,c2)
+        analyzer = Mini_LL.SAX_CINE_analyzer(cc)
+        dfs += [analyzer.get_case_contour_comparison_pandas_dataframe(True)]
+        return dfs[0]
+    
+    
+    
+    
+    
+    
+    
