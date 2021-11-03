@@ -89,7 +89,9 @@ def SAX_candlelight_plot(gs_cases, name2cases, store_path=''):
         axes[i][j].set_xticklabels(list(name2cases.keys()))
         axes[i][j].set_ylabel('[%]' if 'EF' in crv else '[ml]' if 'ESV' in crv or 'EDV' in crv else '[g]' )
         yabs_max = abs(max(axes[i][j].get_ylim(), key=abs))
-        axes[i][j].set_ylim(ymin=-yabs_max, ymax=yabs_max)
+        #axes[i][j].set_ylim(ymin=-yabs_max, ymax=yabs_max)
+        if 'EF' in crv: axes[i][j].set_ylim(ymin=-20, ymax=20)
+        if 'ESV' in crv or 'EDV' in crv: axes[i][j].set_ylim(ymin=-45, ymax=45)
         axes[i][j].set_xlabel("")
         if i == (rows-1): j+=1
 
@@ -105,7 +107,7 @@ def SAX_candlelight_plot(gs_cases, name2cases, store_path=''):
     ax.legend(handles[:2], labels[:2], title="Segmented by both")
     ax.set_ylabel('[%]')
     ax.set_xlabel("")
-    ax.set_ylim(ymin=70, ymax=95)
+    ax.set_ylim(ymin=75, ymax=95)
 
     for i, boxplot in enumerate(dicebp.artists):
         if i%2 == 0: boxplot.set_facecolor(boxplot_palette[i//2])
