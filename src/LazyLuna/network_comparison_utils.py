@@ -1,3 +1,5 @@
+import os
+
 import matplotlib.pyplot as plt
 import seaborn as sb
 import pandas
@@ -6,6 +8,8 @@ import numpy as np
 from scipy.stats import wilcoxon
 
 from LazyLuna import Mini_LL
+
+
 
 
 def clinical_result_pandas_table(cases1, cases2, with_dices=True, contour_names=['lv_endo','lv_myo','rv_endo']):
@@ -43,38 +47,58 @@ def dices_pandas_table(cases1, cases2, contour_names=['lv_endo','lv_myo','rv_end
     df = pandas.DataFrame.from_dict(row_dict, orient='index', columns=columns)
     return df
 
+def get_dice_table(table):
+    columns = ['case', 'reader1', 'reader2', 'dice', 'segmented by both']
+    row_dict = dict()
+    row_counter = 0
+    for index, row in table[['case', 'reader1', 'reader2', 'avg dice', 'avg dice cont by both']].iterrows():
+        #print('Row:\n', row.values)
+        row1 = [row[1], row[2], row[3], row[4], False]
+        row2 = [row[1], row[2], row[3], row[5], True ]
+        row_dict['row_'+str(row_counter).zfill(5)] = row1
+        row_counter +=1 
+        row_dict['row_'+str(row_counter).zfill(5)] = row2
+        row_counter +=1 
+    df = pandas.DataFrame.from_dict(row_dict, orient='index', columns=columns)
+    return df
 
-def SAX_candlelight_plot(gs_cases, name2cases):
+def SAX_candlelight_plot(gs_cases, name2cases, store_path=''):
     columns, rows    = 2, 4
     boxplot_palette  = sb.color_palette("Blues")
     boxplot_palette2 = sb.color_palette("Purples")
     swarm_palette = sb.color_palette(["#061C36", "#061C36"])
-    font = {'family' : 'DejaVu Sans',
-            'weight' : 'normal',
-            'size'   : 18}
-    plt.rc('font', **font)
+    plt.rc('font', **{'family': 'DejaVu Sans', 'weight': 'normal', 'size': 18})
     fig, axes = plt.subplots(rows, columns, figsize=(columns*11,(rows*7.5)))
     
     name2tables = dict()
-    for n in name2cases.keys(): name2tables[n] = clinical_result_pandas_table(gs_cases, name2cases[n])
+    tables = []
+    for n_i, n in enumerate(name2cases.keys()):
+        df, stats, wilcox_tests = clinical_result_pandas_table(gs_cases, name2cases[n], with_dices=True)
+        tables.append(df)
+    table = pandas.DataFrame(np.concatenate(tables, axis=0),columns=df.columns)
     
     j = 0
-    for i, crv in enumerate(crvs_data):
+    crvs = ['LVESV', 'LVEDV', 'LVEF', 'LVMYOMASS', 'RVESV', 'RVEDV', 'RVEF']
+    crvs = [crv+' difference' for crv in crvs]
+    for i, crv in enumerate(crvs):
         if i >= (rows*columns): continue
         while i >= rows: i-=rows
-        axes[i][j].set_title(crv + " Error")
-        sb.boxplot   (ax=axes[i][j], data=crvs_data[crv], palette=boxplot_palette, saturation=1, width=0.6)
-        sb.swarmplot (ax=axes[i][j], data=crvs_data[crv], color="#061C36", alpha=1)
-        axes[i][j].set_xticklabels([name2cases.keys()])
+        axes[i][j].set_title(crv.replace(' difference','') + " Error")
+        sb.boxplot(ax=axes[i][j], data=table, x='reader2', y=crv, palette=boxplot_palette, saturation=1, width=0.6)
+        sb.swarmplot (ax=axes[i][j], data=table, x='reader2', y=crv, color="#061C36", alpha=1)        
+        axes[i][j].set_xticklabels(list(name2cases.keys()))
         axes[i][j].set_ylabel('[%]' if 'EF' in crv else '[ml]' if 'ESV' in crv or 'EDV' in crv else '[g]' )
         yabs_max = abs(max(axes[i][j].get_ylim(), key=abs))
         axes[i][j].set_ylim(ymin=-yabs_max, ymax=yabs_max)
+        axes[i][j].set_xlabel("")
         if i == (rows-1): j+=1
 
+    dice_table = get_dice_table(table)
+            
     ax = axes[3][1]
     ax.set_title('Dice')
-    dicebp = sb.boxplot   (ax=ax, x="NetName", y="Dice", data=dice_data, hue="Segmented by both", width=0.8)
-    sb.swarmplot (ax=ax, x="NetName", y="Dice", data=dice_data, hue="Segmented by both", palette=swarm_palette, dodge=True)
+    dicebp = sb.boxplot(ax=ax, x="reader2", y="dice", hue="segmented by both", data=dice_table, width=0.8)
+    sb.swarmplot(ax=ax, x="reader2", y="dice", hue="segmented by both", data=dice_table, palette=swarm_palette, dodge=True)
     handles, labels = ax.get_legend_handles_labels()
     handles[0].set_fc(boxplot_palette[3])
     handles[1].set_fc(boxplot_palette2[3])
@@ -89,4 +113,6 @@ def SAX_candlelight_plot(gs_cases, name2cases):
 
     sb.despine()
     plt.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.25, hspace=0.35)
-    fig.savefig("candlelight_test.png", dpi=100, facecolor="#FFFFFF")
+    fig.savefig(os.path.join(store_path,'candlelight_test.png'), dpi=100, 
+                facecolor="#FFFFFF")
+    
