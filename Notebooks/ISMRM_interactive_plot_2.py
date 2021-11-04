@@ -18,7 +18,7 @@ from LazyLuna.CATCH_utils import *
 from LazyLuna.network_comparison_utils import *
 
 
-"""
+
 bp       = '/media/omega/Daten1/CATCH/CS'
 bp_annos = '/media/omega/Daten1/CATCH/CS/Preds/FCN'
 bp_cases = '/media/omega/Daten1/CATCH/CS/Cases'
@@ -28,7 +28,7 @@ bp       = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases'
 bp_annos = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Annos'
 bp_cases = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Cases'
 bp_imgs  = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Imgs'
-
+"""
 
 # load cases
 case_paths = [os.path.join(bp_cases,p) for p in os.listdir(bp_cases) if p.endswith('.pickle') and 'Annos' in p]
@@ -156,24 +156,40 @@ unet_plottable   = plottable_per_network(unet_table)
 fcn_plottable    = plottable_per_network(fcn_table)
 mrunet_plottable = plottable_per_network(mrunet_table)
 
-#display(unet_plottable)
 
-fig, axes = plt.subplots(3,1,figsize=(8,20))
+unet_plottable   = plottable_per_network(unet_table)
+fcn_plottable    = plottable_per_network(fcn_table)
+mrunet_plottable = plottable_per_network(mrunet_table)
+
+colors = ["#FF2020", "#208020", "#2020FF"]# Set your custom color palette
+customPalette = sns.set_palette(sns.color_palette(colors))
+
+fig, axes = plt.subplots(3,1,figsize=(8,16), sharex=True, sharey=True)
 for i in range(3): 
-    axes[i].set_title(['UNet', 'FCN', 'MRUNet'][i] + ' HD vs Dice')
-sns.scatterplot(ax=axes[0], data=unet_plottable, x='hd', y='dice', 
-                size='abs ml diff', hue='cont_type', picker=4)
-sns.scatterplot(ax=axes[1], data=fcn_plottable, x='hd', y='dice', 
-                size='abs ml diff', hue='cont_type', picker=4)
-sns.scatterplot(ax=axes[2], data=mrunet_plottable, x='hd', y='dice', 
-                size='abs ml diff', hue='cont_type', picker=4)
+    axes[i].set_title(['UNet', 'FCN', 'MRUNet'][i] + ' - ml Difference vs Dice')
+sns.scatterplot(ax=axes[0], data=unet_plottable, x='ml diff', y='dice', 
+                size='abs ml diff', hue='cont_type', picker=4, palette=customPalette)
+sns.scatterplot(ax=axes[1], data=fcn_plottable, x='ml diff', y='dice', 
+                size='abs ml diff', hue='cont_type', picker=4, palette=customPalette)
+sns.scatterplot(ax=axes[2], data=mrunet_plottable, x='ml diff', y='dice', 
+                size='abs ml diff', hue='cont_type', picker=4, palette=customPalette)
+axes[0].set_ylabel('Dice [%]')
+axes[2].set_xlabel('ml Difference [ml]')
+axes[0].xaxis.set_tick_params(which='both', labelbottom=True)
+axes[1].xaxis.set_tick_params(which='both', labelbottom=True)
+
+for i in range(3):
+    leg = axes[i].axes.get_legend()
+    for t, l in zip(leg.texts, ['Contour Type', 'LV Endo', 'LV Myo', 'RV Endo', 'Abs ml Diff']):
+        t.set_text(l)
+
 
 
 def onpick(event):
     ind = event.ind
     print('onpick: ', ind)
-    table = unet_plottable
-    c1s, c2s = cases1, cases2
+    table = fcn_plottable
+    c1s, c2s = cases1, cases3
     case_name  = table.iloc[ind]['case name'].values[0]
     phase      = table.iloc[ind]['phase'].values[0]
     reader1    = table.iloc[ind]['reader1'].values[0]
