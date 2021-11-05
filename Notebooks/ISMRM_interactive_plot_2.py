@@ -18,7 +18,7 @@ from LazyLuna.CATCH_utils import *
 from LazyLuna.network_comparison_utils import *
 
 
-
+"""
 bp       = '/media/omega/Daten1/CATCH/CS'
 bp_annos = '/media/omega/Daten1/CATCH/CS/Preds/FCN'
 bp_cases = '/media/omega/Daten1/CATCH/CS/Cases'
@@ -28,7 +28,7 @@ bp       = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases'
 bp_annos = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Annos'
 bp_cases = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Cases'
 bp_imgs  = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Imgs'
-"""
+
 
 # load cases
 case_paths = [os.path.join(bp_cases,p) for p in os.listdir(bp_cases) if p.endswith('.pickle') and 'Annos' in p]
@@ -152,19 +152,16 @@ def plottable_per_network(table):
     ret_table = pd.concat(tables)
     return ret_table
 
-unet_plottable   = plottable_per_network(unet_table)
-fcn_plottable    = plottable_per_network(fcn_table)
-mrunet_plottable = plottable_per_network(mrunet_table)
-
 
 unet_plottable   = plottable_per_network(unet_table)
 fcn_plottable    = plottable_per_network(fcn_table)
 mrunet_plottable = plottable_per_network(mrunet_table)
 
 colors = ["#FF2020", "#208020", "#2020FF"]# Set your custom color palette
+colors = ["#FF2020", "#00bd00", "#4d50ff"]# Set your custom color palette
 customPalette = sns.set_palette(sns.color_palette(colors))
 
-fig, axes = plt.subplots(3,1,figsize=(8,16), sharex=True, sharey=True)
+fig, axes = plt.subplots(3,1,figsize=(8,20), sharex=True, sharey=True)
 for i in range(3): 
     axes[i].set_title(['UNet', 'FCN', 'MRUNet'][i] + ' - ml Difference vs Dice')
 sns.scatterplot(ax=axes[0], data=unet_plottable, x='ml diff', y='dice', 
@@ -178,7 +175,12 @@ axes[2].set_xlabel('ml Difference [ml]')
 axes[0].xaxis.set_tick_params(which='both', labelbottom=True)
 axes[1].xaxis.set_tick_params(which='both', labelbottom=True)
 
+x_max = 0
+for ax in axes:
+    x_max = abs(max(ax.get_xlim(), key=abs))
+
 for i in range(3):
+    axes[i].set_xlim(-x_max,x_max)
     leg = axes[i].axes.get_legend()
     for t, l in zip(leg.texts, ['Contour Type', 'LV Endo', 'LV Myo', 'RV Endo', 'Abs ml Diff']):
         t.set_text(l)
@@ -203,16 +205,18 @@ def onpick(event):
     cont1 = cat1.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
     cont2 = cat2.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
     
-    fig, ax = plt.subplots(1,1)
+    fig, axes = plt.subplots(1,4, sharex=True, sharey=True, figsize=(10,3))
     fig.suptitle(case_name + ', Phase: ' + str(phase) + ', Slice: ' + str(slice_nr))
-    ax.imshow(img, cmap='gray'); ax.axis('off')
-    if not cont1.is_empty and not cont2.is_empty: CATCH_utils.plot_geo_face_comparison(ax, cont1, cont2)
+    for ax in axes: ax.imshow(img, cmap='gray'); ax.axis('off')
+    if not cont1.is_empty: CATCH_utils.plot_geo_face(axes[0], cont1, c='r')
+    if not cont1.is_empty or not cont2.is_empty: CATCH_utils.plot_geo_face_comparison(axes[1], cont1, cont2)
+    if not cont2.is_empty: CATCH_utils.plot_geo_face(axes[2], cont2, c='b')
     pst = Polygon([[0,0],[1,1],[1,0]])
     patches = [PolygonPatch(pst, facecolor='red',   edgecolor='red',   alpha=0.4),
                PolygonPatch(pst, facecolor='green', edgecolor='green', alpha=0.4),
                PolygonPatch(pst, facecolor='blue',  edgecolor='blue',  alpha=0.4)]
     handles = [reader1, reader1+' & '+reader2, reader2]
-    ax.legend(patches, handles)
+    axes[3].legend(patches, handles)
     fig.tight_layout()
     plt.show()
     
