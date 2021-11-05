@@ -18,7 +18,7 @@ from LazyLuna.CATCH_utils import *
 from LazyLuna.network_comparison_utils import *
 
 
-
+"""
 bp       = '/media/omega/Daten1/CATCH/CS'
 bp_annos = '/media/omega/Daten1/CATCH/CS/Preds/FCN'
 bp_cases = '/media/omega/Daten1/CATCH/CS/Cases'
@@ -28,7 +28,7 @@ bp       = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases'
 bp_annos = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Annos'
 bp_cases = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Cases'
 bp_imgs  = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Imgs'
-"""
+
 
 # load cases
 case_paths = [os.path.join(bp_cases,p) for p in os.listdir(bp_cases) if p.endswith('.pickle') and 'Annos' in p]
@@ -150,11 +150,11 @@ mrunet_lv_endo_table = add_absolute_mldiff(contour_subset(mrunet_table, 'lv_endo
 mrunet_lv_myo_table  = add_absolute_mldiff(contour_subset(mrunet_table, 'lv_myo' ))
 mrunet_rv_endo_table = add_absolute_mldiff(contour_subset(mrunet_table, 'rv_endo'))
 
-
-colors = ["#FF2020", "#208020", "#2020FF", "#101010"]# Set your custom color palette
+colors = ["#FF2020", "#4d57ff", "#208020", "#FF7F50"]# Set your custom color palette
+colors = ["#FF2020", "#4d50ff", "#00bd00", "#FF7F50"]# Set your custom color palette
 custom_palette = sns.set_palette(sns.color_palette(colors))
 
-fig, axes = plt.subplots(3,3,figsize=(20,20), sharex=True, sharey=True)
+fig, axes = plt.subplots(3,3,figsize=(33,33), sharex=True, sharey=True)
 for i in range(3): 
     for j in range(3): 
         axes[i][j].set_title(['UNet', 'FCN', 'MRUNet'][i] +' - '+ ['LV Endo', 'LV Myo', 'RV Endo'][j] + '-  ml Diff vs Dice')
@@ -179,6 +179,11 @@ sns.scatterplot(ax=axes[2,1], data=mrunet_lv_myo_table, x='lv_myo ml diff', y='l
 sns.scatterplot(ax=axes[2,2], data=mrunet_rv_endo_table, x='rv_endo ml diff', y='rv_endo dice', 
                 size='rv_endo abs ml diff', hue='rv_endo position1', picker=4, palette=custom_palette)
 
+xabs_max = 0
+for i in range(3):
+    for j in range(3):
+        xabs_max = abs(max(axes[i][j].get_xlim(), key=abs))
+
 for i in range(3):
     for j in range(3):
         axes[i][j].xaxis.set_tick_params(which='both', labelbottom=True)
@@ -187,25 +192,13 @@ for i in range(3):
         axes[i][j].set_xlabel('ml Difference [ml]')
         axes[i][j].xaxis.set_tick_params(which='both', labelbottom=True)
         axes[i][j].xaxis.set_tick_params(which='both', labelbottom=True)
+        axes[i][j].set_xlim(-xabs_max, xabs_max)
         leg = axes[i][j].axes.get_legend()
-        #print(leg.texts)
-        if i==0 and j==0: 
-            for t, l in zip(leg.texts, ['Position', 'Outside', 'Basal', 'Midventricular', 'Apical', 'Abs ml Diff']):
-                t.set_text(l)
-        else:
-            h,l = axes[i][j].get_legend_handles_labels()
-            l[5] = 'Abs ml Diff'
-            axes[i][j].legend(h[5:],l[5:])
-
-        """
-        if i==0 and j==0: 
-            for t, l in zip(leg.texts, [cont_name_+' - Position', 'Outside', 'Basal', 'Midventricular', 'Apical', cont_name_+' - Abs ml Diff']):
-                t.set_text(l)
-        else:
-            #axes[i][j].get_legend().remove()
-            for t, l in zip(leg.texts, ['', '', '', '', '', cont_name_+' - Abs ml Diff']):
-                t.set_text(l)
-        """    
+        cont_name_ = ['LV Endo', 'LV Myo', 'RV Endo'][j]
+        for t, l in zip(leg.texts, [cont_name_+' - Position', 'Outside', 'Basal', 'Midventricular', 'Apical', cont_name_+' - Abs ml Diff']):
+            t.set_text(l)
+#fig.tight_layout()
+#plt.show()
 
 def onpick(event):
     ind = event.ind
