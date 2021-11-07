@@ -161,7 +161,7 @@ colors = ["#FF2020", "#208020", "#2020FF"]# Set your custom color palette
 colors = ["#FF2020", "#00bd00", "#4d50ff"]# Set your custom color palette
 customPalette = sns.set_palette(sns.color_palette(colors))
 
-fig, axes = plt.subplots(3,1,figsize=(8,20), sharex=True, sharey=True)
+fig, axes = plt.subplots(3,1,figsize=(10,27), sharex=True, sharey=True)
 for i in range(3): 
     axes[i].set_title(['U-Net', 'FCN', 'MultiResUNet'][i] + ' - ml Difference vs Dice')
 sns.scatterplot(ax=axes[0], data=unet_plottable, x='ml diff', y='dice', 
@@ -170,8 +170,8 @@ sns.scatterplot(ax=axes[1], data=fcn_plottable, x='ml diff', y='dice',
                 size='abs ml diff', hue='cont_type', picker=4, palette=customPalette)
 sns.scatterplot(ax=axes[2], data=mrunet_plottable, x='ml diff', y='dice', 
                 size='abs ml diff', hue='cont_type', picker=4, palette=customPalette)
-axes[0].set_ylabel('Dice [%]')
-axes[2].set_xlabel('ml Difference [ml]')
+#axes[0].set_ylabel('Dice [%]')
+#axes[2].set_xlabel('ml Difference [ml]')
 axes[0].xaxis.set_tick_params(which='both', labelbottom=True)
 axes[1].xaxis.set_tick_params(which='both', labelbottom=True)
 
@@ -181,6 +181,8 @@ for ax in axes:
 
 for i in range(3):
     axes[i].set_xlim(-x_max,x_max)
+    axes[i].set_ylabel('Dice [%]')
+    axes[i].set_xlabel('ml Difference [ml]', visible=True)
     leg = axes[i].axes.get_legend()
     for t, l in zip(leg.texts, ['Contour Type', 'LV Endo', 'LV Myo', 'RV Endo', 'Abs ml Diff']):
         t.set_text(l)
@@ -204,7 +206,7 @@ def onpick(event):
     img   = cat1.get_img(slice_nr, cat1.phase)
     cont1 = cat1.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
     cont2 = cat2.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
-    
+    """
     fig, axes = plt.subplots(1,4, sharex=True, sharey=True, figsize=(10,3))
     fig.suptitle(case_name + ', Phase: ' + str(phase) + ', Slice: ' + str(slice_nr))
     for ax in axes: ax.imshow(img, cmap='gray'); ax.axis('off')
@@ -212,11 +214,26 @@ def onpick(event):
     if not cont1.is_empty or not cont2.is_empty: CATCH_utils.plot_geo_face_comparison(axes[1], cont1, cont2)
     if not cont2.is_empty: CATCH_utils.plot_geo_face(axes[2], cont2, c='b')
     pst = Polygon([[0,0],[1,1],[1,0]])
+    patches = [[PolygonPatch(pst, facecolor='red',   edgecolor='red',   alpha=0.4)],
+               [PolygonPatch(pst, facecolor='green', edgecolor='green', alpha=0.4)],
+               [PolygonPatch(pst, facecolor='blue',  edgecolor='blue',  alpha=0.4)]]
+    handles = [[reader1], [reader1+' & '+reader2], [reader2]]
+    axes[0].legend(patches[0], handles[0])
+    axes[1].legend(patches[1], handles[1])
+    axes[2].legend(patches[2], handles[2])
+    fig.tight_layout()
+    plt.show()
+    """
+    fig, axes = plt.subplots(1,2, sharex=True, sharey=True, figsize=(6,3))
+    fig.suptitle(case_name + ', Phase: ' + str(phase) + ', Slice: ' + str(slice_nr))
+    for ax in axes: ax.imshow(img, cmap='gray'); ax.axis('off')
+    if not cont1.is_empty or not cont2.is_empty: CATCH_utils.plot_geo_face_comparison(axes[0], cont1, cont2)
+    pst = Polygon([[0,0],[1,1],[1,0]])
     patches = [PolygonPatch(pst, facecolor='red',   edgecolor='red',   alpha=0.4),
                PolygonPatch(pst, facecolor='green', edgecolor='green', alpha=0.4),
                PolygonPatch(pst, facecolor='blue',  edgecolor='blue',  alpha=0.4)]
     handles = [reader1, reader1+' & '+reader2, reader2]
-    axes[3].legend(patches, handles)
+    axes[0].legend(patches, handles)
     fig.tight_layout()
     plt.show()
     

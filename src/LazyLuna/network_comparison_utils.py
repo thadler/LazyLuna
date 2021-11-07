@@ -83,7 +83,7 @@ def SAX_candlelight_plot(gs_cases, name2cases, store_path=''):
     for i, crv in enumerate(crvs):
         if i >= (rows*columns): continue
         while i >= rows: i-=rows
-        axes[i][j].set_title(crv.replace(' difference','') + " Error")
+        axes[i][j].set_title(crv.replace(' difference','').replace('YOMASS','') + " Error")
         sb.boxplot(ax=axes[i][j], data=table, x='reader2', y=crv, palette=boxplot_palette, saturation=1, width=0.6)
         sb.swarmplot (ax=axes[i][j], data=table, x='reader2', y=crv, color="#061C36", alpha=1)        
         axes[i][j].set_xticklabels(list(name2cases.keys()))
