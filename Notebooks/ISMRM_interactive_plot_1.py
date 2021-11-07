@@ -157,7 +157,7 @@ custom_palette = sns.set_palette(sns.color_palette(colors))
 fig, axes = plt.subplots(3,3,figsize=(33,33), sharex=True, sharey=True)
 for i in range(3): 
     for j in range(3): 
-        axes[i][j].set_title(['UNet', 'FCN', 'MRUNet'][i] +' - '+ ['LV Endo', 'LV Myo', 'RV Endo'][j] + '-  ml Diff vs Dice')
+        axes[i][j].set_title(['U-Net', 'FCN', 'MultiResUNet'][i] +' - '+ ['LV Endo', 'LV Myo', 'RV Endo'][j] + '-  ml Diff vs Dice')
 sns.scatterplot(ax=axes[0,0], data=unet_lv_endo_table, x='lv_endo ml diff', y='lv_endo dice', 
                 size='lv_endo abs ml diff', hue='lv_endo position1', picker=4, palette=custom_palette)
 sns.scatterplot(ax=axes[0,1], data=unet_lv_myo_table, x='lv_myo ml diff', y='lv_myo dice', 

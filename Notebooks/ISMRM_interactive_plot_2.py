@@ -163,7 +163,7 @@ customPalette = sns.set_palette(sns.color_palette(colors))
 
 fig, axes = plt.subplots(3,1,figsize=(8,20), sharex=True, sharey=True)
 for i in range(3): 
-    axes[i].set_title(['UNet', 'FCN', 'MRUNet'][i] + ' - ml Difference vs Dice')
+    axes[i].set_title(['U-Net', 'FCN', 'MultiResUNet'][i] + ' - ml Difference vs Dice')
 sns.scatterplot(ax=axes[0], data=unet_plottable, x='ml diff', y='dice', 
                 size='abs ml diff', hue='cont_type', picker=4, palette=customPalette)
 sns.scatterplot(ax=axes[1], data=fcn_plottable, x='ml diff', y='dice', 
