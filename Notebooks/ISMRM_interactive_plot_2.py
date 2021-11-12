@@ -18,7 +18,7 @@ from LazyLuna.CATCH_utils import *
 from LazyLuna.network_comparison_utils import *
 
 
-"""
+
 bp       = '/media/omega/Daten1/CATCH/CS'
 bp_annos = '/media/omega/Daten1/CATCH/CS/Preds/FCN'
 bp_cases = '/media/omega/Daten1/CATCH/CS/Cases'
@@ -28,7 +28,7 @@ bp       = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases'
 bp_annos = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Annos'
 bp_cases = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Cases'
 bp_imgs  = '/Users/dietrichhadler/Desktop/Daten/CS_ESED_Cases/Imgs'
-
+"""
 
 # load cases
 case_paths = [os.path.join(bp_cases,p) for p in os.listdir(bp_cases) if p.endswith('.pickle') and 'Annos' in p]
@@ -48,6 +48,13 @@ cases1 = [c for c in cases1 if c.case_name in names]
 
 #cases1 = cases1[:3]
 #cases2 = cases2[:3]
+#cases3 = cases3[:3]
+#cases4 = cases4[:3]
+
+print(len(cases1))
+print(len(cases2))
+print(len(cases3))
+print(len(cases4))
 
 
 metric_names  = ['dice', 'hd', 'ml diff', 'by reader1', 'by reader2', 'position1', 'position2']
@@ -163,7 +170,7 @@ customPalette = sns.set_palette(sns.color_palette(colors))
 
 fig, axes = plt.subplots(3,1,figsize=(10,27), sharex=True, sharey=True)
 for i in range(3): 
-    axes[i].set_title(['U-Net', 'FCN', 'MultiResUNet'][i] + ' - ml Difference vs Dice')
+    axes[i].set_title(['U-Net', 'FCN', 'MultiResUNet'][i] + ' • ml Difference vs Dice')
 sns.scatterplot(ax=axes[0], data=unet_plottable, x='ml diff', y='dice', 
                 size='abs ml diff', hue='cont_type', picker=4, palette=customPalette)
 sns.scatterplot(ax=axes[1], data=fcn_plottable, x='ml diff', y='dice', 
@@ -188,12 +195,14 @@ for i in range(3):
         t.set_text(l)
 
 
+from mpl_interactions import ioff, panhandler, zoom_factory
+        
 
 def onpick(event):
     ind = event.ind
     print('onpick: ', ind)
-    table = fcn_plottable
-    c1s, c2s = cases1, cases3
+    table = mrunet_plottable
+    c1s, c2s = cases1, cases4
     case_name  = table.iloc[ind]['case name'].values[0]
     phase      = table.iloc[ind]['phase'].values[0]
     reader1    = table.iloc[ind]['reader1'].values[0]
@@ -203,10 +212,13 @@ def onpick(event):
     
     c1, c2 = [c for c in c1s if c.case_name==case_name][0], [c for c in c2s if c.case_name==case_name][0]
     cat1, cat2 = [cat for cat in c1.categories if phase in cat.name.lower()][0], [cat for cat in c2.categories if phase in cat.name.lower()][0]
-    img   = cat1.get_img(slice_nr, cat1.phase)
+    tmp_img = cat1.get_img(slice_nr, cat1.phase)
+    h,w = tmp_img.shape
+    img = np.zeros((max(h,w),max(h,w)))
+    img[:h,:w] = tmp_img
     cont1 = cat1.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
     cont2 = cat2.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
-    """
+    
     fig, axes = plt.subplots(1,4, sharex=True, sharey=True, figsize=(10,3))
     fig.suptitle(case_name + ', Phase: ' + str(phase) + ', Slice: ' + str(slice_nr))
     for ax in axes: ax.imshow(img, cmap='gray'); ax.axis('off')
@@ -217,10 +229,12 @@ def onpick(event):
     patches = [[PolygonPatch(pst, facecolor='red',   edgecolor='red',   alpha=0.4)],
                [PolygonPatch(pst, facecolor='green', edgecolor='green', alpha=0.4)],
                [PolygonPatch(pst, facecolor='blue',  edgecolor='blue',  alpha=0.4)]]
-    handles = [[reader1], [reader1+' & '+reader2], [reader2]]
+    handles = [['Expert'], [reader1+' & '+reader2], [['U-Net','FCN', 'MultiResUNet'][['UNet','FCN', 'MRUNet'].index(reader2)]]]
     axes[0].legend(patches[0], handles[0])
     axes[1].legend(patches[1], handles[1])
     axes[2].legend(patches[2], handles[2])
+    disconnect_zoom = zoom_factory(axes[0])
+    pan_handler = panhandler(fig)
     fig.tight_layout()
     plt.show()
     """
@@ -236,6 +250,7 @@ def onpick(event):
     axes[0].legend(patches, handles)
     fig.tight_layout()
     plt.show()
+    """
     
     
 fig.canvas.mpl_connect('pick_event', onpick)

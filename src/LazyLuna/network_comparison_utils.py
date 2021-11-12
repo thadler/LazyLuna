@@ -92,6 +92,7 @@ def SAX_candlelight_plot(gs_cases, name2cases, store_path=''):
         #axes[i][j].set_ylim(ymin=-yabs_max, ymax=yabs_max)
         if 'EF' in crv: axes[i][j].set_ylim(ymin=-20, ymax=20)
         if 'ESV' in crv or 'EDV' in crv: axes[i][j].set_ylim(ymin=-45, ymax=45)
+        if 'MYOMASS' in crv: axes[i][j].set_ylim(ymin=-30, ymax=30)
         axes[i][j].set_xlabel("")
         if i == (rows-1): j+=1
 

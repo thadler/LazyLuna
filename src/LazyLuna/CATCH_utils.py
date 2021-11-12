@@ -183,7 +183,7 @@ def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'],alpha=0.4):
 def plot_geo_face(ax, geo, c='r', ec=None, alpha=0.4):
     # buffer is a hack, make sure contours are in clockwise or counter cw direction
     #ax.add_patch(PolygonPatch(geo.buffer(0), color=c, alpha=alpha))
-    ax.add_patch(PolygonPatch(geo, color=c, ec=c, alpha=alpha))
+    ax.add_patch(PolygonPatch(geo.buffer(0), color=c, ec=c, alpha=alpha))
         
 def plot_points(ax, points, c='w', marker='x'):
     if points.geom_type=='Point': # case: points is really just point
