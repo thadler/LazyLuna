@@ -44,16 +44,14 @@ def dicom_images_to_table(imgs_path):
     return df
 
 def present_nrimages_nr_annos_table(images_df, annotation_df, by_series=False):
-    combined = pandas.merge(images_df, annotation_df, 
-                            on=['sop_uid', 'study_uid'], how='left')
+    combined = pandas.merge(images_df, annotation_df, on=['sop_uid', 'study_uid'], how='left')
     combined.fillna(0, inplace=True)
     if by_series:
-        nr_imgs  = combined[['series_descr','series_uid']].value_counts()
-        nr_annos = combined.groupby(['series_descr','series_uid']).sum()
+        nr_imgs  = combined[['series_descr','series_uid','LL_tag']].value_counts()
+        nr_annos = combined.groupby(['series_descr','series_uid','LL_tag']).sum()
     else:
-        nr_imgs  = combined[['series_descr']].value_counts()
-        nr_annos = combined.groupby(['series_descr']).sum()
-    
+        nr_imgs  = combined[['series_descr','LL_tag']].value_counts()
+        nr_annos = combined.groupby(['series_descr','LL_tag']).sum()
     nr_imgs   = nr_imgs.to_dict()
     nr_annos  = nr_annos.to_dict()['annotated']
     imgs_keys, anno_keys = list(nr_imgs.keys()), list(nr_annos.keys())
@@ -61,12 +59,12 @@ def present_nrimages_nr_annos_table(images_df, annotation_df, by_series=False):
         if not isinstance(k, tuple): nr_imgs[(k,)] = nr_imgs.pop(k)
     for k in anno_keys: 
         if not isinstance(k, tuple): nr_annos[(k,)] = nr_annos.pop(k)
-    
-    if by_series: cols = ['series_descr', 'series_uid', 'nr_imgs', 'nr_annos']
-    else:         cols = ['series_descr', 'nr_imgs', 'nr_annos']
+    if by_series: cols = ['series_descr', 'series_uid','LL_tag', 'nr_imgs', 'nr_annos']
+    else:         cols = ['series_descr','LL_tag', 'nr_imgs', 'nr_annos']
     keys = set(nr_imgs.keys()).union(set(nr_annos.keys()))
     rows = [[*k, nr_imgs[k], int(nr_annos[k])] for k in keys]
     df = pandas.DataFrame(rows, columns=cols)
+    df.sort_values(by='series_descr', key=lambda x: x.str.lower(), inplace=True, ignore_index=True)
     return df
 
 def get_paths_for_series_descr(imgs_df, annos_df, series_description, series_uid=None):
@@ -74,7 +72,6 @@ def get_paths_for_series_descr(imgs_df, annos_df, series_description, series_uid
         imgs = imgs_df .loc[imgs_df ['series_descr'].isin([series_description]) & imgs_df ['series_uid'].isin([series_uid])]
     else:
         imgs  = imgs_df .loc[imgs_df ['series_descr'].isin([series_description])]
-    
     annos = pandas.merge(imgs, annos_df, on=['study_uid','sop_uid'], how='inner')
     annos.fillna('', inplace=True)
     return imgs['dcm_path'].unique().tolist(), annos['anno_path'].unique().tolist()
@@ -93,9 +90,8 @@ def add_and_store_LL_tags(imgs_df, key2LLtag):
         #print(dcm.SeriesDescription)
         try:
             k = (dcm.SeriesDescription,dcm.SeriesInstanceUID) if sdAndSeriesUID else dcm.SeriesDescription
-            if k in key2LLtag.keys(): 
-                add_LL_tag(p, dcm, tag=key2LLtag[k])
-            else: add_LL_tag(p, dcm, tag='Lazy Luna: None')
+            if k in key2LLtag.keys(): add_LL_tag(p, dcm, tag=key2LLtag[k])
+            else:                     add_LL_tag(p, dcm, tag='Lazy Luna: None')
         except:
             print('Failed at: Case', c, '/nDCM', dcm)
             continue

@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>986</width>
+    <height>628</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QPushButton" name="img_folder_btn">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>30</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(181, 255, 149);</string>
+    </property>
+    <property name="text">
+     <string>Image Folder</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="reader_folder_btn">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>90</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(181, 255, 149);</string>
+    </property>
+    <property name="text">
+     <string>Reader Folder</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="img_folder_line_edit">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>40</y>
+      <width>113</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Images Path</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="reader_folder_line_edit">
+    <property name="geometry">
+     <rect>
+      <x>150</x>
+      <y>100</y>
+      <width>113</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Reader Path</string>
+    </property>
+   </widget>
+   <widget class="QRadioButton" name="differentiation_radio_btn">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>190</y>
+      <width>251</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Differentiate by SeriesUID</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>181</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Required (for specific case):</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>70</y>
+      <width>251</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Optional (reader folder not case folder):</string>
+    </property>
+   </widget>
+   <widget class="QTableView" name="image_information_table_view">
+    <property name="geometry">
+     <rect>
+      <x>290</x>
+      <y>20</y>
+      <width>681</width>
+      <height>551</height>
+     </rect>
+    </property>
+   </widget>
+   <widget class="QProgressBar" name="progress_bar">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>560</y>
+      <width>251</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="value">
+     <number>24</number>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>550</y>
+      <width>251</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Loading progress bar</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sax_cine_label">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>260</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>SAX CINE</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sax_cine_label_2">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>290</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>SAX CS</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sax_cine_label_3">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>320</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>LAX 2 CV</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sax_cine_label_4">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>350</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>LAX 3 CV</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sax_cine_label_5">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>380</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>LAX 4 CV</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sax_cine_label_6">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>410</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>T1</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sax_cine_label_7">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>440</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>T2</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="SAX_CINE_add_to_dict">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>260</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Make SAX CINE</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_2">
+    <property name="geometry">
+     <rect>
+      <x>12</x>
+      <y>220</y>
+      <width>251</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Suggest Labels</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="SAX_CS_add_to_dict">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>290</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Make SAX CS</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="LAX_3CV_add_to_dict">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>350</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Make LAX 3 CV</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="LAX_2CV_add_to_dict">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>320</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Make LAX 2 CV</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="LAX_4CV_add_to_dict">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>380</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Make LAX 4 CV</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="SAX_T1_add_to_dict">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>410</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Make SAX T1</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="SAX_T2_add_to_dict">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>440</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Make SAX T2</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="SAX_LGE_add_to_dict">
+    <property name="geometry">
+     <rect>
+      <x>80</x>
+      <y>470</y>
+      <width>181</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Make SAX LGE</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="sax_cine_label_8">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>470</y>
+      <width>61</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>LGE</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="Add_LL_Tags">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>500</y>
+      <width>251</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(187, 195, 255);</string>
+    </property>
+    <property name="text">
+     <string>Add Lazy Luna Tags</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="load_table_btn">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>150</y>
+      <width>131</width>
+      <height>31</height>
+     </rect>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">background-color: rgb(181, 255, 149);</string>
+    </property>
+    <property name="text">
+     <string>Load Table</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_4">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>130</y>
+      <width>251</width>
+      <height>16</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Usable after defining folders</string>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>986</width>
+     <height>22</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
