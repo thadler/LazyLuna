@@ -65,7 +65,27 @@ def present_nrimages_nr_annos_table(images_df, annotation_df, by_series=False):
     rows = [[*k, nr_imgs[k], int(nr_annos[k])] for k in keys]
     df = pandas.DataFrame(rows, columns=cols)
     df.sort_values(by='series_descr', key=lambda x: x.str.lower(), inplace=True, ignore_index=True)
+    df['Change LL_tag'] = df['LL_tag']
     return df
+
+def present_nrimages_table(images_df, by_series=False):
+    if by_series:
+        nr_imgs  = images_df[['series_descr','series_uid','LL_tag']].value_counts()
+    else:
+        nr_imgs  = images_df[['series_descr','LL_tag']].value_counts()
+    nr_imgs   = nr_imgs.to_dict()
+    imgs_keys = list(nr_imgs.keys())
+    for k in imgs_keys: 
+        if not isinstance(k, tuple): nr_imgs[(k,)] = nr_imgs.pop(k)
+    if by_series: cols = ['series_descr', 'series_uid','LL_tag', 'nr_imgs']
+    else:         cols = ['series_descr','LL_tag', 'nr_imgs']
+    keys = set(nr_imgs.keys())
+    rows = [[*k, nr_imgs[k]] for k in keys]
+    df = pandas.DataFrame(rows, columns=cols)
+    df.sort_values(by='series_descr', key=lambda x: x.str.lower(), inplace=True, ignore_index=True)
+    df['Change LL_tag'] = df['LL_tag']
+    return df
+
 
 def get_paths_for_series_descr(imgs_df, annos_df, series_description, series_uid=None):
     if series_uid is not None:
@@ -75,6 +95,14 @@ def get_paths_for_series_descr(imgs_df, annos_df, series_description, series_uid
     annos = pandas.merge(imgs, annos_df, on=['study_uid','sop_uid'], how='inner')
     annos.fillna('', inplace=True)
     return imgs['dcm_path'].unique().tolist(), annos['anno_path'].unique().tolist()
+
+def get_img_paths_for_series_descr(imgs_df, series_description, series_uid=None):
+    if series_uid is not None:
+        imgs = imgs_df .loc[imgs_df ['series_descr'].isin([series_description]) & imgs_df ['series_uid'].isin([series_uid])]
+    else:
+        imgs  = imgs_df .loc[imgs_df ['series_descr'].isin([series_description])]
+    return imgs['dcm_path'].unique().tolist()
+
 
 def add_LL_tag(store_path, dcm, tag='Lazy Luna: None'): # Lazy Luna: SAX CS
     try:    dcm[0x0b, 0x10].value = tag
@@ -90,8 +118,8 @@ def add_and_store_LL_tags(imgs_df, key2LLtag):
         #print(dcm.SeriesDescription)
         try:
             k = (dcm.SeriesDescription,dcm.SeriesInstanceUID) if sdAndSeriesUID else dcm.SeriesDescription
-            if k in key2LLtag.keys(): add_LL_tag(p, dcm, tag=key2LLtag[k])
-            else:                     add_LL_tag(p, dcm, tag='Lazy Luna: None')
+            if k not in key2LLtag.keys(): continue
+            add_LL_tag(p, dcm, tag=key2LLtag[k])
         except:
             print('Failed at: Case', c, '/nDCM', dcm)
             continue
