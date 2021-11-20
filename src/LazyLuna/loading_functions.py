@@ -115,13 +115,11 @@ def add_and_store_LL_tags(imgs_df, key2LLtag):
     sdAndSeriesUID = isinstance(list(key2LLtag.keys())[0], tuple) and len(list(key2LLtag.keys())[0])>1
     for ip, p in enumerate(imgs_df['dcm_path'].values):
         dcm = pydicom.dcmread(p, stop_before_pixels=False)
-        #print(dcm.SeriesDescription)
         try:
-            k = (dcm.SeriesDescription,dcm.SeriesInstanceUID) if sdAndSeriesUID else dcm.SeriesDescription
+            k = (dcm.SeriesDescription,dcm.SeriesInstanceUID) if sdAndSeriesUID else (dcm.SeriesDescription,)
             if k in key2LLtag.keys(): add_LL_tag(p, dcm, tag=key2LLtag[k])
             else:                     add_LL_tag(p, dcm, tag='Lazy Luna: None')
-            
         except:
-            print('Failed at: Case', c, '/nDCM', dcm)
+            print('Failed at case: ', c, '/nDCM', dcm)
             continue
 

@@ -31,9 +31,12 @@ def read_dcm_images_into_sop2filepaths(path, debug=False):
     for n in ['SAX CINE', 'SAX CS', 'SAX T1', 'SAX T2', 'LAX 2CV', 'LAX 3CV', 'LAX 4CV', 'SAX LGE', 'None']:
         sop2filepath[n] = dict()
     for p in Path(path).glob('**/*.dcm'):
-        dcm  = pydicom.dcmread(str(p), stop_before_pixels=True)
-        name = str(dcm[0x0b, 0x10].value).replace('Lazy Luna: ', '') # LL Tag
-        sop2filepath[name][dcm.SOPInstanceUID] = str(p)
+        try:
+            dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
+            name = str(dcm[0x0b, 0x10].value).replace('Lazy Luna: ', '') # LL Tag
+            sop2filepath[name][dcm.SOPInstanceUID] = str(p)
+        except Exception as e:
+            if debug: print(dcm, '\nException: ', e)
     if debug: print('Reading images took: ', time()-st)
     return sop2filepath
 
@@ -52,7 +55,7 @@ def get_imgs_and_annotation_paths(bp_imgs, bp_annos):
     """
     imgpaths_annopaths_tuples = []
     img_folders = os.listdir(bp_imgs)
-    for img_f in img_folders:
+    for i, img_f in enumerate(img_folders):
         case_path = os.path.join(bp_imgs, img_f)
         for p in Path(case_path).glob('**/*.dcm'):
             dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
@@ -583,6 +586,7 @@ class Case:
         self.annos_path   = annos_path
         self.case_name    = case_name
         self.reader_name  = reader_name
+        self.type         = 'None'
         self.all_imgs_sop2filepath  = read_dcm_images_into_sop2filepaths(imgs_path, debug)
         self.studyinstanceuid       = self._get_studyinstanceuid()
         self.annos_sop2filepath     = read_annos_into_sop2filepaths(annos_path, debug)

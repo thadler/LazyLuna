@@ -119,7 +119,6 @@ class Window(QtWidgets.QMainWindow):
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
                 self.cases_folder_path = dialog.selectedFiles()[0]
                 self.cases_folder_line_edit.setText(self.cases_folder_path)
-                print('Set cases folder path: ', self.cases_folder_path)
         except Exception as e: print(e)
             
     def set_bulk_case_images_folder_path(self):
@@ -135,9 +134,6 @@ class Window(QtWidgets.QMainWindow):
         bp_imgs  = self.bulk_case_images_folder_path
         bp_annos = self.case_reader_folder_path
         bp_cases = self.cases_folder_path
-        print('bp imgs:  ', bp_imgs)
-        print('bp annos: ', bp_annos)
-        print('bp cases: ', bp_cases)
         imgsanno_paths = get_imgs_and_annotation_paths(bp_imgs, bp_annos)
         cases = []
         sax_cine_view = SAX_CINE_View()
@@ -162,11 +158,37 @@ class Window(QtWidgets.QMainWindow):
             #cases.append(case)
     
     def transform_case(self):
-        pass
+        single_imgs_path = self.case_imgs_folder_path
+        bp_annos = self.case_reader_folder_path
+        bp_cases = self.cases_folder_path
+        print('head: ', os.path.split(single_imgs_path)[0])
+        imgsanno_paths = get_imgs_and_annotation_paths(os.path.split(single_imgs_path)[0], bp_annos)
+        cases = []
+        sax_cine_view = SAX_CINE_View()
+        sax_cs_view   = SAX_CS_View()
+        for imgp, annop in imgsanno_paths:
+            if single_imgs_path not in imgp: continue
+            print('Image path: ', imgp)
+            self.case_conversion_text_edit.append('\nImage and Annotation paths:/n'+imgp+'/n'+annop)
+            if not os.path.exists(annop): 
+                self.case_conversion_text_edit.append('No annotations: '+annop)
+                continue
+            case = Case(imgp, annop, os.path.basename(imgp), os.path.basename(bp_annos))
+            try: 
+                case = sax_cine_view.customize_case(case)
+                self.case_conversion_text_edit.append('CINE view worked for: '+case.case_name)
+            except Exception as e: 
+                self.case_conversion_text_edit.append('Failed at CINE view: '+str(e))
+            try:
+                case = sax_cs_view.customize_case(case)
+                self.case_conversion_text_edit.append('CS view worked for: '+case.case_name)
+            except Exception as e: 
+                self.case_conversion_text_edit.append('Failed at CS view: '+str(e))
+            case.store(bp_cases)
+            #cases.append(case)
         
         
     def present_table(self):
-        self.key2LLtag = dict()
         self.imgs_df   = dicom_images_to_table(self.imgs_folder_path)
         study_uid      = get_study_uid(self.imgs_folder_path)
         try:
@@ -193,23 +215,28 @@ class Window(QtWidgets.QMainWindow):
     def set_sax_lge_LL_tags(self):  self.set_LL_tags('Lazy Luna: SAX LGE')
     def remove_LL_tags(self):       self.set_LL_tags('Lazy Luna: None')
     
-    def store_LL_tags(self): add_and_store_LL_tags(self.imgs_df, self.key2LLtag)
-        
     def set_LL_tags(self, name):
         table = self.ui.image_information_table_view
         divide_by_series_uid = self.ui.differentiation_radio_btn.isChecked()
         idxs  = table.selectionModel().selectedIndexes()
         for idx in sorted(idxs):
-            if not divide_by_series_uid: 
-                value = table.model().index(idx.row(), 0).data()
-            else: 
-                value = (table.model().index(idx.row(), 0).data(), table.model().index(idx.row(), 1).data())
-            self.key2LLtag[value] = name
+            if not divide_by_series_uid: value = table.model().index(idx.row(), 0).data()
+            else: value = (table.model().index(idx.row(), 0).data(), table.model().index(idx.row(), 1).data())
             self.information_df.at[idx.row(),'Change LL_tag'] = name
         pandas_model = DataFrameModel(self.information_df, parent=self)
         self.ui.image_information_table_view.setModel(pandas_model)
-        #print('key2LLtag: ', self.key2LLtag)
         
+    def store_LL_tags(self):
+        self.key2LLtag = self.set_key2LLtag()
+        add_and_store_LL_tags(self.imgs_df, self.key2LLtag)
+        
+    def set_key2LLtag(self):
+        key2LLtag = dict()
+        divide_by_series_uid = self.ui.differentiation_radio_btn.isChecked()
+        columns = ['series_descr', 'series_uid', 'Change LL_tag'] if divide_by_series_uid else ['series_descr', 'Change LL_tag']
+        rows = self.information_df[columns].to_dict(orient='split')['data']
+        for r in rows: key2LLtag[tuple(r[:-1])] = r[-1]
+        return key2LLtag
 
     def show_dcms(self, modelindex):
         row   = modelindex.row()
@@ -219,8 +246,7 @@ class Window(QtWidgets.QMainWindow):
         if divide_by_series_uid:
             series_uid = self.information_df.at[row,'series_uid']
         else: series_uid = None
-        paths = get_img_paths_for_series_descr(self.imgs_df, series_description, 
-                                               series_uid)
+        paths = get_img_paths_for_series_descr(self.imgs_df, series_description, series_uid)
         self.DCM_MplWidget.set_dcms([pydicom.dcmread(p) for p in paths])
         
     
