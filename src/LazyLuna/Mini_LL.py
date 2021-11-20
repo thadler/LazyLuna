@@ -28,7 +28,7 @@ def read_annos_into_sop2filepaths(path, debug=False):
 def read_dcm_images_into_sop2filepaths(path, debug=False):
     if debug: st = time()
     sop2filepath = dict()
-    for n in ['SAX CINE', 'SAX CS', 'T1', 'T2', 'LAX 2CH', 'LAX 3CH', 'LAX 4CH', 'None']:
+    for n in ['SAX CINE', 'SAX CS', 'SAX T1', 'SAX T2', 'LAX 2CV', 'LAX 3CV', 'LAX 4CV', 'SAX LGE', 'None']:
         sop2filepath[n] = dict()
     for p in Path(path).glob('**/*.dcm'):
         dcm  = pydicom.dcmread(str(p), stop_before_pixels=True)

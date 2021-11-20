@@ -7,8 +7,9 @@ from PyQt5 import Qt, QtWidgets, QtGui, QtCore, uic
 
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
 
-
+from catch_converter.parse_contours import parse_cvi42ws
 from LazyLuna.loading_functions import *
+from LazyLuna.Mini_LL import *
 
 
 class Window(QtWidgets.QMainWindow):
@@ -23,6 +24,9 @@ class Window(QtWidgets.QMainWindow):
         self.ui.centralwidget.setWindowState(self.ui.centralwidget.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
         self.ui.centralwidget.activateWindow()
         
+        ########
+        # Tab1 #
+        ########
         # folder selection
         self.ui.img_folder_btn   .clicked.connect(self.set_image_folder_path)
         self.ui.reader_folder_btn.clicked.connect(self.set_reader_folder_path)
@@ -42,15 +46,29 @@ class Window(QtWidgets.QMainWindow):
         # adding tags to dicoms
         self.ui.store_LL_Tags.clicked.connect(self.store_LL_tags)
         
+        # show dicom images for row in table
         self.ui.image_information_table_view.doubleClicked.connect(self.show_dcms)
         
+        ########
+        # Tab2 #
+        ########
         # adding figure
         self.DCM_MplWidget.canvas.axes.clear()
-        self.DCM_MplWidget.canvas.axes.imshow(np.arange(25**2).reshape(25,25))
-        self.DCM_MplWidget.canvas.axes.set_title('DCMs')
+        self.DCM_MplWidget.canvas.axes.set_title('Dicoms')
         self.DCM_MplWidget.canvas.draw()
         self.DCM_MplWidget.canvas.mpl_connect('key_press_event', 
                                         self.DCM_MplWidget.keyPressEvent)
+        
+        ########
+        # Tab3 #
+        ########
+        # folder selection
+        self.ui.case_img_folder_btn        .clicked.connect(self.set_case_image_folder_path)
+        self.ui.case_reader_folder_btn     .clicked.connect(self.set_case_reader_folder_path)
+        self.ui.cases_folder_btn           .clicked.connect(self.set_cases_folder_path)
+        self.ui.case_transform_btn         .clicked.connect(self.transform_case)
+        self.ui.bulk_case_images_folder_btn.clicked.connect(self.set_bulk_case_images_folder_path)
+        self.ui.bulk_cases_transform_btn   .clicked.connect(self.bulk_transform_cases)
         
         
     def set_image_folder_path(self):
@@ -60,8 +78,7 @@ class Window(QtWidgets.QMainWindow):
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
                 self.imgs_folder_path = dialog.selectedFiles()[0]
                 self.img_folder_line_edit.setText(self.imgs_folder_path)
-        except Exception as e:
-            print(e)
+        except Exception as e: print(e)
             
     def set_reader_folder_path(self):
         try:
@@ -70,8 +87,83 @@ class Window(QtWidgets.QMainWindow):
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
                 self.reader_folder_path = dialog.selectedFiles()[0]
                 self.reader_folder_line_edit.setText(self.reader_folder_path)
-        except Exception as e:
-            print(e)
+                parse_cvi42ws(self.reader_folder_path, 
+                              self.reader_folder_path, process=True, debug=False)
+        except Exception as e: print(e)
+            
+            
+    def set_case_image_folder_path(self):
+        try:
+            dialog = QtWidgets.QFileDialog(self, '')
+            dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+            if dialog.exec_() == QtWidgets.QDialog.Accepted:
+                self.case_imgs_folder_path = dialog.selectedFiles()[0]
+                self.case_img_folder_line_edit.setText(self.case_imgs_folder_path)
+        except Exception as e: print(e)
+            
+    def set_case_reader_folder_path(self):
+        try:
+            dialog = QtWidgets.QFileDialog(self, '')
+            dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+            if dialog.exec_() == QtWidgets.QDialog.Accepted:
+                self.case_reader_folder_path = dialog.selectedFiles()[0]
+                self.case_reader_folder_line_edit.setText(self.case_reader_folder_path)
+                parse_cvi42ws(self.case_reader_folder_path, 
+                              self.case_reader_folder_path, process=True, debug=False)
+        except Exception as e: print(e)
+            
+    def set_cases_folder_path(self):
+        try:
+            dialog = QtWidgets.QFileDialog(self, '')
+            dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+            if dialog.exec_() == QtWidgets.QDialog.Accepted:
+                self.cases_folder_path = dialog.selectedFiles()[0]
+                self.cases_folder_line_edit.setText(self.cases_folder_path)
+                print('Set cases folder path: ', self.cases_folder_path)
+        except Exception as e: print(e)
+            
+    def set_bulk_case_images_folder_path(self):
+        try:
+            dialog = QtWidgets.QFileDialog(self, '')
+            dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+            if dialog.exec_() == QtWidgets.QDialog.Accepted:
+                self.bulk_case_images_folder_path = dialog.selectedFiles()[0]
+                self.bulk_case_img_folder_line_edit.setText(self.bulk_case_images_folder_path)
+        except Exception as e: print(e)
+        
+    def bulk_transform_cases(self):
+        bp_imgs  = self.bulk_case_images_folder_path
+        bp_annos = self.case_reader_folder_path
+        bp_cases = self.cases_folder_path
+        print('bp imgs:  ', bp_imgs)
+        print('bp annos: ', bp_annos)
+        print('bp cases: ', bp_cases)
+        imgsanno_paths = get_imgs_and_annotation_paths(bp_imgs, bp_annos)
+        cases = []
+        sax_cine_view = SAX_CINE_View()
+        sax_cs_view   = SAX_CS_View()
+        for imgp, annop in imgsanno_paths:
+            self.case_conversion_text_edit.append('Image and Annotation paths:/n'+imgp+'/n'+annop)
+            if not os.path.exists(annop): 
+                self.case_conversion_text_edit.append('No annotations: '+annop)
+                continue
+            case = Case(imgp, annop, os.path.basename(imgp), os.path.basename(bp_annos))
+            try: 
+                case = sax_cine_view.customize_case(case)
+                self.case_conversion_text_edit.append('CINE view worked for: '+case.case_name)
+            except Exception as e: 
+                self.case_conversion_text_edit.append('Failed at CINE view: '+str(e))
+            try:
+                case = sax_cs_view.customize_case(case)
+                self.case_conversion_text_edit.append('CS view worked for: '+case.case_name)
+            except Exception as e: 
+                self.case_conversion_text_edit.append('Failed at CS view: '+str(e))
+            case.store(bp_cases)
+            #cases.append(case)
+    
+    def transform_case(self):
+        pass
+        
         
     def present_table(self):
         self.key2LLtag = dict()

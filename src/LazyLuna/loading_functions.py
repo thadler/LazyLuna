@@ -118,8 +118,9 @@ def add_and_store_LL_tags(imgs_df, key2LLtag):
         #print(dcm.SeriesDescription)
         try:
             k = (dcm.SeriesDescription,dcm.SeriesInstanceUID) if sdAndSeriesUID else dcm.SeriesDescription
-            if k not in key2LLtag.keys(): continue
-            add_LL_tag(p, dcm, tag=key2LLtag[k])
+            if k in key2LLtag.keys(): add_LL_tag(p, dcm, tag=key2LLtag[k])
+            else:                     add_LL_tag(p, dcm, tag='Lazy Luna: None')
+            
         except:
             print('Failed at: Case', c, '/nDCM', dcm)
             continue
