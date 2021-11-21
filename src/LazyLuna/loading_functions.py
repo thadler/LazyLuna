@@ -123,3 +123,20 @@ def add_and_store_LL_tags(imgs_df, key2LLtag):
             print('Failed at case: ', c, '/nDCM', dcm)
             continue
 
+def get_cases_table(cases_path, debug=False):
+    if debug: st = time()
+    paths   = [str(p) for p in Path(cases_path).glob('**/*.pickle')]
+    cases   = [pickle.load(open(p,'rb')) for p in paths]
+    columns = ['Case Name', 'Reader', 'Path']
+    rows    = sorted([[cases[i].case_name, cases[i].reader_name, paths[i]] for i in range(len(paths))], key=lambda p: str(p[0]))
+    df      = pandas.DataFrame(rows, columns=columns)
+    if debug: print('Took: ', time()-st)
+    return df
+
+def get_comparison_table(cases_df, reader_name1, reader_name2):
+    reader1 = cases_df[cases_df['Reader']==reader_name1]
+    reader2 = cases_df[cases_df['Reader']==reader_name2]
+    cc_df   = reader1.merge(reader2, how='inner', on='Case Name')
+    cc_df.rename({'Reader_x': 'Reader1', 'Reader_y': 'Reader2', 'Path_x': 'Path1', 'Path_y': 'Path2'}, inplace=True, axis=1)
+    cc_df   = cc_df.reindex(columns=['Case Name', 'Reader1', 'Reader2', 'Path1', 'Path2'])
+    return cc_df
