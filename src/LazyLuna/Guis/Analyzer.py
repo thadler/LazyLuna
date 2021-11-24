@@ -15,8 +15,9 @@ import os
 import numpy as np
 
 from LazyLuna.loading_functions import *
-from LazyLuna.utils_pyqt5 import DataFrameModel
-from LazyLuna.Mini_LL import Case_Comparison
+from LazyLuna.Tables import *
+from LazyLuna.Mini_LL import Case_Comparison, SAX_CINE_View
+from LazyLuna.Guis.Addable_Tabs.Case_Comparisons_Overview_Tab import Case_Comparisons_Overview_Tab
 
 
 class Module_3(QMainWindow):
@@ -41,15 +42,13 @@ class MyTabWidget(QWidget):
         super(QWidget, self).__init__(parent)
         self.parent = parent
         self.layout = QVBoxLayout(self)
-        
         # Initialize tab screen
         self.tabs  = QTabWidget()
         self.tab1  = QWidget()
         self.tabs.resize(self.parent.width, self.parent.height)
-        
+        # Closable Tabs
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(lambda index: self.tabs.removeTab(index))
-        
         # Add tabs
         self.tabs.addTab(self.tab1, "Data Loader")
         
@@ -99,10 +98,13 @@ class MyTabWidget(QWidget):
         cases1 = [pickle.load(open(p,'rb')) for p in paths1]
         cases2 = [pickle.load(open(p,'rb')) for p in paths2]
         self.case_comparisons = [Case_Comparison(cases1[i],cases2[i]) for i in range(len(cases1))]
-        print(self.case_comparisons)
-        #self.tabs.setCurrentIndex(2)
-        #SAX_Cine_Tabs.tabs_adder_and_storage_tab(self, self.case_comparisons)
-    
+        # remove all failed CCs
+        self.case_comparisons = [cc for cc in self.case_comparisons if len(cc.case1.available_types)>0]
+        self.case_comparisons = sorted(self.case_comparisons, key=lambda cc:cc.case1.case_name)
+        tab = Case_Comparisons_Overview_Tab()
+        tab.make_tab(self, self.case_comparisons)
+        self.tabs.addTab(tab, "Customize Cardio Analysis")
+        
     def set_case_folder(self):
         dialog = QFileDialog(self, '')
         dialog.setFileMode(QFileDialog.DirectoryOnly)
@@ -125,23 +127,25 @@ class MyTabWidget(QWidget):
         return paths1, paths2
         
     def fill_case_table(self):
-        reader1 = self.combobox_select_segmenter .currentText()
-        reader2 = self.combobox_select_segmenter2.currentText()
-        if reader1=='Select a Reader' or reader2=='Select a Reader': return [], []
-        cc_df = get_comparison_table(self.cases_df, reader1, reader2)
-        pandas_model = DataFrameModel(cc_df, parent=self)
-        self.caseTableView.setModel(pandas_model)
+        self.reader1 = self.combobox_select_segmenter .currentText()
+        self.reader2 = self.combobox_select_segmenter2.currentText()
+        if self.reader1=='Select a Reader' or self.reader2=='Select a Reader': return [], []
+        self.cc_table = CC_OverviewTable()
+        self.cc_table.calculate(self.cases_df, self.reader1, self.reader2)
+        self.caseTableView.setModel(self.cc_table.to_pyqt5_table_model())
         
-               
     def get_segmenters(self):
         case_folder_path = self.case_folder_path.text()
         if not os.path.exists(case_folder_path): return
-        self.cases_df = get_cases_table(case_folder_path, False)
+        paths   = [str(p) for p in Path(case_folder_path).glob('**/*.pickle')]
+        cases   = [pickle.load(open(p,'rb')) for p in paths]
+        self.cases_df = get_cases_table(cases, False)
+        self.cases_df['Path'] = paths
         readers = sorted(self.cases_df['Reader'].unique())
         self.combobox_select_segmenter .clear()
         self.combobox_select_segmenter2.clear()
-        self.combobox_select_segmenter .addItems(['Select a Segmenter'] + readers)
-        self.combobox_select_segmenter2.addItems(['Select a Segmenter'] + readers)
+        self.combobox_select_segmenter .addItems(['Select a Reader'] + readers)
+        self.combobox_select_segmenter2.addItems(['Select a Reader'] + readers)
     
 
 def main():

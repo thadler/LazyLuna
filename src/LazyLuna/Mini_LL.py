@@ -587,6 +587,7 @@ class Case:
         self.case_name    = case_name
         self.reader_name  = reader_name
         self.type         = 'None'
+        self.available_types = set()
         self.all_imgs_sop2filepath  = read_dcm_images_into_sop2filepaths(imgs_path, debug)
         self.studyinstanceuid       = self._get_studyinstanceuid()
         self.annos_sop2filepath     = read_annos_into_sop2filepaths(annos_path, debug)
@@ -694,6 +695,25 @@ class SAX_CINE_View(View):
         cats  = [c for c in case.categories if type(c) in types]
         return cats
 
+    def initialize_case(self, case, debug=False):
+        if debug: st=time()
+        # switch images
+        case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CINE']
+        # attach annotation type
+        case.attach_annotation_type(SAX_CINE_Annotation)
+        # if categories have not been attached, attach the first and init other_categories
+        # otherwise it has categories and a type, so store the old categories for later use
+        if not hasattr(case, 'other_categories'): case.other_categories = dict()
+        case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
+        case.other_categories['SAX CINE'] = case.categories
+        case.categories = []
+        if debug: print('Case categories are: ', case.categories)
+        # set new type
+        case.type = 'SAX CINE'
+        case.available_types.add('SAX CINE')
+        if debug: print('Customization in SAX CINE view took: ', time()-st)
+        return case
+    
     def customize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
@@ -702,13 +722,16 @@ class SAX_CINE_View(View):
         case.attach_annotation_type(SAX_CINE_Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
+        #print('Has Categories: ', hasattr(case, 'categories'), case.other_categories)
         if not hasattr(case, 'categories'):
             case.other_categories = dict()
             case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
+            case.other_categories['SAX CINE'] = case.categories
         else:
-            case.other_categories[case.type] = case.categories
             if 'SAX CINE' in case.other_categories.keys(): case.categories = case.other_categories['SAX CINE']
             else: case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
+        #print('Has Categories: ', hasattr(case, 'categories'), case.categories[0].name, case.categories[0])
+        if debug: print('Case categories are: ', case.categories)
         # attach CRs
         case.attach_clinical_results([LVSAX_ESV, LVSAX_EDV, RVSAX_ESV, RVSAX_EDV,
                                       LVSAX_SV, LVSAX_EF, RVSAX_SV, RVSAX_EF,
@@ -725,6 +748,25 @@ class SAX_CS_View(SAX_CINE_View):
     def __init__(self):
         super().__init__()
 
+    def initialize_case(self, case, debug=False):
+        if debug: st=time()
+        # switch images
+        case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CS']
+        # attach annotation type
+        case.attach_annotation_type(SAX_CINE_Annotation)
+        # if categories have not been attached, attach the first and init other_categories
+        # otherwise it has categories and a type, so store the old categories for later use
+        if not hasattr(case, 'other_categories'): case.other_categories = dict()
+        case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
+        case.other_categories['SAX CS'] = case.categories
+        case.categories = []
+        if debug: print('Case categories are: ', case.categories)
+        # set new type
+        case.type = 'SAX CS'
+        case.available_types.add('SAX CINE')
+        if debug: print('Customization in SAX CS view took: ', time()-st)
+        return case
+        
     def customize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
@@ -733,13 +775,9 @@ class SAX_CS_View(SAX_CINE_View):
         case.attach_annotation_type(SAX_CINE_Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
-        if not hasattr(case, 'categories'):
-            case.other_categories = dict()
-            case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
-        else:
-            case.other_categories[case.type] = case.categories
-            if 'SAX CS' in case.other_categories.keys(): case.categories = case.other_categories['SAX CS']
-            else: case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
+        if 'SAX CS' in case.other_categories.keys(): case.categories = case.other_categories['SAX CS']
+        else: case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
+        if debug: print('Case categories are: ', case.categories)
         # attach CRs
         case.attach_clinical_results([LVSAX_ESV, LVSAX_EDV, RVSAX_ESV, RVSAX_EDV,
                                       LVSAX_SV, LVSAX_EF, RVSAX_SV, RVSAX_EF,

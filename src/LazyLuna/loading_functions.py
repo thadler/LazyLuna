@@ -5,6 +5,7 @@ import pickle
 import pydicom
 from time import time
 import pandas
+import numpy as np
 
 def get_study_uid(imgs_path):
     for ip, p in enumerate(Path(imgs_path).glob('**/*.dcm')):
@@ -123,20 +124,47 @@ def add_and_store_LL_tags(imgs_df, key2LLtag):
             print('Failed at case: ', c, '/nDCM', dcm)
             continue
 
-def get_cases_table(cases_path, debug=False):
+def get_cases_table(cases, debug=False):
+    def get_dcm(case):
+        for k in case.all_imgs_sop2filepath.keys():
+            try: sop = next(iter(case.all_imgs_sop2filepath[k]))
+            except: continue
+            return pydicom.dcmread(case.all_imgs_sop2filepath[k][sop])
+    def get_age(case):
+        try:
+            age = get_dcm(case).data_element('PatientAge').value
+            age = float(age[:-1]) if age!='' else np.nan
+        except: age=np.nan
+        return age
+    def get_gender(case):
+        try:
+            gender = get_dcm(case).data_element('PatientSex').value
+            gender = gender if gender in ['M','F'] else np.nan
+        except: gender=np.nan
+        return gender
+    def get_weight(case):
+        try:
+            weight = get_dcm(case).data_element('PatientWeight').value
+            weight = float(weight) if weight is not None else np.nan
+        except: weight=np.nan
+        return weight
+    def get_height(case):
+        try:
+            h = get_dcm(case).data_element('PatientSize').value
+            h = np.nan if h is None else float(h)/100 if float(h)>3 else float(h)
+        except: h=np.nan
+        return h
     if debug: st = time()
-    paths   = [str(p) for p in Path(cases_path).glob('**/*.pickle')]
-    cases   = [pickle.load(open(p,'rb')) for p in paths]
-    columns = ['Case Name', 'Reader', 'Path']
-    rows    = sorted([[cases[i].case_name, cases[i].reader_name, paths[i]] for i in range(len(paths))], key=lambda p: str(p[0]))
+    columns = ['Case Name', 'Reader', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 
+               'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE']
+    rows    = sorted([[c.case_name, c.reader_name, get_age(c), get_gender(c), get_weight(c), get_height(c), 
+                       'SAX CINE' in c.available_types, 'SAX CS' in c.available_types, 'LAX CINE' in c.available_types, 
+                       'SAX T1' in c.available_types, 'SAX T2' in c.available_types, 'SAX LGE' in c.available_types] 
+                      for c in cases],
+                     key=lambda p: str(p[0]))
     df      = pandas.DataFrame(rows, columns=columns)
     if debug: print('Took: ', time()-st)
     return df
 
-def get_comparison_table(cases_df, reader_name1, reader_name2):
-    reader1 = cases_df[cases_df['Reader']==reader_name1]
-    reader2 = cases_df[cases_df['Reader']==reader_name2]
-    cc_df   = reader1.merge(reader2, how='inner', on='Case Name')
-    cc_df.rename({'Reader_x': 'Reader1', 'Reader_y': 'Reader2', 'Path_x': 'Path1', 'Path_y': 'Path2'}, inplace=True, axis=1)
-    cc_df   = cc_df.reindex(columns=['Case Name', 'Reader1', 'Reader2', 'Path1', 'Path2'])
-    return cc_df
+
+

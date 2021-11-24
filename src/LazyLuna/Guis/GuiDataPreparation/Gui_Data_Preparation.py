@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as Navigati
 from catch_converter.parse_contours import parse_cvi42ws
 from LazyLuna.loading_functions import *
 from LazyLuna.Mini_LL import *
-from LazyLuna.utils_pyqt5 import DataFrameModel
+from LazyLuna.Tables import DataFrameModel
 
 
 class Window(QtWidgets.QMainWindow):
@@ -146,17 +146,16 @@ class Window(QtWidgets.QMainWindow):
                 continue
             case = Case(imgp, annop, os.path.basename(imgp), os.path.basename(bp_annos))
             try: 
-                case = sax_cine_view.customize_case(case)
+                case = sax_cine_view.initialize_case(case)
                 self.case_conversion_text_edit.append('CINE view worked for: '+case.case_name)
             except Exception as e: 
                 self.case_conversion_text_edit.append('Failed at CINE view: '+str(e))
             try:
-                case = sax_cs_view.customize_case(case)
+                case = sax_cs_view.initialize_case(case)
                 self.case_conversion_text_edit.append('CS view worked for: '+case.case_name)
             except Exception as e: 
                 self.case_conversion_text_edit.append('Failed at CS view: '+str(e))
             case.store(bp_cases)
-            #cases.append(case)
     
     def transform_case(self):
         single_imgs_path = self.case_imgs_folder_path
@@ -221,8 +220,6 @@ class Window(QtWidgets.QMainWindow):
         divide_by_series_uid = self.ui.differentiation_radio_btn.isChecked()
         idxs  = table.selectionModel().selectedIndexes()
         for idx in sorted(idxs):
-            if not divide_by_series_uid: value = table.model().index(idx.row(), 0).data()
-            else: value = (table.model().index(idx.row(), 0).data(), table.model().index(idx.row(), 1).data())
             self.information_df.at[idx.row(),'Change LL_tag'] = name
         pandas_model = DataFrameModel(self.information_df, parent=self)
         self.ui.image_information_table_view.setModel(pandas_model)
