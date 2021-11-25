@@ -129,9 +129,9 @@ class CC_StatsOverviewTable(Table):
 class CC_ClinicalResultsTable(Table):
     def calculate(self, case_comparisons, with_dices=True, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
-        case = case_comparisons[0].case1
+        case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
         columns=['case', 'reader1', 'reader2']
-        for cr in case.crs: columns += [cr.name+' '+case.reader_name, cr.name+' '+case.reader_name, cr.name+' difference']
+        for cr in case1.crs: columns += [cr.name+' '+case1.reader_name, cr.name+' '+case2.reader_name, cr.name+' difference']
         for cc in case_comparisons:
             c1, c2 = cc.case1, cc.case2
             try: # due to cases that couldn't be fitted
@@ -161,5 +161,68 @@ class CC_ClinicalResultsTable(Table):
         for c in contour_names: columns.extend([c+' avg dice', c+' avg dice cont by both'])
         df = DataFrame(rows, columns=columns)
         return df
+    
+    def add_bland_altman_dataframe(self, case_comparisons):
+        case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
+        columns=[]
+        for cr in case1.crs: columns += [cr.name+' '+case1.reader_name, cr.name+' '+case2.reader_name]
+        for i in range(len(columns)//2):
+            col_n = columns[i*2].replace(' '+case1.reader_name, ' avg').replace(' '+case2.reader_name, ' avg')
+            self.df[col_n] = self.df[[columns[i*2], columns[i*2+1]]].mean(axis=1)
+        
 
+class CC_OverviewTable(Table):
+    def calculate(self, cases_df, reader_name1, reader_name2):
+        reader1 = cases_df[cases_df['Reader']==reader_name1].copy()
+        reader2 = cases_df[cases_df['Reader']==reader_name2].copy()
+        #'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE'
+        cc_df   = reader1.merge(reader2, how='inner', on=['Case Name', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)',
+                                                         'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE'])
+        cc_df.rename({'Reader_x': 'Reader1', 'Reader_y': 'Reader2', 'Path_x': 'Path1', 'Path_y': 'Path2'}, inplace=True, axis=1)
+        cc_df   = cc_df.reindex(columns=['Case Name', 'Reader1', 'Reader2', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE', 'Path1', 'Path2'])
+        self.df = cc_df
+    
+
+class CC_StatsOverviewTable(Table):
+    def calculate(self, cc_overview_table, restrict_to_view=None):
+        cc_df = cc_overview_table.df
+        if restrict_to_view is not None: 
+            cc_df = cc_df[cc_df[restrict_to_view]]
+        columns = ['Nr Cases','Age (Y)','Gender (M/F)','Weight (kg)','Height (m)']
+        rows = [[len(cc_df.index), 
+                 '{:.1f}'.format(cc_df['Age (Y)'].mean())+' ('+'{:.1f}'.format(cc_df['Age (Y)'].std())+')',
+                 self.gender_string(cc_df),
+                 '{:.1f}'.format(cc_df['Weight (kg)'].mean())+' ('+'{:.1f}'.format(cc_df['Weight (kg)'].std())+')',
+                 '{:.1f}'.format(cc_df['Height (m)'].mean())+' ('+'{:.2f}'.format(cc_df['Height (m)'].std())+')']]
+        information_summary_df  = DataFrame(rows, columns=columns)
+        self.df = information_summary_df
+        
+    def gender_string(self, cc_df): # to resolve key errors when the cohort is only male or female
+        counts     = cc_df['Gender (M/F)'].value_counts()
+        nr_males   = counts['M'] if 'M' in counts.keys() else 0
+        nr_females = counts['F'] if 'F' in counts.keys() else 0
+        return str(nr_males)+'/'+str(nr_females)
+
+    
+class CC_SAX_DiceTable(Table):
+    def calculate(self, case_comparisons, contour_names=['lv_endo','lv_myo','rv_endo']):
+        rows = []
+        case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
+        columns=['case name', 'cont by both', 'cont type', 'avg dice']
+            
+        for cc in case_comparisons:
+            c1, c2 = cc.case1, cc.case2
+            analyzer = Mini_LL.SAX_CINE_analyzer(cc)
+            df = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader=False)
+            
+            
+            all_dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0] in contour_names]
+            rows.append([c1.case_name, False, 'all', np.mean(all_dices)])
+            rows.append([c1.case_name, True, 'all',  np.mean([d for d in all_dices if 0<d<100])])
+            
+            for cname in contour_names:
+                dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0]==cname]
+                rows.append([c1.case_name, False, cname, np.mean(dices)])
+                rows.append([c1.case_name, True, cname, np.mean([d for d in dices if 0<d<100])])
+        self.df = DataFrame(rows, columns=columns)
 
