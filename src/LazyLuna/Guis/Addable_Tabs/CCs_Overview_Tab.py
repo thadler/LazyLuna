@@ -19,15 +19,16 @@ import pandas
 from LazyLuna.Mini_LL import Case_Comparison, SAX_CINE_View, SAX_CS_View
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables import *
+from LazyLuna.Figures import *
 
 
-class Case_Comparisons_Overview_Tab(QWidget):
+class CCs_Overview_Tab(QWidget):
     def __init__(self):
         super().__init__()
         
     def make_tab(self, gui, case_comparisons):
         self.gui = gui
-        gui.tabs.addTab(self, "Customize Cardio Analysis")
+        gui.tabs.addTab(self, "Overview")
         layout = self.layout
         layout = QGridLayout(gui)
         layout.setSpacing(7)
@@ -69,14 +70,14 @@ class Case_Comparisons_Overview_Tab(QWidget):
 
         self.case_lbl = QLabel('Pick Case and Tab: ')
         layout.addWidget(self.case_lbl, 2,1, 1,1)
-        self.combobox_case = QComboBox()
-        self.combobox_case.addItems(['Choose a Case'])# + get_view_names())
-        self.combobox_case.activated[str].connect(self.select_case)
-        layout.addWidget(self.combobox_case, 3,1, 1,1)
         self.combobox_case_tab = QComboBox()
-        self.combobox_case_tab.addItems(['Choose a Tab'])# + get_view_names())
+        self.combobox_case_tab.addItems(['Choose a Tab'])
         self.combobox_case_tab.activated[str].connect(self.create_case_tab)
-        layout.addWidget(self.combobox_case_tab, 4,1, 1,1)
+        layout.addWidget(self.combobox_case_tab, 3,1, 1,1)
+        self.combobox_case = QComboBox()
+        self.combobox_case.addItems(['Choose a Case']+[cc.case1.case_name for cc in case_comparisons])
+        self.combobox_case.activated[str].connect(self.create_case_tab)
+        layout.addWidget(self.combobox_case, 4,1, 1,1)
 
         ###########
         ## Row 3 ##
@@ -94,7 +95,6 @@ class Case_Comparisons_Overview_Tab(QWidget):
         layout.addWidget(self.export_button, 7, 0)
 
         layout.setColumnStretch(2, 2)
-
         self.setLayout(layout)
 
     def set_export_storage_folder_path(self):
@@ -104,27 +104,41 @@ class Case_Comparisons_Overview_Tab(QWidget):
             self.export_storage_folder_path.setText(dialog.selectedFiles()[0])
     
     def store_tables(self):
-        path = self.export_storage_folder_path.text()
-        reader1 = self.gui.reader1
-        reader2 = self.gui.reader2
-        export_folder_path = os.path.join(path, 'Export_comparison_'+reader1+'_'+reader2)
-        if not os.path.exists(export_folder_path): os.mkdir(export_folder_path)
-        view_name = self.combobox_select_view.currentText()
-        view_folder_path = os.path.join(export_folder_path, view_name)
-        if not os.path.exists(view_folder_path): os.mkdir(view_folder_path)
-        self.gui.cc_table.store(os.path.join(export_folder_path, 'table1.csv'))
-        self.overview_table.store(os.path.join(view_folder_path, 'overview_table.csv'))
-        cr_table = CC_ClinicalResultsTable()
-        cr_table.calculate(self.case_comparisons)
-        cr_table.store(os.path.join(view_folder_path, 'clinical_results.csv'))
+        try:
+            path = self.export_storage_folder_path.text()
+            reader1 = self.gui.reader1
+            reader2 = self.gui.reader2
+            export_folder_path = os.path.join(path, 'Export_comparison_'+reader1+'_'+reader2)
+            if not os.path.exists(export_folder_path): os.mkdir(export_folder_path)
+            view_name = self.combobox_select_view.currentText()
+            view_folder_path = os.path.join(export_folder_path, view_name)
+            if not os.path.exists(view_folder_path): os.mkdir(view_folder_path)
+            self.gui.cc_table.store(os.path.join(export_folder_path, 'table1.csv'))
+            self.overview_table.store(os.path.join(view_folder_path, 'overview_table.csv'))
+            cr_table = CC_ClinicalResultsTable()
+            cr_table.calculate(self.case_comparisons)
+            cr_table.store(os.path.join(view_folder_path, 'clinical_results.csv'))
+            cr_overview_figure = SAX_BlandAltman()
+            cr_overview_figure.visualize(self.case_comparisons)
+            cr_overview_figure.store(view_folder_path)
+        except Exception as e:
+            print(e)
+        
+        
         
     def create_stats_tab(self):
         return
     
-    def select_case(self):
-        return
-    
     def create_case_tab(self):
+        case_name = self.combobox_case       .currentText()
+        tab_name  = self.combobox_case_tab   .currentText()
+        view_name = self.combobox_select_view.currentText()
+        if case_name=='Choose a Case' or tab_name=='Choose a Tab' or view_name=='Choose a View': return
+        view = self.get_view(self.combobox_select_view.currentText())
+        cc   = [cc for cc in self.case_comparisons if cc.case1.case_name==case_name][0]
+        tab  = [v for k,v in view.case_tabs.items()][0]()
+        tab.make_tab(self.gui, view, cc)
+        self.gui.tabs.addTab(tab, 'Metrics and Figure: '+cc.case1.case_name)
         return
     
     def get_view(self, vname):
@@ -144,11 +158,9 @@ class Case_Comparisons_Overview_Tab(QWidget):
             new_cc = Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2))
             new_ccs.append(new_cc)
         self.case_comparisons = new_ccs
-        
+        self.combobox_case_tab.clear(); self.combobox_case_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.case_tabs])
         self.overview_table.calculate(self.gui.cc_table, view_name.replace('_View','').replace('_',' '))
         self.overview_TableView.setModel(self.overview_table.to_pyqt5_table_model())
-        
-        
         self.case_comparisons = [Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2)) for cc in self.case_comparisons]
 
     

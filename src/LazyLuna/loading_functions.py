@@ -157,6 +157,7 @@ def get_cases_table(cases, debug=False):
     if debug: st = time()
     columns = ['Case Name', 'Reader', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 
                'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE']
+    print([c.available_types for c in cases])
     rows    = sorted([[c.case_name, c.reader_name, get_age(c), get_gender(c), get_weight(c), get_height(c), 
                        'SAX CINE' in c.available_types, 'SAX CS' in c.available_types, 'LAX CINE' in c.available_types, 
                        'SAX T1' in c.available_types, 'SAX T2' in c.available_types, 'SAX LGE' in c.available_types] 

@@ -16,8 +16,11 @@ import numpy as np
 
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables import *
-from LazyLuna.Mini_LL import Case_Comparison, SAX_CINE_View
-from LazyLuna.Guis.Addable_Tabs.Case_Comparisons_Overview_Tab import Case_Comparisons_Overview_Tab
+from LazyLuna.Mini_LL import Case_Comparison, SAX_CS_View, SAX_CINE_View
+from LazyLuna.Guis.Addable_Tabs.CCs_Overview_Tab import CCs_Overview_Tab
+from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab import CC_Metrics_Tab
+
+
 
 
 class Module_3(QMainWindow):
@@ -97,13 +100,16 @@ class MyTabWidget(QWidget):
         if paths1==[]: return
         cases1 = [pickle.load(open(p,'rb')) for p in paths1]
         cases2 = [pickle.load(open(p,'rb')) for p in paths2]
+        cases1 = sorted(cases1, key=lambda c:c.case_name)
+        cases2 = sorted(cases2, key=lambda c:c.case_name)
         self.case_comparisons = [Case_Comparison(cases1[i],cases2[i]) for i in range(len(cases1))]
         # remove all failed CCs
         self.case_comparisons = [cc for cc in self.case_comparisons if len(cc.case1.available_types)>0]
         self.case_comparisons = sorted(self.case_comparisons, key=lambda cc:cc.case1.case_name)
-        tab = Case_Comparisons_Overview_Tab()
+        tab = CCs_Overview_Tab()
         tab.make_tab(self, self.case_comparisons)
-        self.tabs.addTab(tab, "Customize Cardio Analysis")
+        self.tabs.addTab(tab, "Case Comparisons Overview")
+        
         
     def set_case_folder(self):
         dialog = QFileDialog(self, '')

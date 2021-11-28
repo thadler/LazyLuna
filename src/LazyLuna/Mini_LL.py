@@ -463,7 +463,7 @@ class LVSAX_MYO(Clinical_Result):
         self.set_CR_information()
 
     def set_CR_information(self):
-        self.name = 'LVMYOMASS'
+        self.name = 'LVM'
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
 
@@ -481,7 +481,7 @@ class RVSAX_MYO(Clinical_Result):
         self.set_CR_information()
 
     def set_CR_information(self):
-        self.name = 'RVMYOMASS'
+        self.name = 'RVM'
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_RV_ED_Category)][0]
 
@@ -649,6 +649,8 @@ class Case_Comparison:
     def __init__(self, case1, case2):
         self.case1, self.case2 = case1, case2
         # assertions here? same case, same images,
+        if self.case1.case_name!=self.case2.case_name:
+            raise Exception('A Case Comparison must reference the same case: '+self.case1.case_name, self.case2.case_name)
 
     def get_categories_by_type(self, cat_type):
         cat1 = [cat for cat in self.case1.categories if isinstance(cat, cat_type)][0]
@@ -684,8 +686,13 @@ class SAX_CINE_View(View):
                                      'rv_epi'  : self.rvcats, 'rv_pamu' : self.rvcats, 'rv_myo'  : self.rvcats}
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_pamu', 'lv_myo',
                               'rv_endo', 'rv_epi', 'rv_pamu', 'rv_myo']
-
-
+        
+        # register tabs here:
+        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab import CC_Metrics_Tab
+        
+        self.case_tabs  = {'Metrics and Figure': CC_Metrics_Tab}
+        self.stats_tabs = []
+        
     def load_categories(self):
         self.lvcats, self.rvcats  = [SAX_LV_ES_Category, SAX_LV_ED_Category], [SAX_RV_ES_Category, SAX_RV_ED_Category]
         self.all = [SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category]
@@ -763,7 +770,7 @@ class SAX_CS_View(SAX_CINE_View):
         if debug: print('Case categories are: ', case.categories)
         # set new type
         case.type = 'SAX CS'
-        case.available_types.add('SAX CINE')
+        case.available_types.add('SAX CS')
         if debug: print('Customization in SAX CS view took: ', time()-st)
         return case
         
@@ -940,13 +947,11 @@ class SAX_CINE_analyzer:
     def get_case_contour_comparison_pandas_dataframe(self, fixed_phase_first_reader=False, debug=False):
         # case, reader1, reader2, sop1, sop2, category, d, nr_slices, depth_perc, p1, p2, cont_name, dsc, hd, mldiff, apic/midv/bas/outside1, apic/midv/bas/outside2, has_cont1, has_cont2
         if debug: st = time()
-        row_dict              = {}
-        row_counter           = 0
+        rows                  = []
         view                  = self.view
         case1, case2          = self.cc.case1, self.cc.case2
         case_name             = case1.case_name
         reader1, reader2      = case1.reader_name, case2.reader_name
-        #categories            = [self.cc.get_categories_by_example(c) for c in self.cc.case1.categories]
         dsc_m, hd_m, mldiff_m = DiceMetric(), HausdorffMetric(), mlDiffMetric()
         for cont_name in self.view.contour_names:
             categories1, categories2 = view.get_categories(case1, cont_name), view.get_categories(case2, cont_name)
@@ -967,9 +972,8 @@ class SAX_CINE_analyzer:
                     apic_midv_basal_outside1 = self._is_apic_midv_basal_outside(d, p1, cont_name, first_reader=True)
                     apic_midv_basal_outside2 = self._is_apic_midv_basal_outside(d, p2, cont_name, first_reader=False)
                     row = [case_name, reader1, reader2, sop1, sop2, cat1.name, d, nr_sl, d_perc, p1, p2, cont_name, dsc, hd, mldiff, np.abs(mldiff), apic_midv_basal_outside1, apic_midv_basal_outside2, has_cont1, has_cont2]
-                    row_dict['row_'+str(row_counter).zfill(4)] = row
-                    row_counter += 1
+                    rows.append(row)
         columns=['case', 'reader1', 'reader2', 'sop1', 'sop2', 'category', 'slice', 'max_slices', 'depth_perc', 'phase1', 'phase2', 'contour name', 'DSC', 'HD', 'ml diff', 'abs ml diff', 'position1', 'position2', 'has_contour1', 'has_contour2']
-        df = pandas.DataFrame.from_dict(row_dict,  orient='index', columns=columns)
+        df = pandas.DataFrame(rows, columns=columns)
         if debug: print('pandas table took: ', time()-st)
         return df

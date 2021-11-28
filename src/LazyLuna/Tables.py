@@ -139,7 +139,7 @@ class CC_ClinicalResultsTable(Table):
                 for cr1, cr2 in zip(c1.crs, c2.crs):
                     row += [cr1.get_cr(), cr2.get_cr(), cr1.get_cr_diff(cr2)]
                 rows.append(row)
-            except: rows.append([np.nan for _ in range(len(case.crs)*3+3)])
+            except: rows.append([np.nan for _ in range(len(case1.crs)*3+3)])
         df = DataFrame(rows, columns=columns)
         if with_dices: df = pandas.concat([df, self.dices_dataframe(case_comparisons, contour_names)], axis=1, join="outer")
         self.df = df
@@ -209,20 +209,51 @@ class CC_SAX_DiceTable(Table):
         rows = []
         case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
         columns=['case name', 'cont by both', 'cont type', 'avg dice']
-            
         for cc in case_comparisons:
             c1, c2 = cc.case1, cc.case2
             analyzer = Mini_LL.SAX_CINE_analyzer(cc)
             df = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader=False)
-            
-            
             all_dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0] in contour_names]
             rows.append([c1.case_name, False, 'all', np.mean(all_dices)])
             rows.append([c1.case_name, True, 'all',  np.mean([d for d in all_dices if 0<d<100])])
-            
             for cname in contour_names:
                 dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0]==cname]
                 rows.append([c1.case_name, False, cname, np.mean(dices)])
                 rows.append([c1.case_name, True, cname, np.mean([d for d in dices if 0<d<100])])
         self.df = DataFrame(rows, columns=columns)
 
+class CC_Metrics_Table(Table):
+    def calculate(self, case_comparison, fixed_phase_first_reader=False):
+        rows = []
+        analyzer = Mini_LL.SAX_CINE_analyzer(case_comparison)
+        self.metric_vals = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader)
+        self.metric_vals = self.metric_vals[['category', 'slice', 'contour name', 'ml diff', 'abs ml diff', 'DSC', 'HD', 'has_contour1', 'has_contour2']]
+        self.metric_vals.sort_values(by='slice', axis=0, ascending=True, inplace=True, ignore_index=True)
+        
+    def present_contour_df(self, contour_name):
+        self.df = self.metric_vals[self.metric_vals['contour name']==contour_name]
+        self.df[['ml diff', 'abs ml diff', 'HD']] = self.df[['ml diff', 'abs ml diff', 'HD']].round(1)
+        self.df[['DSC']] = self.df[['DSC']].astype(int)
+        unique_cats = self.df['category'].unique()
+        for cat_i, cat in enumerate(unique_cats):
+            curr = self.df[self.df['category']==cat]
+            curr = curr.rename(columns={k:cat+' '+k for k in curr.columns if k not in ['slice', 'category']})
+            curr.reset_index(drop=True, inplace=True)
+            if cat_i==0: df = curr
+            else:        df = df.merge(curr, on='slice', how='outer')
+        df = df.drop(labels=[c for c in df.columns if 'category' in c or 'contour name' in c], axis=1)
+        df = self.resort(df, contour_name)
+        self.df = df
+        
+    def resort(self, df, contour_name):
+        metric_vals = self.metric_vals[self.metric_vals['contour name']==contour_name]
+        unique_cats = metric_vals['category'].unique()
+        n = len([c for c in df.columns if unique_cats[0] in c])
+        cols = list(df.columns[0:1])
+        for i in range(n): cols += [df.columns[1+i], df.columns[1+i+n]]
+        return df[cols]
+        
+        
+        
+        
+        
