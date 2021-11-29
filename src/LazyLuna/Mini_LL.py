@@ -688,10 +688,11 @@ class SAX_CINE_View(View):
                               'rv_endo', 'rv_epi', 'rv_pamu', 'rv_myo']
         
         # register tabs here:
-        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab import CC_Metrics_Tab
+        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab         import CC_Metrics_Tab
+        from LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_Tab import CCs_ClinicalResults_Tab
         
         self.case_tabs  = {'Metrics and Figure': CC_Metrics_Tab}
-        self.stats_tabs = []
+        self.stats_tabs = {'Clinical Results'  : CCs_ClinicalResults_Tab}
         
     def load_categories(self):
         self.lvcats, self.rvcats  = [SAX_LV_ES_Category, SAX_LV_ED_Category], [SAX_RV_ES_Category, SAX_RV_ED_Category]

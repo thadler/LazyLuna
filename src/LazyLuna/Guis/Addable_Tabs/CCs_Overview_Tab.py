@@ -127,6 +127,13 @@ class CCs_Overview_Tab(QWidget):
         
         
     def create_stats_tab(self):
+        tab_name  = self.combobox_stats_tab  .currentText()
+        view_name = self.combobox_select_view.currentText()
+        if tab_name=='Choose a Tab' or view_name=='Choose a View': return
+        view = self.get_view(self.combobox_select_view.currentText())
+        tab  = [v for k,v in view.stats_tabs.items()][0]()
+        tab.make_tab(self.gui, view, self.case_comparisons)
+        self.gui.tabs.addTab(tab, 'Clinical Results')
         return
     
     def create_case_tab(self):
@@ -159,6 +166,7 @@ class CCs_Overview_Tab(QWidget):
             new_ccs.append(new_cc)
         self.case_comparisons = new_ccs
         self.combobox_case_tab.clear(); self.combobox_case_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.case_tabs])
+        self.combobox_stats_tab.clear(); self.combobox_stats_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.stats_tabs])
         self.overview_table.calculate(self.gui.cc_table, view_name.replace('_View','').replace('_',' '))
         self.overview_TableView.setModel(self.overview_table.to_pyqt5_table_model())
         self.case_comparisons = [Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2)) for cc in self.case_comparisons]

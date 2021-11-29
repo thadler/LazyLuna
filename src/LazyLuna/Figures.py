@@ -199,46 +199,69 @@ class Annotation_Comparison(Visualization):
         self.visualize(slice_nr, category, contour_name)
         
     
-
-        
 class BlandAltman(Visualization):
     def visualize(self, case_comparisons, cr_name):
         self.cr_name = cr_name
-        cases1   = [cc.case1 for cc in case_comparisons]
-        cases2   = [cc.case2 for cc in case_comparisons]
-        #self.set_size_inches(w=columns*11.0, h=(rows*6.0))
-        ax = self.subplots(111)
-        custom_palette  = sns.color_palette("Blues")
-        custom_palette2 = sns.color_palette("Purples")
+        cr = [cr for cr in case_comparisons[0].case1.crs if cr.name==cr_name][0]
+        ax = self.add_subplot(111)
+        self.set_size_inches(w=15, h=7.5)
         swarm_palette   = sns.color_palette(["#061C36", "#061C36"])
         
-        crs1 = []; crs2 = []
+        rows = []
         for cc in case_comparisons:
-            crs1.append([cr for cr in cc.case1.crs if cr.name==cr_name][0])
-            crs2.append([cr for cr in cc.case2.crs if cr.name==cr_name][0])
-        avgs  = (np.array(crs1) + np.array(crs2)) / 2.0
-        diffs =  np.array(crs1) - np.array(crs2)
+            cr1 = [cr.get_cr() for cr in cc.case1.crs if cr.name==cr_name][0]
+            cr2 = [cr.get_cr() for cr in cc.case2.crs if cr.name==cr_name][0]
+            rows.append([(cr1+cr2)/2.0, cr1-cr2])
+        df = DataFrame(rows, columns=[cr_name, cr_name+' difference'])
         
-        sns.scatterplot(ax=ax, x=avgs, y=diffs, markers='o', palette=swarm_palette, 
-                        size=np.abs(table[diff_n]), s=10, legend=False)
-        ax.axhline(np.mean(diffs), ls="-", c=".2")
-        ax.axhline(np.mean(diffs)+1.96*np.std(diffs), ls=":", c=".2")
-        ax.axhline(np.mean(diffs)-1.96*np.std(diffs), ls=":", c=".2")
+        sns.scatterplot(ax=ax, x=cr_name, y=cr_name+' difference', data=df, markers='o', palette=swarm_palette, legend=False)
+        ax.axhline(df[cr_name+' difference'].mean(), ls="-", c=".2")
+        ax.axhline(df[cr_name+' difference'].mean()+1.96*df[cr_name+' difference'].std(), ls=":", c=".2")
+        ax.axhline(df[cr_name+' difference'].mean()-1.96*df[cr_name+' difference'].std(), ls=":", c=".2")
 
-
-        handles, labels = ax.get_legend_handles_labels()
-        handles[0].set(color=custom_palette[3])
-        handles[1].set(color=custom_palette2[3])
-        ax.legend(handles[:2], labels[:2], title="Segmented by both", fontsize=14)
-        ax.set_ylabel('[%]', fontsize=14)
-        ax.set_xlabel("", fontsize=14)
-        ax.set_ylim(ymin=70, ymax=100)
+        ax.set_title(cr_name+' Bland Altman', fontsize=16)
+        ax.set_ylabel(cr.unit, fontsize=14)
+        ax.set_xlabel(cr.unit, fontsize=14)
         sns.despine()
-        self.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.25, hspace=0.35)
     
     def store(self, storepath, figurename='_bland_altman.png'):
         self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=100, facecolor="#FFFFFF")
     
     
+class PairedBoxplot(Visualization):
+    def visualize(self, case_comparisons, cr_name):
+        self.cr_name = cr_name
+        cr = [cr for cr in case_comparisons[0].case1.crs if cr.name==cr_name][0]
+        ax = self.add_subplot(111)
+        self.set_size_inches(w=7.5, h=10)
+        custom_palette  = sns.color_palette([sns.color_palette("Blues")[1], sns.color_palette("Purples")[1]])
+        swarm_palette   = sns.color_palette(["#061C36", "#061C36"])
+        rows = []
+        for cc in case_comparisons:
+            cr1 = [cr.get_cr() for cr in cc.case1.crs if cr.name==cr_name][0]
+            cr2 = [cr.get_cr() for cr in cc.case2.crs if cr.name==cr_name][0]
+            rows.extend([[cc.case1.reader_name, cr1], [cc.case2.reader_name, cr2]])
+        df = DataFrame(rows, columns=['Reader', cr_name])
+        # Plot
+        sns.boxplot  (ax=ax, data=df, x='Reader', y=cr_name, width=0.6, palette=custom_palette)
+        sns.swarmplot(ax=ax, data=df, x='Reader', y=cr_name, palette=swarm_palette)
+        # Now connect the dots
+        locs1 = ax.get_children()[0].get_offsets()
+        locs2 = ax.get_children()[1].get_offsets()
+        set1 = df[df['Reader']==case_comparisons[0].case1.reader_name][cr_name]
+        set2 = df[df['Reader']==case_comparisons[0].case2.reader_name][cr_name]
+        sort_idxs1 = np.argsort(set1)
+        sort_idxs2 = np.argsort(set2)
+        # revert "ascending sort" through sort_idxs2.argsort(),
+        # and then sort into order corresponding with set1
+        locs2_sorted = locs2[sort_idxs2.argsort()][sort_idxs1]
+        for i in range(locs1.shape[0]):
+            x = [locs1[i, 0], locs2_sorted[i, 0]]
+            y = [locs1[i, 1], locs2_sorted[i, 1]]
+            ax.plot(x, y, color="black", alpha=0.1)
     
+    def store(self, storepath, figurename='_bland_altman.png'):
+        self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=100, facecolor="#FFFFFF")
+
+
     
