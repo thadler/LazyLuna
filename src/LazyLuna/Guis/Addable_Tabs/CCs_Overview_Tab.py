@@ -131,7 +131,7 @@ class CCs_Overview_Tab(QWidget):
         view_name = self.combobox_select_view.currentText()
         if tab_name=='Choose a Tab' or view_name=='Choose a View': return
         view = self.get_view(self.combobox_select_view.currentText())
-        tab  = [v for k,v in view.stats_tabs.items()][0]()
+        tab  = [v for k,v in view.stats_tabs.items() if k==tab_name][0]()
         tab.make_tab(self.gui, view, self.case_comparisons)
         self.gui.tabs.addTab(tab, 'Clinical Results')
         return

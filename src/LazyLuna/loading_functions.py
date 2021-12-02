@@ -124,7 +124,7 @@ def add_and_store_LL_tags(imgs_df, key2LLtag):
             print('Failed at case: ', c, '/nDCM', dcm)
             continue
 
-def get_cases_table(cases, debug=False):
+def get_cases_table(cases, paths, debug=False):
     def get_dcm(case):
         for k in case.all_imgs_sop2filepath.keys():
             try: sop = next(iter(case.all_imgs_sop2filepath[k]))
@@ -156,12 +156,12 @@ def get_cases_table(cases, debug=False):
         return h
     if debug: st = time()
     columns = ['Case Name', 'Reader', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 
-               'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE']
+               'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE', 'Path']
     print([c.available_types for c in cases])
     rows    = sorted([[c.case_name, c.reader_name, get_age(c), get_gender(c), get_weight(c), get_height(c), 
                        'SAX CINE' in c.available_types, 'SAX CS' in c.available_types, 'LAX CINE' in c.available_types, 
-                       'SAX T1' in c.available_types, 'SAX T2' in c.available_types, 'SAX LGE' in c.available_types] 
-                      for c in cases],
+                       'SAX T1' in c.available_types, 'SAX T2' in c.available_types, 'SAX LGE' in c.available_types, paths[i]] 
+                      for i, c in enumerate(cases)],
                      key=lambda p: str(p[0]))
     df      = pandas.DataFrame(rows, columns=columns)
     if debug: print('Took: ', time()-st)

@@ -181,27 +181,6 @@ class CC_OverviewTable(Table):
         cc_df.rename({'Reader_x': 'Reader1', 'Reader_y': 'Reader2', 'Path_x': 'Path1', 'Path_y': 'Path2'}, inplace=True, axis=1)
         cc_df   = cc_df.reindex(columns=['Case Name', 'Reader1', 'Reader2', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE', 'Path1', 'Path2'])
         self.df = cc_df
-    
-
-class CC_StatsOverviewTable(Table):
-    def calculate(self, cc_overview_table, restrict_to_view=None):
-        cc_df = cc_overview_table.df
-        if restrict_to_view is not None: 
-            cc_df = cc_df[cc_df[restrict_to_view]]
-        columns = ['Nr Cases','Age (Y)','Gender (M/F)','Weight (kg)','Height (m)']
-        rows = [[len(cc_df.index), 
-                 '{:.1f}'.format(cc_df['Age (Y)'].mean())+' ('+'{:.1f}'.format(cc_df['Age (Y)'].std())+')',
-                 self.gender_string(cc_df),
-                 '{:.1f}'.format(cc_df['Weight (kg)'].mean())+' ('+'{:.1f}'.format(cc_df['Weight (kg)'].std())+')',
-                 '{:.1f}'.format(cc_df['Height (m)'].mean())+' ('+'{:.2f}'.format(cc_df['Height (m)'].std())+')']]
-        information_summary_df  = DataFrame(rows, columns=columns)
-        self.df = information_summary_df
-        
-    def gender_string(self, cc_df): # to resolve key errors when the cohort is only male or female
-        counts     = cc_df['Gender (M/F)'].value_counts()
-        nr_males   = counts['M'] if 'M' in counts.keys() else 0
-        nr_females = counts['F'] if 'F' in counts.keys() else 0
-        return str(nr_males)+'/'+str(nr_females)
 
     
 class CC_SAX_DiceTable(Table):
@@ -253,6 +232,31 @@ class CC_Metrics_Table(Table):
         for i in range(n): cols += [df.columns[1+i], df.columns[1+i+n]]
         return df[cols]
         
+        
+class CC_ClinicalResultsAveragesTable(Table):
+    def calculate(self, case_comparisons):
+        rows = []
+        case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
+        columns=['Clinical Result', case1.reader_name, case2.reader_name, 'Diff('+case1.reader_name+', '+case2.reader_name+')']
+        
+        cr_dict1 = {cr.name:[] for cr in case1.crs}
+        cr_dict2 = {cr.name:[] for cr in case1.crs}
+        cr_dict3 = {cr.name:[] for cr in case1.crs}
+        for cc in case_comparisons:
+            c1, c2 = cc.case1, cc.case2
+            for cr1, cr2 in zip(c1.crs, c2.crs):
+                cr_dict1[cr1.name].append(cr1.get_cr())
+                cr_dict2[cr1.name].append(cr2.get_cr())
+                cr_dict3[cr1.name].append(cr1.get_cr_diff(cr2))
+        rows = []
+        for cr_name in cr_dict1.keys():
+            row = [cr_name]
+            row.append('{:.1f}'.format(np.mean(cr_dict1[cr_name])))
+            row.append('{:.1f}'.format(np.mean(cr_dict2[cr_name])))
+            row.append('{:.1f}'.format(np.mean(cr_dict3[cr_name])))
+            rows.append(row)
+            
+        self.df = pandas.DataFrame(rows, columns=columns)
         
         
         

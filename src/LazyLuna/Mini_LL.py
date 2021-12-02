@@ -446,7 +446,7 @@ class NR_SLICES(Clinical_Result):
         self.set_CR_information()
 
     def set_CR_information(self):
-        self.name = 'LVEDP'
+        self.name = 'NrSlices'
         self.unit = '[#]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
 
@@ -688,11 +688,12 @@ class SAX_CINE_View(View):
                               'rv_endo', 'rv_epi', 'rv_pamu', 'rv_myo']
         
         # register tabs here:
-        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab         import CC_Metrics_Tab
-        from LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_Tab import CCs_ClinicalResults_Tab
-        
+        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                      import CC_Metrics_Tab
+        from LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_Tab             import CCs_ClinicalResults_Tab
+        from LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab import CCs_Qualitative_Correlationplot_Tab
         self.case_tabs  = {'Metrics and Figure': CC_Metrics_Tab}
-        self.stats_tabs = {'Clinical Results'  : CCs_ClinicalResults_Tab}
+        self.stats_tabs = {'Clinical Results'  : CCs_ClinicalResults_Tab, 
+                           'Qualitative Metrics Correlation Plot' : CCs_Qualitative_Correlationplot_Tab}
         
     def load_categories(self):
         self.lvcats, self.rvcats  = [SAX_LV_ES_Category, SAX_LV_ED_Category], [SAX_RV_ES_Category, SAX_RV_ED_Category]
@@ -834,8 +835,12 @@ class DiceMetric(Metric):
         self.unit = '[%]'
 
     def get_val(self, geo1, geo2, dcm=None, string=False):
-        m = CATCH_utils.dice(geo1, geo2)
-        return "{:.2f}".format(m) if string else m
+        try:
+            m = CATCH_utils.dice(geo1, geo2)
+            return "{:.2f}".format(m) if string else m
+        except Exception as e:
+            print(e)
+            return '0.00' if string else 0.0
 
     def calculate_all_vals(self, debug=False):
         if debug: st = time(); nr_conts = 0
