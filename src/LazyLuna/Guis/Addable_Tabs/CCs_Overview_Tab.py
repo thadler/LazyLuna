@@ -91,7 +91,7 @@ class CCs_Overview_Tab(QWidget):
         self.export_storage_folder_path = QLineEdit('')
         layout.addWidget(self.export_storage_folder_path, 6, 1)
         self.export_button = QPushButton('Export Figures and Tables')
-        self.export_button.clicked.connect(self.store_tables)
+        self.export_button.clicked.connect(self.store_all)
         layout.addWidget(self.export_button, 7, 0)
 
         layout.setColumnStretch(2, 2)
@@ -103,7 +103,7 @@ class CCs_Overview_Tab(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             self.export_storage_folder_path.setText(dialog.selectedFiles()[0])
     
-    def store_tables(self):
+    def store_all(self):
         try:
             path = self.export_storage_folder_path.text()
             reader1 = self.gui.reader1
@@ -111,6 +111,7 @@ class CCs_Overview_Tab(QWidget):
             export_folder_path = os.path.join(path, 'Export_comparison_'+reader1+'_'+reader2)
             if not os.path.exists(export_folder_path): os.mkdir(export_folder_path)
             view_name = self.combobox_select_view.currentText()
+            view = self.get_view(view_name)
             view_folder_path = os.path.join(export_folder_path, view_name)
             if not os.path.exists(view_folder_path): os.mkdir(view_folder_path)
             self.gui.cc_table.store(os.path.join(export_folder_path, 'table1.csv'))
@@ -121,6 +122,15 @@ class CCs_Overview_Tab(QWidget):
             cr_overview_figure = SAX_BlandAltman()
             cr_overview_figure.visualize(self.case_comparisons)
             cr_overview_figure.store(view_folder_path)
+            metrics_table = CCs_MetricsTable()
+            metrics_table.calculate(self.case_comparisons, self.get_view(view_name))
+            metrics_table.store(os.path.join(view_folder_path, 'metrics_phase_slice_table.csv'))
+            failed_segmentation_folder_path = os.path.join(view_folder_path, 'Failed_Segmentations')
+            if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
+            failed_annotation_comparison = Failed_Annotation_Comparison_Yielder()
+            failed_annotation_comparison.set_values(view, self.case_comparisons)
+            failed_annotation_comparison.store(failed_segmentation_folder_path)
+                
         except Exception as e:
             print(e)
         

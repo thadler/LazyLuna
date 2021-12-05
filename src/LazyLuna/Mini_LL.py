@@ -681,22 +681,23 @@ class SAX_CINE_View(View):
         self.colormap            = 'gray'
         self.available_colormaps = ['gray']
         self.load_categories()
-        self.contour2categorytype = {None      : self.all,    'lv_endo' : self.lvcats, 'lv_epi'  : self.lvcats,
-                                     'lv_pamu' : self.lvcats, 'lv_myo'  : self.lvcats, 'rv_endo' : self.rvcats,
-                                     'rv_epi'  : self.rvcats, 'rv_pamu' : self.rvcats, 'rv_myo'  : self.rvcats}
+        self.contour2categorytype = {None      : self.all,    'lv_endo' : self.lvcats,  'lv_epi'  : self.myocats,
+                                     'lv_pamu' : self.lvcats, 'lv_myo'  : self.myocats, 'rv_endo' : self.rvcats,
+                                     'rv_epi'  : self.rvcats, 'rv_pamu' : self.rvcats,  'rv_myo'  : self.rvcats}
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_pamu', 'lv_myo',
                               'rv_endo', 'rv_epi', 'rv_pamu', 'rv_myo']
         
         # register tabs here:
-        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                      import CC_Metrics_Tab
-        from LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_Tab             import CCs_ClinicalResults_Tab
-        from LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab import CCs_Qualitative_Correlationplot_Tab
+        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                        import CC_Metrics_Tab
+        from LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_Tab               import CCs_ClinicalResults_Tab
+        from LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab   import CCs_Qualitative_Correlationplot_Tab
         self.case_tabs  = {'Metrics and Figure': CC_Metrics_Tab}
         self.stats_tabs = {'Clinical Results'  : CCs_ClinicalResults_Tab, 
                            'Qualitative Metrics Correlation Plot' : CCs_Qualitative_Correlationplot_Tab}
         
     def load_categories(self):
         self.lvcats, self.rvcats  = [SAX_LV_ES_Category, SAX_LV_ED_Category], [SAX_RV_ES_Category, SAX_RV_ED_Category]
+        self.myocats              = [SAX_LV_ED_Category]
         self.all = [SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category]
 
     def get_categories(self, case, contour_name=None):

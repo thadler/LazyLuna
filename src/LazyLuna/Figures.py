@@ -91,12 +91,12 @@ class SAX_BlandAltman(Visualization):
         ax.legend(handles[:2], labels[:2], title="Segmented by both", fontsize=14)
         ax.set_ylabel('[%]', fontsize=14)
         ax.set_xlabel("", fontsize=14)
-        ax.set_ylim(ymin=70, ymax=100)
+        ax.set_ylim(ymin=75, ymax=100)
         for i, boxplot in enumerate(dicebp.artists):
             if i%2 == 0: boxplot.set_facecolor(custom_palette[i//2])
             else:        boxplot.set_facecolor(custom_palette2[i//2])
         sns.despine()
-        self.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.25, hspace=0.35)
+        self.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.25)
     
     def store(self, storepath, figurename='clinical_results_bland_altman.png'):
         self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
@@ -170,14 +170,17 @@ class Annotation_Comparison(Visualization):
         img2  = cat2.get_img (slice_nr, cat2.get_phase())
         anno1 = cat1.get_anno(slice_nr, cat1.get_phase())
         anno2 = cat2.get_anno(slice_nr, cat2.get_phase())
-        ax1.imshow(img1,'gray'); ax2.imshow(img1,'gray'); ax3.imshow(img2,'gray'); ax4.imshow(img1,'gray')
+        h, w  = img1.shape
+        extent=(0, w, h, 0)
+        ax1.imshow(img1,'gray', extent=extent); ax2.imshow(img1,'gray', extent=extent)
+        ax3.imshow(img2,'gray', extent=extent); ax4.imshow(img1,'gray', extent=extent)
         self.suptitle('Category: ' + cat1.name + ', slice: ' + str(slice_nr))
         if self.add_annotation:
             anno1.plot_contour_face   (ax1,        contour_name, alpha=0.4, c='r')
             anno1.plot_cont_comparison(ax2, anno2, contour_name, alpha=0.4)
             anno2.plot_contour_face   (ax3,        contour_name, alpha=0.4, c='b')
-            anno1.plot_all_contour_outlines(ax1)
-            anno2.plot_all_contour_outlines(ax3)
+            #anno1.plot_all_contour_outlines(ax1) # looks like overlooked slices when different phases for RV and LV
+            #anno2.plot_all_contour_outlines(ax3)
         for ax in [ax1, ax2, ax3]: ax.set_xticks([]); ax.set_yticks([])
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
         
@@ -202,7 +205,81 @@ class Annotation_Comparison(Visualization):
         if event.key == 'right': category = categories[(idx+1)%len(categories)]
         self.visualize(slice_nr, category, contour_name)
         
+##########################################################################################
+##########################################################################################
+##########################################################################################
+
+class Failed_Annotation_Comparison_Yielder(Visualization):
+    def set_values(self, view, ccs):
+        self.ccs     = ccs
+        self.view    = view
+        self.yielder = self.initialize_yeild_next()
+        self.add_annotation = True
     
+    def visualize(self, cc, slice_nr, category, contour_name, debug=False):
+        if debug: print('Start'); st = time()
+        self.clear()
+        self.cc, self.slice_nr, self.category, self.contour_name = cc, slice_nr, category, contour_name
+        rows, columns = 1, 4
+        self.set_size_inches(w=columns*11.0, h=rows*11.0)
+        axes = self.subplots(rows, columns)
+        axes[0].get_shared_x_axes().join(*axes); axes[0].get_shared_y_axes().join(*axes)
+        cat1, cat2 = self.cc.get_categories_by_example(category)
+        img1  = cat1.get_img (slice_nr, cat1.get_phase())
+        img2  = cat2.get_img (slice_nr, cat2.get_phase())
+        anno1 = cat1.get_anno(slice_nr, cat1.get_phase())
+        anno2 = cat2.get_anno(slice_nr, cat2.get_phase())
+        h, w  = img1.shape
+        extent=(0, w, h, 0)
+        axes[0].imshow(img1,'gray', extent=extent); axes[1].imshow(img1,'gray', extent=extent)
+        axes[2].imshow(img2,'gray', extent=extent); axes[3].imshow(img1,'gray', extent=extent)
+        self.suptitle('Case: ' + cc.case1.case_name + ', Contour: ' + contour_name + ', category: ' + cat1.name + ', slice: ' + str(slice_nr))
+        if self.add_annotation:
+            anno1.plot_contour_face   (axes[0],        contour_name, alpha=0.4, c='r')
+            anno1.plot_cont_comparison(axes[1], anno2, contour_name, alpha=0.4)
+            anno2.plot_contour_face   (axes[2],        contour_name, alpha=0.4, c='b')
+        for ax in axes: ax.set_xticks([]); ax.set_yticks([])
+        d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
+        patches = [PolygonPatch(d,facecolor=c, edgecolor=c,  alpha=0.4) for c in ['red', 'green', 'blue']]
+        handles = [self.cc.case1.reader_name,
+                   self.cc.case1.reader_name+' & '+self.cc.case2.reader_name,
+                   self.cc.case2.reader_name]
+        axes[3].legend(patches, handles)
+        self.tight_layout()
+        if debug: print('Took: ', time()-st)
+        
+    def initialize_yeild_next(self, rounds=None):
+        dsc, hd, mld = Mini_LL.DiceMetric(), Mini_LL.HausdorffMetric(), Mini_LL.mlDiffMetric()
+        count = 0
+        while (rounds is None) or (count<rounds):
+            for cc in self.ccs:
+                c1, c2    = cc.case1, cc.case2
+                nr_slices = c1.categories[0].nr_slices
+                case_name = c1.case_name
+                for sl_nr in range(nr_slices):
+                    for contname in self.view.contour_names:
+                        cats1 = self.view.get_categories(c1, contname)
+                        cats2 = self.view.get_categories(c2, contname)
+                        for cat1, cat2 in zip(cats1, cats2):
+                            p1, p2 = cat1.phase, cat2.phase
+                            dcm    = cat1.get_dcm(sl_nr, p1)
+                            cont1  = cat1.get_anno(sl_nr, p1).get_contour(contname)
+                            cont2  = cat2.get_anno(sl_nr, p2).get_contour(contname)
+                            dice   = dsc.get_val(cont1, cont2, dcm)
+                            mldiff = np.abs(mld.get_val(cont1, cont2, dcm))
+                            if dice<60 and mldiff>1.2:
+                                yield cc, sl_nr, cat1, contname
+            count += 1
+                
+    def store(self, storepath):
+        self.yielder = self.initialize_yeild_next(rounds=1)
+        for cc, slice_nr, category, contour_name in self.yielder:
+            figname = cc.case1.case_name+'_'+str(slice_nr)+'_'+category.name+'_'+contour_name
+            print(figname)
+            self.visualize(cc, slice_nr, category, contour_name)
+            self.savefig(os.path.join(storepath, figname+'.png'), dpi=100, facecolor="#FFFFFF")
+        
+        
 class BlandAltman(Visualization):
     def set_view(self, view):
         self.view   = view
@@ -227,8 +304,9 @@ class BlandAltman(Visualization):
             cr2 = [cr.get_cr() for cr in cc.case2.crs if cr.name==cr_name][0]
             rows.append([(cr1+cr2)/2.0, cr1-cr2])
         df = DataFrame(rows, columns=[cr_name, cr_name+' difference'])
-        
-        sns.scatterplot(ax=ax, x=cr_name, y=cr_name+' difference', data=df, markers='o', palette=swarm_palette, legend=False)
+        sns.scatterplot(ax=ax, x=cr_name, y=cr_name+' difference', data=df, markers='o', 
+                        palette=swarm_palette, size=np.abs(df[cr_name+' difference']), 
+                        s=10, legend=False)
         ax.axhline(df[cr_name+' difference'].mean(), ls="-", c=".2")
         ax.axhline(df[cr_name+' difference'].mean()+1.96*df[cr_name+' difference'].std(), ls=":", c=".2")
         ax.axhline(df[cr_name+' difference'].mean()-1.96*df[cr_name+' difference'].std(), ls=":", c=".2")
@@ -444,8 +522,6 @@ class Boxplot(Visualization):
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
         self.canvas.draw()
-        #self.tight_layout()
-        
     
     def store(self, storepath, figurename='_bland_altman.png'):
         self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=100, facecolor="#FFFFFF")
@@ -575,7 +651,6 @@ class Qualitative_Correlationplot(Visualization):
         sns.scatterplot(ax=ax_corr, data=df, x=metric, y='DSC', size='abs ml diff', hue=hue, picker=True, palette=customPalette)
         xmax = np.max(np.abs(ax_corr.get_xlim())); ymax = np.max(np.abs(ax_corr.get_ylim()))
         ax_corr.set_xlim([-xmax, xmax]); ax_corr.set_ylim([-5, ymax])
-        ax_comps[0][0].imshow(np.arange(4**2).reshape(4,4))
         
         texts = df['case'].tolist()
         annot = ax.annotate("", xy=(0,0), xytext=(20,20), textcoords="offset points", 
@@ -599,18 +674,26 @@ class Qualitative_Correlationplot(Visualization):
                 
                 cc = [cc for cc in case_comparisons if cc.case1.case_name==case_name][0]
                 cat1, cat2 = [cat for cat in cc.case1.categories if cat_name==cat.name][0], [cat for cat in cc.case2.categories if cat_name==cat.name][0]
-                tmp_img = cat1.get_img(slice_nr, cat1.phase)
-                h,w = tmp_img.shape
-                img = np.zeros((max(h,w),max(h,w)))
-                img[:h,:w] = tmp_img
-                cont1 = cat1.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
-                cont2 = cat2.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
                 
+                tmp_img     = cat1.get_img(slice_nr, cat1.phase)
+                h,w         = tmp_img.shape
+                img1        = np.zeros((max(h,w),max(h,w)))
+                img1[:h,:w] = tmp_img
+                tmp_img     = cat2.get_img(slice_nr, cat2.phase)
+                h,w         = tmp_img.shape
+                img2        = np.zeros((max(h,w),max(h,w)))
+                img2[:h,:w] = tmp_img
+                h, w    = img1.shape
+                extent =(0, w, h, 0)
+                cont1  = cat1.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
+                cont2  = cat2.get_anno(slice_nr, cat2.phase).get_contour(cont_type)
                 axes = ax_comps[self.curr_fig]
-                for ax in axes: ax.imshow(img, cmap='gray')
-                for ax in axes: ax.patches=[]
+                for ax_i, ax in enumerate(axes):
+                    ax.patches=[]
+                    if ax_i!=2: ax.imshow(img1, cmap='gray', extent=extent)
+                    else:       ax.imshow(img2, cmap='gray', extent=extent)
                 axes[0].set_ylabel(case_name, rotation=90, labelpad=0.1)
-                axes[0].set_title('Phase: '+cat_name.replace('SAX ','')); axes[1].set_title('Slice: '+str(slice_nr))
+                axes[0].set_title('Phase: '+cat_name.replace('SAX ',''));   axes[1].set_title('Slice: '+str(slice_nr))
                 axes[2].set_title('ml Diff: {:.1f}'.format(mldiff)+'[ml]'); axes[3].set_title('Dice: {:.1f}'.format(dice)+'[%]')
                     
                 if not cont1.is_empty: CATCH_utils.plot_geo_face(axes[0], cont1, c='r')
