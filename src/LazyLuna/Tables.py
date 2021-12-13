@@ -121,7 +121,6 @@ class CC_StatsOverviewTable(Table):
         nr_males   = counts['M'] if 'M' in counts.keys() else 0
         nr_females = counts['F'] if 'F' in counts.keys() else 0
         return str(nr_males)+'/'+str(nr_females)
-
 class CC_ClinicalResultsTable(Table):
     def calculate(self, case_comparisons, with_dices=True, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
@@ -142,19 +141,21 @@ class CC_ClinicalResultsTable(Table):
         
     def dices_dataframe(self, case_comparisons, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
-        columns = ['case', 'avg dice', 'avg dice cont by both']
+        columns = ['case', 'avg dice', 'avg dice cont by both', 'avg HD']
         for cc in case_comparisons:
             c1, c2 = cc.case1, cc.case2
             analyzer = Mini_LL.SAX_CINE_analyzer(cc)
             row = [c1.case_name]
             df = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader=False)
             all_dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0] in contour_names]
-            row.append(np.mean(all_dices)); row.append(np.mean([d for d in all_dices if 0<d<100]))
+            all_hds   = [d[1] for d in df[['contour name', 'HD' ]].values if d[0] in contour_names]
+            row.append(np.mean(all_dices)); row.append(np.mean([d for d in all_dices if 0<d<100])); row.append(np.mean(all_hds))
             for cname in contour_names:
                 dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0]==cname]
-                row.append(np.mean(dices)); row.append(np.mean([d for d in dices if 0<d<100]))
+                hds   = [d[1] for d in df[['contour name', 'HD' ]].values if d[0]==cname]
+                row.append(np.mean(dices)); row.append(np.mean([d for d in dices if 0<d<100])); row.append(np.mean(hds))
             rows.append(row)
-        for c in contour_names: columns.extend([c+' avg dice', c+' avg dice cont by both'])
+        for c in contour_names: columns.extend([c+' avg dice', c+' avg dice cont by both', c+' avg HD'])
         df = DataFrame(rows, columns=columns)
         return df
     
@@ -228,7 +229,7 @@ class CC_Metrics_Table(Table):
         rows = []
         analyzer = Mini_LL.SAX_CINE_analyzer(case_comparison)
         self.metric_vals = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader)
-        self.metric_vals = self.metric_vals[['category', 'slice', 'contour name', 'ml diff', 'abs ml diff', 'DSC', 'HD', 'has_contour1', 'has_contour2']]
+        self.metric_vals = self.metric_vals[['category', 'slice', 'contour name', 'ml diff', 'abs ml diff', 'DSC', 'HD', 'has_contour1', 'has_contour2', 'position1', 'position2']]
         self.metric_vals.sort_values(by='slice', axis=0, ascending=True, inplace=True, ignore_index=True)
         
     def present_contour_df(self, contour_name, pretty=True):
@@ -277,4 +278,6 @@ class CCs_MetricsTable(Table):
             cases.append(table)
         self.df = pandas.concat(cases, axis=0, ignore_index=True)
                 
-        
+
+    
+    
