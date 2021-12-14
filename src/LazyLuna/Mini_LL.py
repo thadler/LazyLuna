@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from shapely.geometry import Polygon, MultiPolygon, LineString, GeometryCollection, Point, MultiPoint
 from LazyLuna import CATCH_utils
-from shapely.affinity import translate
+from shapely.affinity import translate, scale
 
 ###########
 # Loaders #
@@ -139,6 +139,41 @@ class SAX_CINE_Annotation(Annotation):
         self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
 
 
+class LAX_CINE_Annotation(Annotation):
+    def __init__(self, sop, filepath):
+        super().__init__(sop, filepath)
+
+    def set_information(self):
+        self.name = 'LAX CINE Annotation'
+        self.contour_names = ['lv_lax_endo', 'lv_lax_myo', 'rv_lax_endo', 'ra', 'la']
+        self.point_names   = ['lv_lax_extent', 'laxRaExtentPoints', 'laxLaExtentPoints']
+        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
+        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
+        
+    def length_LV(self):
+        if not self.has_point('lv_lax_extent'): return 0
+        extent = self.get_point('lv_lax_extent')
+        lv_ext1, lv_ext2, apex = scale(extent, xfact=self.pixel_w, yfact=self.pixel_h)
+        mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
+        dist = mitral.distance(apex)
+        return dist
+    
+    def length_LA(self):
+        if not self.has_point('laxLaExtentPoints'): return 0
+        extent = self.get_point('laxLaExtentPoints')
+        lv_ext1, lv_ext2, apex = scale(extent, xfact=self.pixel_w, yfact=self.pixel_h)
+        mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
+        dist = mitral.distance(apex)
+        return dist
+    
+    def length_RA(self):
+        if not self.has_point('laxRaExtentPoints'): return 0
+        extent = self.get_point('laxRaExtentPoints')
+        lv_ext1, lv_ext2, apex = scale(extent, xfact=self.pixel_w, yfact=self.pixel_h)
+        mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
+        dist = mitral.distance(apex)
+        return dist
+        
 
 ############
 # Category #
@@ -304,6 +339,231 @@ class SAX_LV_ED_Category(SAX_slice_phase_Category):
         has_conts = [a!=0 for a in vol_curve]
         if True not in has_conts: return None
         return np.argmax(vol_curve)
+
+    
+##################
+# LAX Categories #
+##################
+class LAX_Category:
+    def __init__(self, case):
+        self.case = case
+        self.sop2depthandtime = self.get_sop2depthandtime(case.imgs_sop2filepath)
+        self.depthandtime2sop = {v:k for k,v in self.sop2depthandtime.items()}
+        self.set_nr_slices_phases()
+        self.set_image_height_width_depth()
+        self.name = 'none'
+        self.phase = None
+
+    def relevant_image(self, dcm):
+        return True
+        
+    def get_sop2depthandtime(self, sop2filepath, debug=False):
+        if debug: st = time()
+        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
+        imgs = {k:dcm for k,dcm in imgs.items() if self.relevant_images(dcm)}
+        sop2depthandtime = {}
+        for dcm_sop, dcm in imgs.items():
+            phase = int(dcm.InstanceNumber)-1
+            sop2depthandtime[dcm_sop] = (0,phase)
+        if debug: print('calculating sop2sorting takes: ', time()-st)
+        return sop2depthandtime
+
+    def set_image_height_width_depth(self, debug=False):
+        if debug: st = time()
+        sop = self.depthandtime2sop[(0, 0)]
+        dcm = self.case.load_dcm(sop)
+        self.height, self.width    = dcm.pixel_array.shape
+        self.pixel_h, self.pixel_w = list(map(float, dcm.PixelSpacing))
+        try: self.slice_thickness = dcm.SliceThickness
+        except Exception as e: print('Exception in LAX_Slice_Phase_Category, ', e)
+        if debug: print('Setting stuff took: ', time()-st)
+
+    def set_nr_slices_phases(self):
+        dat = list(self.depthandtime2sop.keys())
+        self.nr_phases = max(dat, key=itemgetter(1))[1]+1
+        self.nr_slices = max(dat, key=itemgetter(0))[0]+1
+        
+    def get_dcm(self, slice_nr, phase_nr):
+        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        return self.case.load_dcm(sop)
+
+    def get_anno(self, slice_nr, phase_nr):
+        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        return self.case.load_anno(sop)
+
+    def get_img(self, slice_nr, phase_nr, value_normalize=True, window_normalize=True):
+        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        return self.case.get_img(sop, value_normalize=value_normalize, window_normalize=window_normalize)
+
+    def get_area(self, cont_name, phase):
+        if np.isnan(phase): return 0.0
+        anno = self.get_anno(0, phase)
+        pixel_area = self.pixel_h * self.pixel_w
+        area = anno.get_contour(cont_name).area*pixel_area if anno is not None else 0.0
+        return area
+
+    def get_area_curve(self, cont_name):
+        return [self.get_area(cont_name, p) for p in range(self.nr_phases)]
+
+
+class LAX_4CV_LVES_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 4CV LVES'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return np.nan
+        valid_idx = np.where(vol_curve > 0)[0]
+        return valid_idx[vol_curve[valid_idx].argmin()]
+
+class LAX_4CV_LVED_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 4CV LVED'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return None
+        return np.argmax(vol_curve)
+    
+class LAX_4CV_LAES_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 4CV LAES'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('la')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return np.nan
+        valid_idx = np.where(vol_curve > 0)[0]
+        return valid_idx[vol_curve[valid_idx].argmin()]
+      
+class LAX_4CV_LAED_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 4CV LAED'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('la')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return None
+        return np.argmax(vol_curve)
+
+    
+class LAX_4CV_RAES_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 4CV RAES'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('ra')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return np.nan
+        valid_idx = np.where(vol_curve > 0)[0]
+        return valid_idx[vol_curve[valid_idx].argmin()]
+      
+class LAX_4CV_RAED_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 4CV RAED'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('ra')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return None
+        return np.argmax(vol_curve)
+
+
+class LAX_2CV_LVES_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 2CV LVES'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 2CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return np.nan
+        valid_idx = np.where(vol_curve > 0)[0]
+        return valid_idx[vol_curve[valid_idx].argmin()]
+
+class LAX_2CV_LVED_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 2CV LVED'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 2CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return None
+        return np.argmax(vol_curve)
+
+    
+class LAX_2CV_LAES_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 2CV LAES'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 2CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('la')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return np.nan
+        valid_idx = np.where(vol_curve > 0)[0]
+        return valid_idx[vol_curve[valid_idx].argmin()]
+
+class LAX_2CV_LAED_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 2CV LAED'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 2CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('la')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return None
+        return np.argmax(vol_curve)
+
 
 
 
@@ -573,6 +833,617 @@ class LVSAX_EF(Clinical_Result):
         cr_diff = self.get_cr()-other.get_cr()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
+###########
+# LAX CRs #
+###########
+########################
+# LV Values:           #
+# 4CV / 2CV / Biplane: #
+# - ESV, EDV           #
+# - SV,  EF            #
+########################
+
+#######
+# 4CV #
+#######
+class LAX_4CV_LVESV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV LVESV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('lv_lax_endo', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_LVEDV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV LVEDV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('lv_lax_endo', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_LVSV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV LVSV'
+        self.unit = '[ml]'
+        self.cat_es  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
+        self.cat_ed  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat_es.get_area('lv_lax_endo', self.cat_es.phase)
+        anno = self.cat_es.get_anno(0, self.cat_es.phase)
+        esv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        area = self.cat_ed.get_area('lv_lax_endo', self.cat_ed.phase)
+        anno = self.cat_ed.get_anno(0, self.cat_ed.phase)
+        edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        return "{:.2f}".format(edv - esv) if string else edv - esv
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_LVEF(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV LVEF'
+        self.unit = '[ml]'
+        self.cat_es  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
+        self.cat_ed  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat_es.get_area('lv_lax_endo', self.cat_es.phase)
+        anno = self.cat_es.get_anno(0, self.cat_es.phase)
+        esv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        area = self.cat_ed.get_area('lv_lax_endo', self.cat_ed.phase)
+        anno = self.cat_ed.get_anno(0, self.cat_ed.phase)
+        edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000 + 10**-9
+        return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+########
+# 2 CV #
+########
+class LAX_2CV_LVESV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '2CV LVESV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('lv_lax_endo', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_2CV_LVEDV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '2CV LVEDV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('lv_lax_endo', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_2CV_LVSV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '2CV LVSV'
+        self.unit = '[ml]'
+        self.cat_es  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
+        self.cat_ed  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat_es.get_area('lv_lax_endo', self.cat_es.phase)
+        anno = self.cat_es.get_anno(0, self.cat_es.phase)
+        esv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        area = self.cat_ed.get_area('lv_lax_endo', self.cat_ed.phase)
+        anno = self.cat_ed.get_anno(0, self.cat_ed.phase)
+        edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        return "{:.2f}".format(edv - esv) if string else edv - esv
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_2CV_LVEF(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '2CV LVEF'
+        self.unit = '[ml]'
+        self.cat_es  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
+        self.cat_ed  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat_es.get_area('lv_lax_endo', self.cat_es.phase)
+        anno = self.cat_es.get_anno(0, self.cat_es.phase)
+        esv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
+        area = self.cat_ed.get_area('lv_lax_endo', self.cat_ed.phase)
+        anno = self.cat_ed.get_anno(0, self.cat_ed.phase)
+        edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000 + 10**-9
+        return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+    
+
+###########
+# Biplane #
+###########
+class LAX_BIPLANE_LVESV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = 'BIPLANE LVESV'
+        self.unit = '[ml]'
+        self.cat1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
+        self.cat2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
+
+    def get_cr(self, string=False):
+        area1 = self.cat1.get_area('lv_lax_endo', self.cat1.phase)
+        area2 = self.cat2.get_area('lv_lax_endo', self.cat2.phase)
+        anno1 = self.cat1.get_anno(0, self.cat1.phase)
+        anno2 = self.cat2.get_anno(0, self.cat2.phase)
+        L     = min(anno1.length_LV(), anno2.length_LV())
+        cr    = 8/(3*np.pi) * (area1*area2)/L / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+class LAX_BIPLANE_LVEDV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = 'BIPLANE LVEDV'
+        self.unit = '[ml]'
+        self.cat1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
+        self.cat2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area1 = self.cat1.get_area('lv_lax_endo', self.cat1.phase)
+        area2 = self.cat2.get_area('lv_lax_endo', self.cat2.phase)
+        anno1 = self.cat1.get_anno(0, self.cat1.phase)
+        anno2 = self.cat2.get_anno(0, self.cat2.phase)
+        L     = min(anno1.length_LV(), anno2.length_LV())
+        cr    = 8/(3*np.pi) * (area1*area2)/L / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_BIPLANE_LVSV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = 'BIPLANE LVSV'
+        self.unit = '[ml]'
+        self.cates1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
+        self.cates2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
+        self.cated1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
+        self.cated2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area1 = self.cates1.get_area('lv_lax_endo', self.cates1.phase)
+        area2 = self.cates2.get_area('lv_lax_endo', self.cates2.phase)
+        anno1 = self.cates1.get_anno(0, self.cates1.phase)
+        anno2 = self.cates2.get_anno(0, self.cates2.phase)
+        L     = min(anno1.length_LV(), anno2.length_LV())
+        esv   = 8/(3*np.pi) * (area1*area2)/L / 1000
+        area1 = self.cated1.get_area('lv_lax_endo', self.cated1.phase)
+        area2 = self.cated2.get_area('lv_lax_endo', self.cated2.phase)
+        anno1 = self.cated1.get_anno(0, self.cated1.phase)
+        anno2 = self.cated2.get_anno(0, self.cated2.phase)
+        L     = min(anno1.length_LV(), anno2.length_LV())
+        edv   = 8/(3*np.pi) * (area1*area2)/L / 1000
+        cr    = edv - esv
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_BIPLANE_LVEF(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = 'BIPLANE LVEF'
+        self.unit = '[ml]'
+        self.cates1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
+        self.cates2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
+        self.cated1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
+        self.cated2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
+
+    def get_cr(self, string=False):
+        area1 = self.cates1.get_area('lv_lax_endo', self.cates1.phase)
+        area2 = self.cates2.get_area('lv_lax_endo', self.cates2.phase)
+        anno1 = self.cates1.get_anno(0, self.cates1.phase)
+        anno2 = self.cates2.get_anno(0, self.cates2.phase)
+        L     = min(anno1.length_LV(), anno2.length_LV())
+        esv   = 8/(3*np.pi) * (area1*area2)/L / 1000
+        area1 = self.cated1.get_area('lv_lax_endo', self.cated1.phase)
+        area2 = self.cated2.get_area('lv_lax_endo', self.cated2.phase)
+        anno1 = self.cated1.get_anno(0, self.cated1.phase)
+        anno2 = self.cated2.get_anno(0, self.cated2.phase)
+        L     = min(anno1.length_LV(), anno2.length_LV())
+        edv   = 8/(3*np.pi) * (area1*area2)/L / 1000 + 10**-9
+        cr    = (edv - esv) / edv
+        return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+################
+# Right Atrium #
+# - 4CV area   #
+# - 4CV volume #
+################
+
+class LAX_4CV_RAESAREA(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV RAESAREA'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAES_Category)][0]
+
+    def get_cr(self, string=False):
+        cr = self.cat.get_area('ra', self.cat.phase) / 100
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_RAEDAREA(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV RAEDAREA'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAED_Category)][0]
+
+    def get_cr(self, string=False):
+        cr = self.cat.get_area('ra', self.cat.phase) / 100
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_RAESV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV RAESV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAES_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('ra', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_RAEDV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV RAEDV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('ra', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+    
+############
+# LA 4CV   #
+# - Area   #
+# - Volume #
+############
+class LAX_4CV_LAESAREA(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV LAESAREA'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAES_Category)][0]
+
+    def get_cr(self, string=False):
+        cr = self.cat.get_area('la', self.cat.phase) / 100
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_LAEDAREA(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV LAEDAREA'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAED_Category)][0]
+
+    def get_cr(self, string=False):
+        cr = self.cat.get_area('la', self.cat.phase) / 100
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_LAESV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV LAESV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAES_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('la', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_4CV_LAEDV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '4CV LAEDV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('la', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+############
+# LA 2CV   #
+# - Area   #
+# - Volume #
+############
+class LAX_2CV_LAESAREA(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '2CV LAESAREA'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAES_Category)][0]
+
+    def get_cr(self, string=False):
+        cr = self.cat.get_area('la', self.cat.phase) / 100
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_2CV_LAEDAREA(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '2CV LAEDAREA'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAED_Category)][0]
+
+    def get_cr(self, string=False):
+        cr = self.cat.get_area('la', self.cat.phase) / 100
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_2CV_LAESV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '2CV LAESV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAES_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('la', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_2CV_LAEDV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = '2CV LAEDV'
+        self.unit = '[ml]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAED_Category)][0]
+
+    def get_cr(self, string=False):
+        area = self.cat.get_area('la', self.cat.phase)
+        anno = self.cat.get_anno(0, self.cat.phase)
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+
+    
+###############
+# LA Biplanar #
+# - Volume    #
+###############
+class LAX_BIPLANAR_LAESV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = 'BIPLANAE LAESV'
+        self.unit = '[ml]'
+        self.cat1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAES_Category)][0]
+        self.cat2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAES_Category)][0]
+
+    def get_cr(self, string=False):
+        area1 = self.cat1.get_area('la', self.cat1.phase)
+        L1    = self.cat1.get_anno(0, self.cat1.phase).length_LA()
+        area2 = self.cat2.get_area('la', self.cat2.phase)
+        L2    = self.cat2.get_anno(0, self.cat2.phase).length_LA()
+        L     = min(L1, L2)
+        cr    = 8/(3*np.pi) * (area1*area2)/L / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class LAX_BIPLANAR_LAEDV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+
+    def set_CR_information(self):
+        self.name = 'BIPLANAR LAEDV'
+        self.unit = '[ml]'
+        self.cat1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAED_Category)][0]
+        self.cat2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAED_Category)][0]
+
+    def get_cr(self, string=False):
+        area1 = self.cat1.get_area('la', self.cat1.phase)
+        L1    = self.cat1.get_anno(0, self.cat1.phase).length_LA()
+        area2 = self.cat2.get_area('la', self.cat2.phase)
+        L2    = self.cat2.get_anno(0, self.cat2.phase).length_LA()
+        L     = min(L1, L2)
+        cr    = 8/(3*np.pi) * (area1*area2)/L / 1000
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+
 
 
 ########
@@ -797,6 +1668,98 @@ class SAX_CS_View(SAX_CINE_View):
         # set new type
         case.type = 'SAX CS'
         if debug: print('Customization in SAX CS view took: ', time()-st)
+        return case
+
+    
+class LAX_CINE_View(View):
+    def __init__(self):
+        self.colormap            = 'gray'
+        self.available_colormaps = ['gray']
+        self.load_categories()
+        self.contour_names        = ['lv_lax_endo', 'lv_lax_epi', 'lv_lax_myo', 'rv_lax_endo', 'la', 'ra']
+        self.contour2categorytype = {c:self.all for c in self.contour_names}
+        
+        # register tabs here:
+        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                        import CC_Metrics_Tab
+        from LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_Tab               import CCs_ClinicalResults_Tab
+        from LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab   import CCs_Qualitative_Correlationplot_Tab
+        self.case_tabs  = {'Metrics and Figure': CC_Metrics_Tab}
+        self.stats_tabs = {'Clinical Results'  : CCs_ClinicalResults_Tab}
+        
+    def load_categories(self):
+        self.all = [LAX_4CV_LVES_Category]
+
+    def get_categories(self, case, contour_name=None):
+        types = [c for c in self.contour2categorytype[contour_name]]
+        cats  = [c for c in case.categories if type(c) in types]
+        return cats
+
+    def initialize_case(self, case, debug=False):
+        if debug: st=time()
+        # switch images
+        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'], **case.all_imgs_sop2filepath['LAX 3CV'], **case.all_imgs_sop2filepath['LAX 4CV']}
+        # attach annotation type
+        case.attach_annotation_type(LAX_CINE_Annotation)
+        # if categories have not been attached, attach the first and init other_categories
+        # otherwise it has categories and a type, so store the old categories for later use
+        if not hasattr(case, 'other_categories'): case.other_categories = dict()
+        case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
+                                LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
+                                LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
+                                LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
+                                LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
+        case.other_categories['LAX CINE'] = case.categories
+        case.categories = []
+        if debug: print('Case categories are: ', case.categories)
+        # set new type
+        case.type = 'LAX CINE'
+        case.available_types.add('LAX CINE')
+        if debug: print('Customization in LAX CINE view took: ', time()-st)
+        return case
+    
+    def customize_case(self, case, debug=False):
+        if debug: st=time()
+        # switch images
+        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'], **case.all_imgs_sop2filepath['LAX 3CV'], **case.all_imgs_sop2filepath['LAX 4CV']}
+        # attach annotation type
+        case.attach_annotation_type(LAX_CINE_Annotation)
+        # if categories have not been attached, attach the first and init other_categories
+        # otherwise it has categories and a type, so store the old categories for later use
+        #print('Has Categories: ', hasattr(case, 'categories'), case.other_categories)
+        if not hasattr(case, 'categories'):
+            case.other_categories = dict()
+            case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
+                                    LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
+                                    LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
+                                    LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
+                                    LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
+            case.other_categories['LAX CINE'] = case.categories
+        else:
+            if 'LAX CINE' in case.other_categories.keys(): case.categories = case.other_categories['LAX CINE']
+            else: case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
+                                          LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
+                                          LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
+                                          LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
+                                          LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
+        #print('Has Categories: ', hasattr(case, 'categories'), case.categories[0].name, case.categories[0])
+        if debug: print('Case categories are: ', case.categories)
+        # attach CRs
+        case.attach_clinical_results([LAX_4CV_LVESV,      LAX_4CV_LVEDV,
+                                      LAX_4CV_LVSV,       LAX_4CV_LVEF,
+                                      LAX_2CV_LVESV,      LAX_2CV_LVEDV,
+                                      LAX_2CV_LVSV,       LAX_2CV_LVEF,
+                                      LAX_BIPLANE_LVESV,  LAX_BIPLANE_LVEDV,
+                                      LAX_BIPLANE_LVSV,   LAX_BIPLANE_LVEF,
+                                      LAX_4CV_RAESAREA,   LAX_4CV_RAEDAREA,
+                                      LAX_4CV_RAESV,      LAX_4CV_RAEDV,
+                                      LAX_4CV_LAESAREA,   LAX_4CV_LAEDAREA,
+                                      LAX_4CV_LAESV,      LAX_4CV_LAEDV,
+                                      LAX_2CV_LAESAREA,   LAX_2CV_LAEDAREA,
+                                      LAX_2CV_LAESV,      LAX_2CV_LAEDV,
+                                      LAX_BIPLANAR_LAESV, LAX_BIPLANAR_LAEDV])
+        # set new type
+        case.type = 'LAX CINE'
+        if debug: print('Customization in LAX CINE view took: ', time()-st)
         return case
 
 
