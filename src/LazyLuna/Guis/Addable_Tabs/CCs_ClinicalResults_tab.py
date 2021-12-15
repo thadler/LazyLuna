@@ -34,7 +34,6 @@ class CCs_ClinicalResults_Tab(QWidget):
         layout = QGridLayout(gui)
         layout.setSpacing(7)
 
-        cr_name = 'LVESV'
         self.ccs = ccs
         
         self.crs_table  = CC_ClinicalResultsAveragesTable()
@@ -47,7 +46,6 @@ class CCs_ClinicalResults_Tab(QWidget):
         self.qq = QQPlot()
         self.qq_canvas = FigureCanvas(self.qq)
         self.qq.set_view(view); self.qq.set_canvas(self.qq_canvas); self.qq.set_gui(gui)
-        self.qq.visualize(ccs, cr_name)
         self.qq_canvas.setFocusPolicy(Qt.Qt.ClickFocus)
         self.qq_canvas.setFocus()
         self.qq_toolbar = NavigationToolbar(self.qq_canvas, gui)
@@ -57,7 +55,6 @@ class CCs_ClinicalResults_Tab(QWidget):
         #self.bp = Boxplot()
         #self.bp_canvas = FigureCanvas(self.bp)
         #self.bp.set_view(view); self.bp.set_canvas(self.bp_canvas); self.bp.set_gui(gui)
-        #self.bp.visualize(ccs, cr_name)
         #self.bp_canvas.setFocusPolicy(Qt.Qt.ClickFocus)
         #self.bp_canvas.setFocus()
         #self.bp_toolbar = NavigationToolbar(self.bp_canvas, gui)
@@ -67,7 +64,6 @@ class CCs_ClinicalResults_Tab(QWidget):
         self.pair = PairedBoxplot()
         self.pair_canvas = FigureCanvas(self.pair)
         self.pair.set_view(view); self.pair.set_canvas(self.pair_canvas); self.pair.set_gui(gui)
-        self.pair.visualize(ccs, cr_name)
         self.pair_canvas.setFocusPolicy(Qt.Qt.ClickFocus)
         self.pair_canvas.setFocus()
         self.pair_toolbar = NavigationToolbar(self.pair_canvas, gui)
@@ -77,7 +73,6 @@ class CCs_ClinicalResults_Tab(QWidget):
         self.ba = BlandAltman()
         self.ba_canvas = FigureCanvas(self.ba)
         self.ba.set_view(view); self.ba.set_canvas(self.ba_canvas); self.ba.set_gui(gui)
-        self.ba.visualize(ccs, cr_name)
         self.ba_canvas.setFocusPolicy(Qt.Qt.ClickFocus)
         self.ba_canvas.setFocus()
         self.ba_toolbar = NavigationToolbar(self.ba_canvas, gui)

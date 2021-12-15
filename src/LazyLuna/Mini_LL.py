@@ -434,9 +434,43 @@ class LAX_4CV_LVED_Category(LAX_Category):
         lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
         vol_curve = np.array(lvendo_vol_curve)
         has_conts = [a!=0 for a in vol_curve]
-        if True not in has_conts: return None
+        if True not in has_conts: return np.nan
         return np.argmax(vol_curve)
     
+class LAX_4CV_RVES_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 4CV RVES'
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('rv_lax_endo')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        if True not in has_conts: return np.nan
+        valid_idx = np.where(vol_curve > 0)[0]
+        return valid_idx[vol_curve[valid_idx].argmin()]
+
+class LAX_4CV_RVED_Category(LAX_Category):
+    def __init__(self, case):
+        super().__init__(case)
+        self.name  = 'LAX 4CV RVED'
+        print('Starting with: ', self.phase)
+        self.phase = self.get_phase()
+    
+    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    
+    def get_phase(self):
+        lvendo_vol_curve = self.get_area_curve('rv_lax_endo')
+        vol_curve = np.array(lvendo_vol_curve)
+        has_conts = [a!=0 for a in vol_curve]
+        print('Calculating RVED phase: ', has_conts)
+        print(True not in has_conts)
+        if True not in has_conts: return np.nan
+        return np.argmax(vol_curve)
+
 class LAX_4CV_LAES_Category(LAX_Category):
     def __init__(self, case):
         super().__init__(case)
@@ -452,7 +486,7 @@ class LAX_4CV_LAES_Category(LAX_Category):
         if True not in has_conts: return np.nan
         valid_idx = np.where(vol_curve > 0)[0]
         return valid_idx[vol_curve[valid_idx].argmin()]
-      
+
 class LAX_4CV_LAED_Category(LAX_Category):
     def __init__(self, case):
         super().__init__(case)
@@ -465,10 +499,9 @@ class LAX_4CV_LAED_Category(LAX_Category):
         lvendo_vol_curve = self.get_area_curve('la')
         vol_curve = np.array(lvendo_vol_curve)
         has_conts = [a!=0 for a in vol_curve]
-        if True not in has_conts: return None
+        if True not in has_conts: return np.nan
         return np.argmax(vol_curve)
 
-    
 class LAX_4CV_RAES_Category(LAX_Category):
     def __init__(self, case):
         super().__init__(case)
@@ -484,7 +517,7 @@ class LAX_4CV_RAES_Category(LAX_Category):
         if True not in has_conts: return np.nan
         valid_idx = np.where(vol_curve > 0)[0]
         return valid_idx[vol_curve[valid_idx].argmin()]
-      
+
 class LAX_4CV_RAED_Category(LAX_Category):
     def __init__(self, case):
         super().__init__(case)
@@ -497,9 +530,8 @@ class LAX_4CV_RAED_Category(LAX_Category):
         lvendo_vol_curve = self.get_area_curve('ra')
         vol_curve = np.array(lvendo_vol_curve)
         has_conts = [a!=0 for a in vol_curve]
-        if True not in has_conts: return None
+        if True not in has_conts: return np.nan
         return np.argmax(vol_curve)
-
 
 class LAX_2CV_LVES_Category(LAX_Category):
     def __init__(self, case):
@@ -529,10 +561,10 @@ class LAX_2CV_LVED_Category(LAX_Category):
         lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
         vol_curve = np.array(lvendo_vol_curve)
         has_conts = [a!=0 for a in vol_curve]
-        if True not in has_conts: return None
+        if True not in has_conts: return np.nan
         return np.argmax(vol_curve)
 
-    
+
 class LAX_2CV_LAES_Category(LAX_Category):
     def __init__(self, case):
         super().__init__(case)
@@ -561,7 +593,7 @@ class LAX_2CV_LAED_Category(LAX_Category):
         lvendo_vol_curve = self.get_area_curve('la')
         vol_curve = np.array(lvendo_vol_curve)
         has_conts = [a!=0 for a in vol_curve]
-        if True not in has_conts: return None
+        if True not in has_conts: return np.nan
         return np.argmax(vol_curve)
 
 
@@ -1389,7 +1421,6 @@ class LAX_2CV_LAEDV(Clinical_Result):
         cr_diff = self.get_cr()-other.get_cr()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
-
     
 ###############
 # LA Biplanar #
@@ -1603,7 +1634,6 @@ class SAX_CINE_View(View):
         case.attach_annotation_type(SAX_CINE_Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
-        #print('Has Categories: ', hasattr(case, 'categories'), case.other_categories)
         if not hasattr(case, 'categories'):
             case.other_categories = dict()
             case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
@@ -1611,7 +1641,6 @@ class SAX_CINE_View(View):
         else:
             if 'SAX CINE' in case.other_categories.keys(): case.categories = case.other_categories['SAX CINE']
             else: case.attach_categories([SAX_LV_ES_Category, SAX_LV_ED_Category, SAX_RV_ES_Category, SAX_RV_ED_Category])
-        #print('Has Categories: ', hasattr(case, 'categories'), case.categories[0].name, case.categories[0])
         if debug: print('Case categories are: ', case.categories)
         # attach CRs
         case.attach_clinical_results([LVSAX_ESV, LVSAX_EDV, RVSAX_ESV, RVSAX_EDV,
@@ -1676,8 +1705,11 @@ class LAX_CINE_View(View):
         self.colormap            = 'gray'
         self.available_colormaps = ['gray']
         self.load_categories()
-        self.contour_names        = ['lv_lax_endo', 'lv_lax_epi', 'lv_lax_myo', 'rv_lax_endo', 'la', 'ra']
-        self.contour2categorytype = {c:self.all for c in self.contour_names}
+        self.contour_names        = ['lv_lax_endo', 'lv_lax_myo', 'rv_lax_endo', 'la', 'ra']
+        self.contour2categorytype = {None : self.all,
+                                     'lv_lax_endo': self.lv_cats,  'lv_lax_epi' : self.myo_cats,
+                                     'lv_lax_myo' : self.myo_cats, 'rv_lax_endo': self.rv_cats,
+                                     'la'         : self.la_cats,  'ra'         : self.ra_cats}
         
         # register tabs here:
         from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                        import CC_Metrics_Tab
@@ -1687,8 +1719,16 @@ class LAX_CINE_View(View):
         self.stats_tabs = {'Clinical Results'  : CCs_ClinicalResults_Tab}
         
     def load_categories(self):
-        self.all = [LAX_4CV_LVES_Category]
-
+        self.all = [LAX_4CV_LVES_Category, LAX_4CV_LVED_Category, LAX_4CV_RVES_Category, 
+                    LAX_4CV_RVED_Category, LAX_4CV_LAES_Category, LAX_4CV_LAED_Category, 
+                    LAX_4CV_RAES_Category, LAX_4CV_RAED_Category, LAX_2CV_LVES_Category, 
+                    LAX_2CV_LVED_Category, LAX_2CV_LAES_Category, LAX_2CV_LAED_Category]
+        self.lv_cats  = [LAX_4CV_LVES_Category, LAX_4CV_LVED_Category, LAX_2CV_LVES_Category, LAX_2CV_LVED_Category]
+        self.myo_cats = [LAX_4CV_LVED_Category, LAX_2CV_LVED_Category]
+        self.rv_cats  = [LAX_4CV_RVES_Category, LAX_4CV_RVED_Category]
+        self.la_cats  = [LAX_2CV_LAES_Category, LAX_2CV_LAED_Category]
+        self.ra_cats  = [LAX_4CV_RAES_Category, LAX_4CV_RAED_Category]
+        
     def get_categories(self, case, contour_name=None):
         types = [c for c in self.contour2categorytype[contour_name]]
         cats  = [c for c in case.categories if type(c) in types]
@@ -1704,6 +1744,7 @@ class LAX_CINE_View(View):
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
         case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
+                                LAX_4CV_RVES_Category, LAX_4CV_RVED_Category,
                                 LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
                                 LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
                                 LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
@@ -1725,10 +1766,10 @@ class LAX_CINE_View(View):
         case.attach_annotation_type(LAX_CINE_Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
-        #print('Has Categories: ', hasattr(case, 'categories'), case.other_categories)
         if not hasattr(case, 'categories'):
             case.other_categories = dict()
             case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
+                                    LAX_4CV_RVES_Category, LAX_4CV_RVED_Category,
                                     LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
                                     LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
                                     LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
@@ -1737,11 +1778,11 @@ class LAX_CINE_View(View):
         else:
             if 'LAX CINE' in case.other_categories.keys(): case.categories = case.other_categories['LAX CINE']
             else: case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
+                                          LAX_4CV_RVES_Category, LAX_4CV_RVED_Category,
                                           LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
                                           LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
                                           LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
                                           LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
-        #print('Has Categories: ', hasattr(case, 'categories'), case.categories[0].name, case.categories[0])
         if debug: print('Case categories are: ', case.categories)
         # attach CRs
         case.attach_clinical_results([LAX_4CV_LVESV,      LAX_4CV_LVEDV,
@@ -1875,6 +1916,7 @@ class SAX_CINE_analyzer:
     def __init__(self, case_comparison):
         self.cc   = case_comparison
         self.view = SAX_CINE_View()
+        self.contour_comparison_pandas_dataframe = None
 
     def get_cat_depth_time2sop(self, fixed_phase_first_reader=False):
         cat_depth_time2sop = dict()
@@ -1916,6 +1958,7 @@ class SAX_CINE_analyzer:
 
     def get_case_contour_comparison_pandas_dataframe(self, fixed_phase_first_reader=False, debug=False):
         # case, reader1, reader2, sop1, sop2, category, d, nr_slices, depth_perc, p1, p2, cont_name, dsc, hd, mldiff, apic/midv/bas/outside1, apic/midv/bas/outside2, has_cont1, has_cont2
+        if not self.contour_comparison_pandas_dataframe is None: return self.contour_comparison_pandas_dataframe
         if debug: st = time()
         rows                  = []
         view                  = self.view
@@ -1946,4 +1989,47 @@ class SAX_CINE_analyzer:
         columns=['case', 'reader1', 'reader2', 'sop1', 'sop2', 'category', 'slice', 'max_slices', 'depth_perc', 'phase1', 'phase2', 'contour name', 'DSC', 'HD', 'ml diff', 'abs ml diff', 'position1', 'position2', 'has_contour1', 'has_contour2']
         df = pandas.DataFrame(rows, columns=columns)
         if debug: print('pandas table took: ', time()-st)
+        return df
+
+
+class LAX_CINE_analyzer:
+    def __init__(self, cc):
+        self.cc = cc
+        self.view = LAX_CINE_View()
+        self.contour_comparison_pandas_dataframe = None
+    
+    def get_case_contour_comparison_pandas_dataframe(self, fixed_phase_first_reader=False, debug=False):
+        if not self.contour_comparison_pandas_dataframe is None: return self.contour_comparison_pandas_dataframe
+        # case, reader1, reader2, sop1, sop2, category, d, nr_slices, depth_perc, p1, p2, cont_name, dsc, hd, mldiff, apic/midv/bas/outside1, apic/midv/bas/outside2, has_cont1, has_cont2
+        print('In get_case_contour_comparison_pandas_dataframe')
+        if debug: st = time()
+        rows                  = []
+        view                  = self.view
+        case1, case2          = self.cc.case1, self.cc.case2
+        case_name             = case1.case_name
+        reader1, reader2      = case1.reader_name, case2.reader_name
+        dsc_m, hd_m, mldiff_m = DiceMetric(), HausdorffMetric(), mlDiffMetric()
+        for cont_name in self.view.contour_names:
+            categories1, categories2 = view.get_categories(case1, cont_name), view.get_categories(case2, cont_name)
+            for cat1, cat2 in zip(categories1, categories2):
+                print(cat1, cat2, cat1.phase, cat2.phase)
+                if np.isnan(cat1.phase) or np.isnan(cat2.phase): continue
+                p1, p2 = (cat1.phase, cat2.phase) if not fixed_phase_first_reader else (cat1.phase, cat1.phase)
+                nr_sl  = cat1.nr_slices
+                for d in range(cat1.nr_slices):
+                    d_perc       = 1.0 * d / nr_sl
+                    sop1, sop2   = cat1.depthandtime2sop[d,p1], cat2.depthandtime2sop[d,p2]
+                    anno1, anno2 = self.cc.case1.load_anno(sop1), self.cc.case2.load_anno(sop2)
+                    cont1, cont2 = anno1.get_contour(cont_name), anno2.get_contour(cont_name)
+                    dcm    = self.cc.case1.load_dcm(sop1)
+                    dsc    = dsc_m   .get_val(cont1, cont2, dcm)
+                    hd     = hd_m    .get_val(cont1, cont2, dcm)
+                    mldiff = mldiff_m.get_val(cont1, cont2, dcm)
+                    has_cont1, has_cont2     = anno1.has_contour(cont_name), anno2.has_contour(cont_name)
+                    row = [case_name, reader1, reader2, sop1, sop2, cat1.name, d, nr_sl, d_perc, p1, p2, cont_name, dsc, hd, mldiff, np.abs(mldiff), has_cont1, has_cont2]
+                    rows.append(row)
+        columns=['case', 'reader1', 'reader2', 'sop1', 'sop2', 'category', 'slice', 'max_slices', 'depth_perc', 'phase1', 'phase2', 'contour name', 'DSC', 'HD', 'ml diff', 'abs ml diff', 'has_contour1', 'has_contour2']
+        df = pandas.DataFrame(rows, columns=columns)
+        if debug: print('pandas table took: ', time()-st)
+        self.contour_comparison_pandas_dataframe = df
         return df

@@ -238,7 +238,42 @@ class CC_Metrics_Table(Table):
             self.df[['ml diff', 'abs ml diff', 'HD']] = self.df[['ml diff', 'abs ml diff', 'HD']].round(1)
             self.df[['DSC']] = self.df[['DSC']].astype(int)
         unique_cats = self.df['category'].unique()
+        print('Unique categories; ', unique_cats)
         for cat_i, cat in enumerate(unique_cats):
+            curr = self.df[self.df['category']==cat]
+            curr = curr.rename(columns={k:cat+' '+k for k in curr.columns if k not in ['slice', 'category']})
+            curr.reset_index(drop=True, inplace=True)
+            if cat_i==0: df = curr
+            else:        df = df.merge(curr, on='slice', how='outer')
+        df = df.drop(labels=[c for c in df.columns if 'category' in c or 'contour name' in c], axis=1)
+        df = self.resort(df, contour_name)
+        self.df = df
+        
+    def resort(self, df, contour_name):
+        metric_vals = self.metric_vals[self.metric_vals['contour name']==contour_name]
+        unique_cats = metric_vals['category'].unique()
+        n = len([c for c in df.columns if unique_cats[0] in c])
+        cols = list(df.columns[0:1])
+        for i in range(n): cols += [df.columns[1+i+j*n] for j in range(len(unique_cats))]
+        return df[cols]
+
+class LAX_CC_Metrics_Table(Table):
+    def calculate(self, case_comparison, fixed_phase_first_reader=False):
+        rows = []
+        analyzer = Mini_LL.LAX_CINE_analyzer(case_comparison)
+        self.metric_vals = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader)
+        self.metric_vals = self.metric_vals[['category', 'slice', 'contour name', 'ml diff', 'abs ml diff', 'DSC', 'HD', 'has_contour1', 'has_contour2']]
+        self.metric_vals.sort_values(by='slice', axis=0, ascending=True, inplace=True, ignore_index=True)
+        
+    def present_contour_df(self, contour_name, pretty=True):
+        self.df = self.metric_vals[self.metric_vals['contour name']==contour_name]
+        if pretty:
+            self.df[['ml diff', 'abs ml diff', 'HD']] = self.df[['ml diff', 'abs ml diff', 'HD']].round(1)
+            self.df[['DSC']] = self.df[['DSC']].astype(int)
+        unique_cats = self.df['category'].unique()
+        print(unique_cats)
+        for cat_i, cat in enumerate(unique_cats):
+            print(cat_i)
             curr = self.df[self.df['category']==cat]
             curr = curr.rename(columns={k:cat+' '+k for k in curr.columns if k not in ['slice', 'category']})
             curr.reset_index(drop=True, inplace=True)
