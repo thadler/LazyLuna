@@ -11,17 +11,20 @@ from catch_converter.parse_contours import parse_cvi42ws
 from LazyLuna.loading_functions import *
 from LazyLuna.Mini_LL import *
 from LazyLuna.Tables import DataFrameModel
+from LazyLuna.Guis.GuiDataPreparation import Gui_Data_Preparation2
 
 
 class Window(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
-
-        self.ui = uic.loadUi('GuiDataPreparation.ui', self)
-        self.ui.setWindowFlag(QtCore.Qt.CustomizeWindowHint,      True)
-        self.ui.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
-        self.ui.setWindowFlag(QtCore.Qt.WindowMinimizeButtonHint, False)
-        self.ui.setWindowFlag(QtCore.Qt.WindowMinMaxButtonsHint,  False)
+        
+        self.ui = Gui_Data_Preparation2.Ui_MainWindow()
+        self.ui.setupUi(self)
+        #self.ui = uic.loadUi(filename, self)
+        #self.ui.setWindowFlag(QtCore.Qt.CustomizeWindowHint,      True)
+        #self.ui.setWindowFlag(QtCore.Qt.WindowMaximizeButtonHint, False)
+        #self.ui.setWindowFlag(QtCore.Qt.WindowMinimizeButtonHint, False)
+        #self.ui.setWindowFlag(QtCore.Qt.WindowMinMaxButtonsHint,  False)
         self.ui.centralwidget.setWindowState(self.ui.centralwidget.windowState() & ~QtCore.Qt.WindowMinimized | QtCore.Qt.WindowActive)
         self.ui.centralwidget.activateWindow()
         
@@ -54,11 +57,10 @@ class Window(QtWidgets.QMainWindow):
         # Tab2 #
         ########
         # adding figure
-        self.DCM_MplWidget.canvas.axes.clear()
-        self.DCM_MplWidget.canvas.axes.set_title('Dicoms')
-        self.DCM_MplWidget.canvas.draw()
-        self.DCM_MplWidget.canvas.mpl_connect('key_press_event', 
-                                        self.DCM_MplWidget.keyPressEvent)
+        self.ui.DCM_MplWidget.canvas.axes.clear()
+        self.ui.DCM_MplWidget.canvas.axes.set_title('Dicoms')
+        self.ui.DCM_MplWidget.canvas.draw()
+        self.ui.DCM_MplWidget.canvas.mpl_connect('key_press_event', self.ui.DCM_MplWidget.keyPressEvent)
         
         ########
         # Tab3 #
@@ -78,7 +80,7 @@ class Window(QtWidgets.QMainWindow):
             dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
                 self.imgs_folder_path = dialog.selectedFiles()[0]
-                self.img_folder_line_edit.setText(self.imgs_folder_path)
+                self.ui.img_folder_line_edit.setText(self.imgs_folder_path)
         except Exception as e: print(e)
             
     def set_reader_folder_path(self):
@@ -98,7 +100,7 @@ class Window(QtWidgets.QMainWindow):
             dialog = QtWidgets.QFileDialog(self, '')
             dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
-                self.case_imgs_folder_path = dialog.selectedFiles()[0]
+                self.ui.case_imgs_folder_path = dialog.selectedFiles()[0]
                 self.case_img_folder_line_edit.setText(self.case_imgs_folder_path)
         except Exception as e: print(e)
             
@@ -108,33 +110,33 @@ class Window(QtWidgets.QMainWindow):
             dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
                 self.case_reader_folder_path = dialog.selectedFiles()[0]
-                self.case_reader_folder_line_edit.setText(self.case_reader_folder_path)
+                self.ui.case_reader_folder_line_edit.setText(self.case_reader_folder_path)
                 parse_cvi42ws(self.case_reader_folder_path, 
                               self.case_reader_folder_path, process=True, debug=False)
         except Exception as e: print(e)
             
     def set_cases_folder_path(self):
-        try:
-            dialog = QtWidgets.QFileDialog(self, '')
-            dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
-            if dialog.exec_() == QtWidgets.QDialog.Accepted:
-                self.cases_folder_path = dialog.selectedFiles()[0]
-                self.cases_folder_line_edit.setText(self.cases_folder_path)
-        except Exception as e: print(e)
+        #try:
+        dialog = QtWidgets.QFileDialog(self, '')
+        dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.ui.cases_folder_path = dialog.selectedFiles()[0]
+            self.ui.cases_folder_line_edit.setText(self.ui.cases_folder_path)
+        #except Exception as e: print(e)
             
     def set_bulk_case_images_folder_path(self):
-        try:
-            dialog = QtWidgets.QFileDialog(self, '')
-            dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
-            if dialog.exec_() == QtWidgets.QDialog.Accepted:
-                self.bulk_case_images_folder_path = dialog.selectedFiles()[0]
-                self.bulk_case_img_folder_line_edit.setText(self.bulk_case_images_folder_path)
-        except Exception as e: print(e)
+        #try:
+        dialog = QtWidgets.QFileDialog(self, '')
+        dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            self.ui.bulk_case_images_folder_path = dialog.selectedFiles()[0]
+            self.ui.bulk_case_img_folder_line_edit.setText(self.ui.bulk_case_images_folder_path)
+        #except Exception as e: print(e)
         
     def bulk_transform_cases(self):
-        bp_imgs  = self.bulk_case_images_folder_path
+        bp_imgs  = self.ui.bulk_case_images_folder_path
         bp_annos = self.case_reader_folder_path
-        bp_cases = self.cases_folder_path
+        bp_cases = self.ui.cases_folder_path
         imgsanno_paths = get_imgs_and_annotation_paths(bp_imgs, bp_annos)
         cases = []
         sax_cine_view = SAX_CINE_View()
@@ -245,7 +247,7 @@ class Window(QtWidgets.QMainWindow):
             series_uid = self.information_df.at[row,'series_uid']
         else: series_uid = None
         paths = get_img_paths_for_series_descr(self.imgs_df, series_description, series_uid)
-        self.DCM_MplWidget.set_dcms([pydicom.dcmread(p) for p in paths])
+        self.ui.DCM_MplWidget.set_dcms([pydicom.dcmread(p) for p in paths])
         
     
 
