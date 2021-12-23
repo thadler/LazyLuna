@@ -89,7 +89,7 @@ class Window(QtWidgets.QMainWindow):
             dialog.setFileMode(QtWidgets.QFileDialog.DirectoryOnly)
             if dialog.exec_() == QtWidgets.QDialog.Accepted:
                 self.reader_folder_path = dialog.selectedFiles()[0]
-                self.reader_folder_line_edit.setText(self.reader_folder_path)
+                self.ui.reader_folder_line_edit.setText(self.reader_folder_path)
                 parse_cvi42ws(self.reader_folder_path, 
                               self.reader_folder_path, process=True, debug=False)
         except Exception as e: print(e)
