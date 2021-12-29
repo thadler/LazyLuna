@@ -181,6 +181,8 @@ class Annotation_Comparison(Visualization):
             anno2.plot_contour_face   (ax3,        contour_name, alpha=0.4, c='b')
             #anno1.plot_all_contour_outlines(ax1) # looks like overlooked slices when different phases for RV and LV
             #anno2.plot_all_contour_outlines(ax3)
+            anno1.plot_all_points(ax1)
+            anno2.plot_all_points(ax3)
         for ax in [ax1, ax2, ax3]: ax.set_xticks([]); ax.set_yticks([])
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
         

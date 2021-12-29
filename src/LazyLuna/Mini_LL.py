@@ -926,9 +926,12 @@ class LAX_4CV_LVM(Clinical_Result):
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
     def get_cr(self, string=False):
-        myo_area  = self.cat.get_area('lv_lax_myo',  self.cat.phase)
-        L  = self.cat.get_anno(0, self.cat.phase).length_LV()
-        cr = 8/(3*np.pi) * (myo_area**2)/L / 1000 * 1.05
+        endo_area = self.cat.get_area('lv_lax_endo',  self.cat.phase)
+        epi_area  = endo_area + self.cat.get_area('lv_lax_myo',  self.cat.phase)
+        L         = self.cat.get_anno(0, self.cat.phase).length_LV()
+        endo_area = 8/(3*np.pi) * (endo_area**2)/L / 1000
+        epi_area  = 8/(3*np.pi) * (epi_area**2) /L / 1000
+        cr        = 1.05 * (epi_area - endo_area)
         return "{:.2f}".format(cr) if string else cr
 
     def get_cr_diff(self, other, string=False):
@@ -988,7 +991,7 @@ class LAX_4CV_ESAtrialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '4CV ES Atrial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
 
     def get_cr(self, string=False):
@@ -1007,7 +1010,7 @@ class LAX_4CV_EDAtrialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '4CV ED Atrial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
     def get_cr(self, string=False):
@@ -1026,7 +1029,7 @@ class LAX_4CV_ESEpicardialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '4CV ES Epicardial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
 
     def get_cr(self, string=False):
@@ -1045,7 +1048,7 @@ class LAX_4CV_EDEpicardialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '4CV ED Epicardial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
     def get_cr(self, string=False):
@@ -1064,7 +1067,7 @@ class LAX_4CV_ESPericardialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '4CV ES Pericardial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
 
     def get_cr(self, string=False):
@@ -1083,7 +1086,7 @@ class LAX_4CV_EDPericardialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '4CV ED Pericardial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
     def get_cr(self, string=False):
@@ -1153,9 +1156,12 @@ class LAX_2CV_LVM(Clinical_Result):
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
     def get_cr(self, string=False):
-        myo_area  = self.cat.get_area('lv_lax_myo',  self.cat.phase)
-        L  = self.cat.get_anno(0, self.cat.phase).length_LV()
-        cr = 8/(3*np.pi) * (myo_area**2)/L / 1000 * 1.05
+        endo_area = self.cat.get_area('lv_lax_endo',  self.cat.phase)
+        epi_area  = endo_area + self.cat.get_area('lv_lax_myo',  self.cat.phase)
+        L         = self.cat.get_anno(0, self.cat.phase).length_LV()
+        endo_area = 8/(3*np.pi) * (endo_area**2)/L / 1000
+        epi_area  = 8/(3*np.pi) * (epi_area**2) /L / 1000
+        cr        = 1.05 * (epi_area - endo_area)
         return "{:.2f}".format(cr) if string else cr
     
 class LAX_2CV_LVSV(Clinical_Result):
@@ -1214,7 +1220,7 @@ class LAX_2CV_ESAtrialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '2CV ES Atrial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
 
     def get_cr(self, string=False):
@@ -1233,7 +1239,7 @@ class LAX_2CV_EDAtrialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '2CV ED Atrial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
     def get_cr(self, string=False):
@@ -1252,7 +1258,7 @@ class LAX_2CV_ESEpicardialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '2CV ES Epicardial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
 
     def get_cr(self, string=False):
@@ -1271,7 +1277,7 @@ class LAX_2CV_EDEpicardialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '2CV ED Epicardial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
     def get_cr(self, string=False):
@@ -1290,7 +1296,7 @@ class LAX_2CV_ESPericardialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '2CV ES Pericardial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
 
     def get_cr(self, string=False):
@@ -1309,7 +1315,7 @@ class LAX_2CV_EDPericardialFatArea(Clinical_Result):
 
     def set_CR_information(self):
         self.name = '2CV ED Pericardial Fat Area'
-        self.unit = '[mm^2]'
+        self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
     def get_cr(self, string=False):
@@ -1372,30 +1378,6 @@ class LAX_BIPLANE_LVEDV(Clinical_Result):
         cr_diff = self.get_cr()-other.get_cr()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
-class LAX_BIPLANE_LVM(Clinical_Result):
-    def __init__(self, case):
-        self.case = case
-        self.set_CR_information()
-
-    def set_CR_information(self):
-        self.name = 'BIPLANE LVM'
-        self.unit = '[g]'
-        self.cat1  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
-        self.cat2  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
-
-    def get_cr(self, string=False):
-        area1 = self.cat1.get_area('lv_lax_myo',  self.cat1.phase)
-        area2 = self.cat2.get_area('lv_lax_myo',  self.cat2.phase)
-        anno1 = self.cat1.get_anno(0, self.cat1.phase)
-        anno2 = self.cat2.get_anno(0, self.cat2.phase)
-        L     = min(anno1.length_LV(), anno2.length_LV())
-        cr = 8/(3*np.pi) * (area1*area2)/L / 1000 * 1.05
-        return "{:.2f}".format(cr) if string else cr
-
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
-        return "{:.2f}".format(cr_diff) if string else cr_diff
-    
 class LAX_BIPLANE_LVSV(Clinical_Result):
     def __init__(self, case):
         self.case = case
@@ -2085,7 +2067,6 @@ class LAX_CINE_View(View):
                                       LAX_2CV_LAESAREA,   LAX_2CV_LAEDAREA,
                                       LAX_2CV_LAESV,      LAX_2CV_LAEDV,
                                       LAX_BIPLANAR_LAESV, LAX_BIPLANAR_LAEDV,
-                                      LAX_BIPLANE_LVM,
                                  LAX_2CV_ESAtrialFatArea, LAX_2CV_EDAtrialFatArea, 
                                  LAX_4CV_ESAtrialFatArea, LAX_4CV_EDAtrialFatArea,
                        LAX_2CV_ESEpicardialFatArea,  LAX_2CV_EDEpicardialFatArea,
