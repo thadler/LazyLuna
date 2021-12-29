@@ -53,7 +53,15 @@ class DataFrameModel(QtCore.QAbstractTableModel):
             return QtCore.QVariant()
         row = self._dataframe.index[index.row()]
         col = self._dataframe.columns[index.column()]
-        dt  = self._dataframe[col].dtype
+        #print('In Data')
+        #print(col)
+        #print(index.column())
+        try:
+            dt  = self._dataframe[col].dtype
+        except Exception as e:
+            print(e)
+            dt  = self._dataframe[col].dtypes[0]
+        print(dt)
         val = self._dataframe.iloc[row][col]
         if role == QtCore.Qt.DisplayRole:      return str(val)
         elif role == DataFrameModel.ValueRole: return val
@@ -221,6 +229,8 @@ class CC_ClinicalResultsAveragesTable(Table):
             row.append('{:.1f}'.format(np.mean(cr_dict3[cr_name])))
             rows.append(row)
             
+        print('In things: ')
+        print(rows)
         self.df = pandas.DataFrame(rows, columns=columns)
         
 

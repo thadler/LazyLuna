@@ -984,6 +984,10 @@ class LAX_4CV_LVEF(Clinical_Result):
         edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000 + 10**-9
         return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
     
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
 class LAX_4CV_ESAtrialFatArea(Clinical_Result):
     def __init__(self, case):
         self.case = case
@@ -1163,6 +1167,10 @@ class LAX_2CV_LVM(Clinical_Result):
         epi_area  = 8/(3*np.pi) * (epi_area**2) /L / 1000
         cr        = 1.05 * (epi_area - endo_area)
         return "{:.2f}".format(cr) if string else cr
+    
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_2CV_LVSV(Clinical_Result):
     def __init__(self, case):
