@@ -5,6 +5,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 from matplotlib import gridspec
+from matplotlib.collections import PathCollection
 import seaborn as sns
 
 import shapely
@@ -378,23 +379,28 @@ class PairedBoxplot(Visualization):
         self.clf()
         ax = self.add_subplot(111, position=[0.16, 0.16, 0.68, 0.68])
         #self.set_size_inches(w=7.5, h=10)
+        readername1 = case_comparisons[0].case1.reader_name
+        readername2 = case_comparisons[0].case2.reader_name
+        if readername1==readername2: readername2=' '+readername2
         custom_palette  = sns.color_palette([sns.color_palette("Blues")[1], sns.color_palette("Purples")[1]])
         swarm_palette   = sns.color_palette(["#061C36", "#061C36"])
         rows = []
         for cc in case_comparisons:
             cr1 = [cr.get_cr() for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr.get_cr() for cr in cc.case2.crs if cr.name==cr_name][0]
-            rows.extend([[cc.case1.reader_name, cr1], [cc.case2.reader_name, cr2]])
+            rows.extend([[readername1, cr1], [readername2, cr2]])
         df = DataFrame(rows, columns=['Reader', cr_name])
+        print(df)
         # Plot
-        sns.boxplot  (ax=ax, data=df, y='Reader', x=cr_name, width=0.4, palette=custom_palette, orient='h')
+        sns.boxplot  (ax=ax, data=df, y='Reader', x=cr_name, width=0.4, palette=custom_palette, orient='h', linewidth=1)
         sns.swarmplot(ax=ax, data=df, y='Reader', x=cr_name, palette=swarm_palette, orient='h')
         ax.set_title(cr_name+' Paired Boxplot', fontsize=14)
         ax.set_ylabel('')
         ax.set_xlabel(cr.name+' '+cr.unit, fontsize=12)
         # Now connect the dots
-        locs1 = ax.get_children()[0].get_offsets()
-        locs2 = ax.get_children()[1].get_offsets()
+        children = [c for c in ax.get_children() if isinstance(c, PathCollection)]
+        locs1 = children[0].get_offsets()
+        locs2 = children[1].get_offsets()
         set1 = df[df['Reader']==case_comparisons[0].case1.reader_name][cr_name]
         set2 = df[df['Reader']==case_comparisons[0].case2.reader_name][cr_name]
         sort_idxs1 = np.argsort(set1)
@@ -405,7 +411,7 @@ class PairedBoxplot(Visualization):
         for i in range(locs1.shape[0]):
             x = [locs1[i, 0], locs2_sorted[i, 0]]
             y = [locs1[i, 1], locs2_sorted[i, 1]]
-            ax.plot(x, y, color="black", alpha=0.1)
+            ax.plot(x, y, color="black", alpha=0.4, linewidth=0.3)
         
         texts = [cc.case1.case_name for cc in case_comparisons]
         annot = ax.annotate("", xy=(0,0), xytext=(20,20), textcoords="offset points", 

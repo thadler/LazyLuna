@@ -75,9 +75,13 @@ class Annotation:
         except: self.anno = dict()
         self.set_information()
 
-    def plot_all_contour_outlines(self, ax):
+    def plot_all_contour_outlines(self, ax, debug=False):
         for c in self.available_contour_names():
             CATCH_utils.plot_outlines(ax, self.get_contour(c))
+            
+    def plot_contour_outlines(self, ax, cont_name, edge_c=(1,1,1,1.0), debug=False):
+        if debug: print(cont_name, self.get_contour(cont_name).geom_type, self.get_contour(cont_name).is_empty, self.get_contour(cont_name))
+        CATCH_utils.plot_outlines(ax, self.get_contour(cont_name), edge_c)
 
     def plot_all_points(self, ax):
         for p in self.available_point_names():
@@ -134,6 +138,20 @@ class SAX_CINE_Annotation(Annotation):
         self.name = 'SAX CINE Annotation'
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo', 'lv_pamu',
                               'rv_endo', 'rv_epi', 'rv_myo', 'rv_pamu']
+        self.point_names   = ['sacardialRefPoint']
+        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
+        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
+
+        
+class SAX_LGE_Annotation(Annotation):
+    def __init__(self, sop, filepath):
+        super().__init__(sop, filepath)
+
+    def set_information(self):
+        self.name = 'SAX CINE Annotation'
+        self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo',
+                              'excludeEnhancementAreaContour',
+                             'saEnhancementReferenceMyoContour']
         self.point_names   = ['sacardialRefPoint']
         self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
         self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)

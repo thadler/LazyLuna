@@ -13,68 +13,28 @@ from PyQt5 import Qt, QtWidgets, QtGui, QtCore, uic
 ## For conversion from Pandas DataFrame to PyQt5 Abstract Table Model ##
 ########################################################################
 ########################################################################
-class DataFrameModel(QtCore.QAbstractTableModel):
-    DtypeRole = QtCore.Qt.UserRole + 1000
-    ValueRole = QtCore.Qt.UserRole + 1001
 
-    def __init__(self, df=pandas.DataFrame(), parent=None):
-        super(DataFrameModel, self).__init__(parent)
-        self._dataframe = df
+class DataFrameModel(QtGui.QStandardItemModel):
+    def __init__(self, data, parent=None):
+        QtGui.QStandardItemModel.__init__(self, parent)
+        self._data = data
+        for i in range(len(data.columns)):
+            data_col = [QtGui.QStandardItem("{}".format(x)) for x in data.iloc[:,i].values]
+            self.appendColumn(data_col)
+        return
 
-    def setDataFrame(self, dataframe):
-        self.beginResetModel()
-        self._dataframe = dataframe.copy()
-        self.endResetModel()
+    def rowCount(self, parent=None):
+        return len(self._data.values)
 
-    def dataFrame(self):
-        return self._dataframe
+    def columnCount(self, parent=None):
+        return self._data.columns.size
 
-    dataFrame = QtCore.pyqtProperty(pandas.DataFrame, fget=dataFrame, fset=setDataFrame)
-
-    @QtCore.pyqtSlot(int, QtCore.Qt.Orientation, result=str)
-    def headerData(self, section:int, orientation:QtCore.Qt.Orientation, role:int=QtCore.Qt.DisplayRole):
-        if role==QtCore.Qt.DisplayRole:
-            if orientation==QtCore.Qt.Horizontal:
-                return self._dataframe.columns[section]
-            else: return str(self._dataframe.index[section])
-        return QtCore.QVariant()
-
-    def rowCount(self, parent=QtCore.QModelIndex()):
-        if parent.isValid(): return 0
-        return len(self._dataframe.index)
-
-    def columnCount(self, parent=QtCore.QModelIndex()):
-        if parent.isValid(): return 0
-        return self._dataframe.columns.size
-
-    def data(self, index, role=QtCore.Qt.DisplayRole):
-        if not index.isValid() or not (0 <= index.row() < self.rowCount() \
-            and 0 <= index.column() < self.columnCount()):
-            return QtCore.QVariant()
-        row = self._dataframe.index[index.row()]
-        col = self._dataframe.columns[index.column()]
-        #print('In Data')
-        #print(col)
-        #print(index.column())
-        try:
-            dt  = self._dataframe[col].dtype
-        except Exception as e:
-            print(e)
-            dt  = self._dataframe[col].dtypes[0]
-        print(dt)
-        val = self._dataframe.iloc[row][col]
-        if role == QtCore.Qt.DisplayRole:      return str(val)
-        elif role == DataFrameModel.ValueRole: return val
-        if role == DataFrameModel.DtypeRole:   return dt
-        return QtCore.QVariant()
-
-    def roleNames(self):
-        roles = {
-            QtCore.Qt.DisplayRole:    b'display',
-            DataFrameModel.DtypeRole: b'dtype',
-            DataFrameModel.ValueRole: b'value'
-        }
-        return roles
+    def headerData(self, x, orientation, role):
+        if orientation==QtCore.Qt.Horizontal and role==QtCore.Qt.DisplayRole:
+            return self._data.columns[x]
+        if orientation==QtCore.Qt.Vertical   and role==QtCore.Qt.DisplayRole:
+            return self._data.index[x]
+        return None
     
     
 ########################
@@ -129,6 +89,8 @@ class CC_StatsOverviewTable(Table):
         nr_males   = counts['M'] if 'M' in counts.keys() else 0
         nr_females = counts['F'] if 'F' in counts.keys() else 0
         return str(nr_males)+'/'+str(nr_females)
+    
+    
 class CC_ClinicalResultsTable(Table):
     def calculate(self, case_comparisons, with_dices=True, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
@@ -206,6 +168,7 @@ class CC_SAX_DiceTable(Table):
                 rows.append([c1.case_name, True, cname, np.mean([d for d in dices if 0<d<100])])
         self.df = DataFrame(rows, columns=columns)
 
+        
 class CC_ClinicalResultsAveragesTable(Table):
     def calculate(self, case_comparisons):
         rows = []
@@ -228,9 +191,6 @@ class CC_ClinicalResultsAveragesTable(Table):
             row.append('{:.1f}'.format(np.mean(cr_dict2[cr_name])))
             row.append('{:.1f}'.format(np.mean(cr_dict3[cr_name])))
             rows.append(row)
-            
-        print('In things: ')
-        print(rows)
         self.df = pandas.DataFrame(rows, columns=columns)
         
 

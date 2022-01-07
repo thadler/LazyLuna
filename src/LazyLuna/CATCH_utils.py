@@ -60,14 +60,11 @@ def to_polygon(mask):
     for geom, val in features.shapes(mask):
         if val:
             polygon = shape(geom)
-            print(polygon.geom_type)
             if polygon.geom_type == 'Polygon' and polygon.is_valid: polygons.append(polygon)
             else: print('Ignoring GeoJSON with cooresponding shape: ' + 
                       str(polygon.geom_type) + ' | Valid: ' + str(polygon.is_valid))
     
     return MultiPolygon(polygons) if len(polygons)>0 else Polygon()#polygons[0]
-
-
 
 
 
@@ -183,7 +180,7 @@ def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'],alpha=0.4):
 def plot_geo_face(ax, geo, c='r', ec=None, alpha=0.4):
     # buffer is a hack, make sure contours are in clockwise or counter cw direction
     #ax.add_patch(PolygonPatch(geo.buffer(0), color=c, alpha=alpha))
-    ax.add_patch(PolygonPatch(geo.buffer(0), color=c, ec=c, alpha=alpha))
+    ax.add_patch(PolygonPatch(geo.buffer(0), color=c, ec=ec, alpha=alpha))
         
 def plot_points(ax, points, c='w', marker='x'):
     if points.geom_type=='Point': # case: points is really just point

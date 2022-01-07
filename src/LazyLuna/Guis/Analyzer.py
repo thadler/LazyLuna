@@ -143,14 +143,17 @@ class MyTabWidget(QWidget):
     def get_segmenters(self):
         case_folder_path = self.case_folder_path.text()
         if not os.path.exists(case_folder_path): return
-        paths   = [str(p) for p in Path(case_folder_path).glob('**/*.pickle')]
-        cases   = [pickle.load(open(p,'rb')) for p in paths]
-        self.cases_df = get_cases_table(cases, paths, False)
-        readers = sorted(self.cases_df['Reader'].unique())
-        self.combobox_select_segmenter .clear()
-        self.combobox_select_segmenter2.clear()
-        self.combobox_select_segmenter .addItems(['Select a Reader'] + readers)
-        self.combobox_select_segmenter2.addItems(['Select a Reader'] + readers)
+        try:
+            paths   = [str(p) for p in Path(case_folder_path).glob('**/*.pickle')]
+            cases   = [pickle.load(open(p,'rb')) for p in paths]
+            self.cases_df = get_cases_table(cases, paths, False)
+            readers = sorted(self.cases_df['Reader'].unique())
+            self.combobox_select_segmenter .clear()
+            self.combobox_select_segmenter2.clear()
+            self.combobox_select_segmenter .addItems(['Select a Reader'] + readers)
+            self.combobox_select_segmenter2.addItems(['Select a Reader'] + readers)
+        except:
+            pass
     
 
 def main():
