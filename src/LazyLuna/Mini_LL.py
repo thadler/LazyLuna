@@ -80,8 +80,8 @@ class Annotation:
             CATCH_utils.plot_outlines(ax, self.get_contour(c))
             
     def plot_contour_outlines(self, ax, cont_name, edge_c=(1,1,1,1.0), debug=False):
-        if debug: print(cont_name, self.get_contour(cont_name).geom_type, self.get_contour(cont_name).is_empty, self.get_contour(cont_name))
-        CATCH_utils.plot_outlines(ax, self.get_contour(cont_name), edge_c)
+        if self.has_contour(cont_name):
+            CATCH_utils.plot_outlines(ax, self.get_contour(cont_name), edge_c)
 
     def plot_all_points(self, ax):
         for p in self.available_point_names():
@@ -771,7 +771,7 @@ class LVSAX_MYO(Clinical_Result):
 
     def set_CR_information(self):
         self.name = 'LVM'
-        self.unit = '[ml]'
+        self.unit = '[g]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
 
     def get_cr(self, string=False):
@@ -789,7 +789,7 @@ class RVSAX_MYO(Clinical_Result):
 
     def set_CR_information(self):
         self.name = 'RVM'
-        self.unit = '[ml]'
+        self.unit = '[g]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_RV_ED_Category)][0]
 
     def get_cr(self, string=False):

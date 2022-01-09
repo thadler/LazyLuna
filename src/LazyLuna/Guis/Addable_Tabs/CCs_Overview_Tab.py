@@ -130,7 +130,12 @@ class CCs_Overview_Tab(QWidget):
             failed_annotation_comparison = Failed_Annotation_Comparison_Yielder()
             failed_annotation_comparison.set_values(view, self.case_comparisons)
             failed_annotation_comparison.store(failed_segmentation_folder_path)
-                
+            table = SAX_Cine_CCs_pretty_averageCRs_averageMetrics_Table()
+            table.calculate(self.case_comparisons, view)
+            table.present_metrics()
+            table.store(os.path.join(view_folder_path, 'metrics_table_by_contour_position.csv'))
+            table.present_crs()
+            table.store(os.path.join(view_folder_path, 'crvs_and_metrics.csv'))
         except Exception as e:
             print(e)
         
