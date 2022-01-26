@@ -60,7 +60,7 @@ def get_imgs_and_annotation_paths(bp_imgs, bp_annos):
         for p in Path(case_path).glob('**/*.dcm'):
             dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
             if not hasattr(dcm, 'StudyInstanceUID'): continue
-            imgpaths_annopaths_tuples += [(case_path, os.path.join(bp_annos, dcm.StudyInstanceUID))]
+            imgpaths_annopaths_tuples += [(os.path.normpath(case_path), os.path.normpath(os.path.join(bp_annos, dcm.StudyInstanceUID)))]
             break
     return imgpaths_annopaths_tuples
 
@@ -205,7 +205,7 @@ class SAX_slice_phase_Category:
         self.set_nr_slices_phases()
         self.set_image_height_width_depth()
         self.name = 'none'
-        self.phase = None
+        self.phase = np.nan
 
     def get_sop2depthandtime(self, sop2filepath, debug=False):
         if debug: st = time()
@@ -269,12 +269,20 @@ class SAX_slice_phase_Category:
         return self.case.load_dcm(sop)
 
     def get_anno(self, slice_nr, phase_nr):
-        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        try: sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        except Exception as e:
+            print(e)
+            sop = None
         return self.case.load_anno(sop)
 
     def get_img(self, slice_nr, phase_nr, value_normalize=True, window_normalize=True):
-        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
-        return self.case.get_img(sop, value_normalize=value_normalize, window_normalize=window_normalize)
+        try:
+            sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+            img = self.case.get_img(sop, value_normalize=value_normalize, window_normalize=window_normalize)
+        except Exception as e:
+            print(e)
+            img = np.zeros((self.height, self.width))
+        return img
 
     def get_imgs_phase(self, phase_nr, value_normalize=True, window_normalize=True):
         return [self.get_img(d, phase_nr, value_normalize, window_normalize) for d in range(self.nr_slices)]
@@ -340,7 +348,7 @@ class SAX_LV_ES_Category(SAX_slice_phase_Category):
         lvpamu_vol_curve = self.get_volume_curve('lv_pamu')
         vol_curve = np.array(lvendo_vol_curve) - np.array(lvpamu_vol_curve)
         has_conts = [a!=0 for a in vol_curve]
-        if True not in has_conts: return None
+        if True not in has_conts: return np.nan
         valid_idx = np.where(vol_curve > 0)[0]
         return valid_idx[vol_curve[valid_idx].argmin()]
 
@@ -355,7 +363,7 @@ class SAX_LV_ED_Category(SAX_slice_phase_Category):
         lvpamu_vol_curve = self.get_volume_curve('lv_pamu')
         vol_curve = np.array(lvendo_vol_curve) - np.array(lvpamu_vol_curve)
         has_conts = [a!=0 for a in vol_curve]
-        if True not in has_conts: return None
+        if True not in has_conts: return np.nan
         return np.argmax(vol_curve)
 
     
@@ -370,7 +378,7 @@ class LAX_Category:
         self.set_nr_slices_phases()
         self.set_image_height_width_depth()
         self.name = 'none'
-        self.phase = None
+        self.phase = np.nan
 
     def relevant_image(self, dcm):
         return True
@@ -1884,12 +1892,29 @@ class SAX_CINE_View(View):
                               'rv_endo', 'rv_epi', 'rv_pamu', 'rv_myo']
         
         # register tabs here:
+        #import LazyLuna as ll
+        #print(ll)
+        #import LazyLuna.Guis as ll
+        #print(ll)
+        #import LazyLuna.Guis.Addable_Tabs as ll
+        #print(ll)
+        #import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab as ll
+        #print(ll)
+        #print(ll.CC_Metrics_Tab)
+
+        """
         from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                        import CC_Metrics_Tab
         from LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_Tab               import CCs_ClinicalResults_Tab
         from LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab   import CCs_Qualitative_Correlationplot_Tab
-        self.case_tabs  = {'Metrics and Figure': CC_Metrics_Tab}
-        self.stats_tabs = {'Clinical Results'  : CCs_ClinicalResults_Tab, 
-                           'Qualitative Metrics Correlation Plot' : CCs_Qualitative_Correlationplot_Tab}
+        """
+        
+        import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                      as tab1
+        import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab             as tab2
+        import LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab as tab3
+        
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab}
+        self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab, 
+                           'Qualitative Metrics Correlation Plot' : tab3.CCs_Qualitative_Correlationplot_Tab}
         
     def load_categories(self):
         self.lvcats, self.rvcats  = [SAX_LV_ES_Category, SAX_LV_ED_Category], [SAX_RV_ES_Category, SAX_RV_ED_Category]

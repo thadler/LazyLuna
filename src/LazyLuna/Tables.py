@@ -209,6 +209,7 @@ class CC_Metrics_Table(Table):
             self.df[['DSC']] = self.df[['DSC']].astype(int)
         unique_cats = self.df['category'].unique()
         print('Unique categories; ', unique_cats)
+        df = DataFrame()
         for cat_i, cat in enumerate(unique_cats):
             curr = self.df[self.df['category']==cat]
             curr = curr.rename(columns={k:cat+' '+k for k in curr.columns if k not in ['slice', 'category']})

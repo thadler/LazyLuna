@@ -54,13 +54,11 @@ class CC_Metrics_Tab(QWidget):
         self.metrics_TableView = QTableView()
         self.metrics_TableView.setModel(self.metrics_table.to_pyqt5_table_model())
         layout.addWidget(self.metrics_TableView, 1,0, 1,1)
-        
         self.annotation_comparison_figure = Annotation_Comparison()
         cat = cc.case1.categories[0]
         self.annotation_comparison_canvas = FigureCanvas(self.annotation_comparison_figure)
         self.annotation_comparison_figure.set_values(view, cc, self.annotation_comparison_canvas)
-        self.annotation_comparison_figure.visualize(0, view.get_categories(cc.case1, view.contour_names[0])[0], 
-                                                    view.contour_names[0])
+        self.annotation_comparison_figure.visualize(0, view.get_categories(cc.case1, view.contour_names[0])[0], view.contour_names[0])
         self.annotation_comparison_canvas.mpl_connect('key_press_event', self.annotation_comparison_figure.keyPressEvent)
         self.annotation_comparison_canvas.setFocusPolicy(Qt.Qt.ClickFocus)
         self.annotation_comparison_canvas.setFocus()

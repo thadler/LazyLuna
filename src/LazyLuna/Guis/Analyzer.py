@@ -100,6 +100,9 @@ class MyTabWidget(QWidget):
         if paths1==[]: return
         cases1 = [pickle.load(open(p,'rb')) for p in paths1]
         cases2 = [pickle.load(open(p,'rb')) for p in paths2]
+        case_names = set([c.case_name for c in cases1]).intersection(set([c.case_name for c in cases2]))
+        cases1 = [c for c in cases1 if c.case_name in case_names]
+        cases2 = [c for c in cases2 if c.case_name in case_names]
         cases1 = sorted(cases1, key=lambda c:c.case_name)
         cases2 = sorted(cases2, key=lambda c:c.case_name)
         self.case_comparisons = [Case_Comparison(cases1[i],cases2[i]) for i in range(len(cases1))]
