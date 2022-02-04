@@ -141,6 +141,8 @@ class Window(QtWidgets.QMainWindow):
         cases = []
         sax_cine_view = SAX_CINE_View()
         sax_cs_view   = SAX_CS_View()
+        sax_t1_view   = SAX_T1_View()
+        sax_t2_view   = SAX_T2_View()
         for imgp, annop in imgsanno_paths:
             self.ui.case_conversion_text_edit.append('Image and Annotation paths:/n'+imgp+'/n'+annop)
             if not os.path.exists(annop): 
@@ -157,6 +159,16 @@ class Window(QtWidgets.QMainWindow):
                 self.ui.case_conversion_text_edit.append('CS view worked for: '+case.case_name)
             except Exception as e: 
                 self.ui.case_conversion_text_edit.append('Failed at CS view: '+str(e))
+            try:
+                case = sax_t1_view.initialize_case(case)
+                self.ui.case_conversion_text_edit.append('T1 view worked for: '+case.case_name)
+            except Exception as e: 
+                self.ui.case_conversion_text_edit.append('Failed at T1 view: '+str(e))
+            try:
+                case = sax_t2_view.initialize_case(case)
+                self.ui.case_conversion_text_edit.append('T2 view worked for: '+case.case_name)
+            except Exception as e: 
+                self.ui.case_conversion_text_edit.append('Failed at T2 view: '+str(e))
             case.store(bp_cases)
     
     def transform_case(self):
@@ -167,6 +179,8 @@ class Window(QtWidgets.QMainWindow):
         cases = []
         sax_cine_view = SAX_CINE_View()
         sax_cs_view   = SAX_CS_View()
+        sax_t1_view   = SAX_T1_View()
+        sax_t2_view   = SAX_T2_View()
         for imgp, annop in imgsanno_paths:
             if single_imgs_path not in imgp: continue
             print('Image path: ', imgp)
@@ -182,11 +196,20 @@ class Window(QtWidgets.QMainWindow):
             except Exception as e: 
                 self.ui.case_conversion_text_edit.append('Failed at CINE view: '+str(e))
             try:
-                #case = sax_cs_view.customize_case(case)
-                case = sax_cine_view.initialize_case(case)
+                case = sax_cs_view.initialize_case(case)
                 self.ui.case_conversion_text_edit.append('CS view worked for: '+case.case_name)
             except Exception as e: 
                 self.ui.case_conversion_text_edit.append('Failed at CS view: '+str(e))
+            try:
+                case = sax_t1_view.initialize_case(case)
+                self.ui.case_conversion_text_edit.append('T1 view worked for: '+case.case_name)
+            except Exception as e: 
+                self.ui.case_conversion_text_edit.append('Failed at T1 view: '+str(e))
+            try:
+                case = sax_t2_view.initialize_case(case)
+                self.ui.case_conversion_text_edit.append('T2 view worked for: '+case.case_name)
+            except Exception as e: 
+                self.ui.case_conversion_text_edit.append('Failed at T2 view: '+str(e))
             case.store(bp_cases)
             #cases.append(case)
         

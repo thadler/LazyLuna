@@ -100,7 +100,7 @@ class CCs_Overview_Tab(QWidget):
     def set_export_storage_folder_path(self):
         dialog = QFileDialog(self.gui, '')
         dialog.setFileMode(QFileDialog.DirectoryOnly)
-        if dialog.exec_() == QDialog.Accepted:
+        if dialog.exec_()==QDialog.Accepted:
             self.export_storage_folder_path.setText(dialog.selectedFiles()[0])
     
     def store_all(self):
@@ -177,8 +177,11 @@ class CCs_Overview_Tab(QWidget):
         new_ccs = []
         for i in range(len(self.all_case_comparisons)):
             cc = copy.deepcopy(self.all_case_comparisons[i])
-            new_cc = Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2))
-            new_ccs.append(new_cc)
+            try:
+                new_cc = Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2))
+                new_ccs.append(new_cc)
+            except Exception as e:
+                print('Failed customize at: ', i, cc.case1.case_name, e)
         self.case_comparisons = new_ccs
         self.combobox_case_tab.clear(); self.combobox_case_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.case_tabs])
         self.combobox_stats_tab.clear(); self.combobox_stats_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.stats_tabs])
