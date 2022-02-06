@@ -654,7 +654,7 @@ class LAX_2CV_LAED_Category(LAX_Category):
 # Mapping Categories #
 ######################
 
-class SAX_T1_Category:
+class SAX_T1_Category(SAX_slice_phase_Category):
     def __init__(self, case, debug=False):
         self.case = case
         self.sop2depthandtime = self.get_sop2depthandtime(case.imgs_sop2filepath, debug=debug)
@@ -663,6 +663,9 @@ class SAX_T1_Category:
         self.set_image_height_width_depth()
         self.name = 'SAX T1'
         self.phase = 0
+        
+    def get_phase(self):
+        return self.phase
 
     def get_sop2depthandtime(self, sop2filepath, debug=False):
         if debug: st = time()
@@ -2577,36 +2580,7 @@ class T1AvgDiffMetric(Metric):
         if debug: print('Calculating all DSC values for ', nr_conts, ' contours took: ', time()-st, ' seconds.')
         return sopandcontname2metricval
 
-class T1AvgReader1Metric(Metric):
-    def __init__(self):
-        super().__init__()
-
-    def set_information(self):
-        self.name = 'T1AVG'
-        self.unit = '[ms]'
-
-    def get_val(self, geo, img, string=False):
-        # imgs = get_img (d,0,True,False)
-        h, w = img.shape
-        mask = CATCH_utils.to_mask(geo, h,w).astype(bool)
-        myo_vals  = img[mask]
-        global_t1 = np.mean(myo_vals)
-        m         = global_t1
-        return "{:.2f}".format(m) if string else m
-        
-    def calculate_all_vals(self, debug=False):
-        if debug: st = time(); nr_conts = 0
-        sopandcontname2metricval = dict()
-        for sop in self.get_all_sops():
-            img  = self.cc.case1.load_img(sop,True,False)
-            anno = self.cc.case1.load_anno(sop)
-            for c in anno1.contour_names:
-                if debug and (anno1.has_contour(c) or anno2.has_contour(c)): nr_conts += 1
-                sopandcontname2metricval[(sop, c)] = self.get_val(anno.get_contour(c), img)
-        if debug: print('Calculating all DSC values for ', nr_conts, ' contours took: ', time()-st, ' seconds.')
-        return sopandcontname2metricval
-    
-class T1AvgReader2Metric(Metric):
+class T1AvgReaderMetric(Metric):
     def __init__(self):
         super().__init__()
 
@@ -2656,7 +2630,19 @@ class AngleDiffMetric(Metric):
         return "{:.2f}".format(angle) if string else angle
     
 
+class T2AvgDiffMetric(T1AvgDiffMetric):
+    def __init__(self):
+        super().__init__()
+    def set_information(self):
+        self.name = 'T2AVG'
+        self.unit = '[ms]'
     
+class T2AvgReaderMetric(T1AvgReaderMetric):
+    def __init__(self):
+        super().__init__()
+    def set_information(self):
+        self.name = 'T2AVG'
+        self.unit = '[ms]'
 
 
 class SAX_CINE_analyzer:
@@ -2776,6 +2762,109 @@ class LAX_CINE_analyzer:
                     row = [case_name, reader1, reader2, sop1, sop2, cat1.name, d, nr_sl, d_perc, p1, p2, cont_name, dsc, hd, mldiff, np.abs(mldiff), has_cont1, has_cont2]
                     rows.append(row)
         columns=['case', 'reader1', 'reader2', 'sop1', 'sop2', 'category', 'slice', 'max_slices', 'depth_perc', 'phase1', 'phase2', 'contour name', 'DSC', 'HD', 'ml diff', 'abs ml diff', 'has_contour1', 'has_contour2']
+        df = pandas.DataFrame(rows, columns=columns)
+        if debug: print('pandas table took: ', time()-st)
+        self.contour_comparison_pandas_dataframe = df
+        return df
+    
+
+
+class SAX_T1_analyzer:
+    def __init__(self, cc):
+        self.cc = cc
+        self.view = SAX_T1_View()
+        self.contour_comparison_pandas_dataframe = None
+    
+    def get_case_contour_comparison_pandas_dataframe(self, fixed_phase_first_reader=False, debug=False):
+        if not self.contour_comparison_pandas_dataframe is None: return self.contour_comparison_pandas_dataframe
+        # case, reader1, reader2, sop1, sop2, category, d, nr_slices, depth_perc, p1, p2, cont_name, dsc, hd, mldiff, apic/midv/bas/outside1, apic/midv/bas/outside2, has_cont1, has_cont2
+        print('In get_case_contour_comparison_pandas_dataframe')
+        if debug: st = time()
+        rows                  = []
+        view                  = self.view
+        case1, case2          = self.cc.case1, self.cc.case2
+        case_name             = case1.case_name
+        reader1, reader2      = case1.reader_name, case2.reader_name
+        dsc_m, hd_m           = DiceMetric(), HausdorffMetric()
+        t1avg_m               = T1AvgReaderMetric()
+        t1avgdiff_m, angle_m  = T1AvgDiffMetric(), AngleDiffMetric()
+        
+        for cont_name in self.view.contour_names:
+            categories1, categories2 = view.get_categories(case1, cont_name), view.get_categories(case2, cont_name)
+            for cat1, cat2 in zip(categories1, categories2):
+                print(cat1, cat2, cat1.phase, cat2.phase)
+                if np.isnan(cat1.phase) or np.isnan(cat2.phase): continue
+                p1, p2 = (cat1.phase, cat2.phase) if not fixed_phase_first_reader else (cat1.phase, cat1.phase)
+                nr_sl  = cat1.nr_slices
+                for d in range(cat1.nr_slices):
+                    d_perc       = 1.0 * d / nr_sl
+                    sop1, sop2   = cat1.depthandtime2sop[d,p1], cat2.depthandtime2sop[d,p2]
+                    anno1, anno2 = self.cc.case1.load_anno(sop1), self.cc.case2.load_anno(sop2)
+                    cont1, cont2 = anno1.get_contour(cont_name), anno2.get_contour(cont_name)
+                    dcm1 = self.cc.case1.load_dcm(sop1)
+                    dcm2 = self.cc.case1.load_dcm(sop2)
+                    img1 = cat1.get_img(d,0, True, False)
+                    img2 = cat2.get_img(d,0, True, False)
+                    dsc      = dsc_m   .get_val(cont1, cont2, dcm1)
+                    hd       = hd_m    .get_val(cont1, cont2, dcm1)
+                    t11, t12 = t1avg_m.get_val(cont1, img1), t1avg_m.get_val(cont2, img2)
+                    t1_diff  = t1avgdiff_m.get_val(cont1, cont2, img1, img2)
+                    angle_d  = angle_m.get_val(anno1, anno2)
+                    has_cont1, has_cont2     = anno1.has_contour(cont_name), anno2.has_contour(cont_name)
+                    row = [case_name, reader1, reader2, sop1, sop2, cat1.name, d, nr_sl, d_perc, p1, p2, cont_name, dsc, hd, t11, t12, t1_diff, angle_d, has_cont1, has_cont2]
+                    rows.append(row)
+        columns=['case', 'reader1', 'reader2', 'sop1', 'sop2', 'category', 'slice', 'max_slices', 'depth_perc', 'phase1', 'phase2', 'contour name', 'DSC', 'HD', 'T1_R1', 'T1_R2', 'T1_Diff', 'Angle_Diff', 'has_contour1', 'has_contour2']
+        df = pandas.DataFrame(rows, columns=columns)
+        if debug: print('pandas table took: ', time()-st)
+        self.contour_comparison_pandas_dataframe = df
+        return df
+    
+    
+class SAX_T2_analyzer:
+    def __init__(self, cc):
+        self.cc = cc
+        self.view = SAX_T2_View()
+        self.contour_comparison_pandas_dataframe = None
+    
+    def get_case_contour_comparison_pandas_dataframe(self, fixed_phase_first_reader=False, debug=False):
+        if not self.contour_comparison_pandas_dataframe is None: return self.contour_comparison_pandas_dataframe
+        # case, reader1, reader2, sop1, sop2, category, d, nr_slices, depth_perc, p1, p2, cont_name, dsc, hd, mldiff, apic/midv/bas/outside1, apic/midv/bas/outside2, has_cont1, has_cont2
+        print('In get_case_contour_comparison_pandas_dataframe')
+        if debug: st = time()
+        rows                  = []
+        view                  = self.view
+        case1, case2          = self.cc.case1, self.cc.case2
+        case_name             = case1.case_name
+        reader1, reader2      = case1.reader_name, case2.reader_name
+        dsc_m, hd_m           = DiceMetric(), HausdorffMetric()
+        t2avg_m               = T2AvgReaderMetric()
+        t2avgdiff_m, angle_m  = T2AvgDiffMetric(), AngleDiffMetric()
+        
+        for cont_name in self.view.contour_names:
+            categories1, categories2 = view.get_categories(case1, cont_name), view.get_categories(case2, cont_name)
+            for cat1, cat2 in zip(categories1, categories2):
+                print(cat1, cat2, cat1.phase, cat2.phase)
+                if np.isnan(cat1.phase) or np.isnan(cat2.phase): continue
+                p1, p2 = (cat1.phase, cat2.phase) if not fixed_phase_first_reader else (cat1.phase, cat1.phase)
+                nr_sl  = cat1.nr_slices
+                for d in range(cat1.nr_slices):
+                    d_perc       = 1.0 * d / nr_sl
+                    sop1, sop2   = cat1.depthandtime2sop[d,p1], cat2.depthandtime2sop[d,p2]
+                    anno1, anno2 = self.cc.case1.load_anno(sop1), self.cc.case2.load_anno(sop2)
+                    cont1, cont2 = anno1.get_contour(cont_name), anno2.get_contour(cont_name)
+                    dcm1 = self.cc.case1.load_dcm(sop1)
+                    dcm2 = self.cc.case1.load_dcm(sop2)
+                    img1 = cat1.get_img(d,0, True, False)
+                    img2 = cat2.get_img(d,0, True, False)
+                    dsc      = dsc_m   .get_val(cont1, cont2, dcm1)
+                    hd       = hd_m    .get_val(cont1, cont2, dcm1)
+                    t21, t22 = t2avg_m.get_val(cont1, img1), t2avg_m.get_val(cont2, img2)
+                    t2_diff  = t2avgdiff_m.get_val(cont1, cont2, img1, img2)
+                    angle_d  = angle_m.get_val(anno1, anno2)
+                    has_cont1, has_cont2     = anno1.has_contour(cont_name), anno2.has_contour(cont_name)
+                    row = [case_name, reader1, reader2, sop1, sop2, cat1.name, d, nr_sl, d_perc, p1, p2, cont_name, dsc, hd, t21, t22, t2_diff, angle_d, has_cont1, has_cont2]
+                    rows.append(row)
+        columns=['case', 'reader1', 'reader2', 'sop1', 'sop2', 'category', 'slice', 'max_slices', 'depth_perc', 'phase1', 'phase2', 'contour name', 'DSC', 'HD', 'T2_R1', 'T2_R2', 'T2_Diff', 'Angle_Diff', 'has_contour1', 'has_contour2']
         df = pandas.DataFrame(rows, columns=columns)
         if debug: print('pandas table took: ', time()-st)
         self.contour_comparison_pandas_dataframe = df
