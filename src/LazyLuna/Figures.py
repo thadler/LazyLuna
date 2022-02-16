@@ -150,6 +150,7 @@ class SAX_Candlelight(Visualization):
         self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
 
 
+
 class Annotation_Comparison(Visualization):
     def set_values(self, view, cc, canvas):
         self.cc     = cc
@@ -207,6 +208,157 @@ class Annotation_Comparison(Visualization):
         if event.key == 'left' : category = categories[(idx-1)%len(categories)]
         if event.key == 'right': category = categories[(idx+1)%len(categories)]
         self.visualize(slice_nr, category, contour_name)
+
+
+class Basic_Presenter(Visualization):
+    def set_values(self, view, cc, canvas):
+        self.cc     = cc
+        self.view   = view
+        self.canvas = canvas
+        self.add_annotation = True
+    
+    def visualize(self, slice_nr, category, debug=False):
+        if debug: print('Start'); st = time()
+        self.clear()
+        self.slice_nr, self.category = slice_nr, category
+        cat1, cat2 = self.cc.get_categories_by_example(category)
+        spec = gridspec.GridSpec(nrows=1, ncols=4, figure=self, hspace=0.0)
+        ax1  = self.add_subplot(spec[0,0])
+        ax2  = self.add_subplot(spec[0,1], sharex=ax1, sharey=ax1)
+        ax3  = self.add_subplot(spec[0,2], sharex=ax1, sharey=ax1)
+        ax4  = self.add_subplot(spec[0,3], sharex=ax1, sharey=ax1)
+        img1  = cat1.get_img (slice_nr, cat1.get_phase())
+        img2  = cat2.get_img (slice_nr, cat2.get_phase())
+        anno1 = cat1.get_anno(slice_nr, cat1.get_phase())
+        anno2 = cat2.get_anno(slice_nr, cat2.get_phase())
+        h, w  = img1.shape
+        extent=(0, w, h, 0)
+        ax1.imshow(img1,'gray', extent=extent); ax2.imshow(img1,'gray', extent=extent)
+        ax3.imshow(img2,'gray', extent=extent); ax4.imshow(img2,'gray', extent=extent)
+        self.suptitle('Category: ' + cat1.name + ', slice: ' + str(slice_nr))
+        if self.add_annotation:
+            anno1.plot_all_contour_outlines(ax2) # looks like overlooked slices when different phases for RV and LV
+            anno2.plot_all_contour_outlines(ax3)
+            anno1.plot_all_points(ax2)
+            anno2.plot_all_points(ax3)
+        for ax in [ax1, ax2, ax3, ax4]: ax.set_xticks([]); ax.set_yticks([])
+        d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
+        
+        self.tight_layout()
+        self.canvas.draw()
+        self.canvas.flush_events()
+        if debug: print('Took: ', time()-st)
+        
+    def keyPressEvent(self, event):
+        slice_nr, category = self.slice_nr, self.category
+        categories = self.cc.case1.categories
+        idx = categories.index(category)
+        if event.key == 'shift': self.add_annotation = not self.add_annotation
+        if event.key == 'up'   : slice_nr = (slice_nr-1) % category.nr_slices
+        if event.key == 'down' : slice_nr = (slice_nr+1) % category.nr_slices
+        if event.key == 'left' : category = categories[(idx-1)%len(categories)]
+        if event.key == 'right': category = categories[(idx+1)%len(categories)]
+        print('In key press: ', slice_nr, category)
+        self.visualize(slice_nr, category)
+
+
+class Angle_Segment_Comparison(Visualization):
+    def set_values(self, view, cc, canvas):
+        self.cc     = cc
+        self.view   = view
+        self.canvas = canvas
+        self.switch_to_image = False
+    
+    def visualize(self, d, category, nr_segments, byreader=None):
+        self.clear()
+        r1, r2 = self.cc.case1.reader_name, self.cc.case2.reader_name
+        self.d,           self.category = d,           category
+        self.nr_segments, self.byreader = nr_segments, byreader
+        cat1,  cat2  = self.cc.get_categories_by_example(category)
+        img1,  img2  = cat1.get_img (d,0, True, False), cat2.get_img (d,0, True, False)
+        anno1, anno2 = cat1.get_anno(d,0), cat2.get_anno(d,0)
+        
+        axes = self.subplots(1, 3)
+        self.suptitle('Slice '+str(d))
+        for i in range(3): axes[i].set_title([r1,r1+'-'+r2,r2][i])
+        
+        if not self.switch_to_image:
+            refpoint = None
+            if byreader is not None: refpoint = anno1.get_point('sacardialRefPoint') if byreader==1 else anno2.get_point('sacardialRefPoint')
+            myo_vals1 = anno1.get_myo_mask_by_angles(img1, nr_segments, refpoint)
+            myo_vals2 = anno2.get_myo_mask_by_angles(img2, nr_segments, refpoint)
+            # make vals to pandas table
+            rows = []
+            for k in myo_vals1.keys():
+                for v in myo_vals1[k]:
+                    row = ['R1', '('+str(int(np.round(k[0])))+'°, '+str(int(np.round(k[1])))+'°)', v]
+                    rows.append(row)
+                for v in myo_vals2[k]:
+                    row = ['R2', '('+str(int(np.round(k[0])))+'°, '+str(int(np.round(k[1])))+'°)', v]
+                    rows.append(row)
+                row = ['R1-R2', '('+str(int(np.round(k[0])))+'°, '+str(int(np.round(k[1])))+'°)', np.mean(myo_vals1[k])-np.mean(myo_vals2[k])]
+                rows.append(row)
+            columns = ['Reader', 'Angle Bins', 'Value']
+            df = pandas.DataFrame(rows, columns=columns)
+            custom_palette  = sns.color_palette([sns.color_palette("Blues")[3], sns.color_palette("Purples")[3]])
+            sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R1'],   ax=axes[0], capsize=.2, palette=custom_palette)
+            sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R1-R2'],ax=axes[1], capsize=.2, palette=custom_palette)
+            sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R2'],   ax=axes[2], capsize=.2, palette=custom_palette)
+            ymax = df['Value'].mean() + df['Value'].std()*2
+            axes[0].set_ylim([0, ymax]); axes[0].tick_params(rotation=45)
+            axes[2].set_ylim([0, ymax]); axes[2].tick_params(rotation=45)
+            ymin = df[df['Reader']=='R1-R2']['Value'].min()
+            ymax = df[df['Reader']=='R1-R2']['Value'].max()
+            ymin, ymax = min(ymin, -ymax)*1.05, max(-ymin, ymax)*1.05
+            axes[1].tick_params(rotation=45)
+            axes[1].set_ylim([ymin, ymax])
+            textstr = 'Angle [°] counterclockwise from\n'#the reference point.'
+            if byreader is None: textstr += "each reader's reference point."
+            if byreader == 1   : textstr += r1+"'s reference point."
+            if byreader == 2   : textstr += r2+"'s reference point."
+            props = dict(boxstyle='round', facecolor='w', alpha=0.5)
+            axes[2].text(0.05, 0.05, textstr, transform=axes[2].transAxes, fontsize=10,
+            verticalalignment='bottom', bbox=props)
+        
+        else:
+            h, w  = img1.shape; extent=(0, w, h, 0)
+            for j in range(3): axes[j].imshow(img1,'gray', extent=extent); axes[j].axis('off')
+            b   = 15
+            bb1 = anno1.get_contour('lv_myo').envelope; bb2 = anno2.get_contour('lv_myo').envelope
+            bb  = bb1 if hasattr(bb1, 'exterior') else bb2
+            if hasattr(bb, 'exterior'):
+                x, y = np.array(bb.exterior.xy)
+                lx, ly, ux, uy = x.min()-b-5, y.min()-b, x.max()+b, y.max()+b
+                for ax in axes: ax.set_xlim([lx, ux]); ax.set_ylim([ly, uy]); ax.invert_yaxis()
+            anno1.plot_all_contour_outlines(axes[0])
+            anno1.plot_cont_comparison(axes[1], anno2, 'lv_myo')
+            anno2.plot_all_contour_outlines(axes[2])
+            if byreader is None:
+                anno1.plot_point(axes[0], 'sacardialRefPoint')
+                anno2.plot_point(axes[2], 'sacardialRefPoint')
+            elif byreader == 1:
+                for j in [0,2]: anno1.plot_point(axes[j], 'sacardialRefPoint')
+            elif byreader == 2:
+                for j in [0,2]: anno2.plot_point(axes[j], 'sacardialRefPoint')
+        
+        self.tight_layout()
+        self.canvas.draw()
+        self.canvas.flush_events()
+        
+    def keyPressEvent(self, event):
+        d, category = self.d, self.category
+        categories = self.cc.case1.categories
+        idx = categories.index(category)
+        if event.key == 'shift': self.switch_to_image = not self.switch_to_image
+        if event.key == 'up'   : d = (d-1) % category.nr_slices
+        if event.key == 'down' : d = (d+1) % category.nr_slices
+        if event.key == 'left' : category = categories[(idx-1)%len(categories)]
+        if event.key == 'right': category = categories[(idx+1)%len(categories)]
+        #print('In key press: ', d, category, self.nr_segments, self.byreader)
+        self.visualize(d, category, self.nr_segments, self.byreader)
+
+
+        
         
 ##########################################################################################
 ##########################################################################################
@@ -281,7 +433,7 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
             print(figname)
             self.visualize(cc, slice_nr, category, contour_name)
             self.savefig(os.path.join(storepath, figname+'.png'), dpi=100, facecolor="#FFFFFF")
-        
+    
         
 class BlandAltman(Visualization):
     def set_view(self, view):
@@ -562,8 +714,6 @@ class QQPlot(Visualization):
         df = DataFrame(rows, columns=['Reader', cr_name+' difference'])
 
         # Plot
-        #qqplot(df[cr_name+' difference'].to_numpy(), ax=ax, line='45')
-        
         probplot(df[cr_name+' difference'].to_numpy(), dist="norm", plot=ax)
         
         ax.set_title(cr_name+' QQplot', fontsize=14)

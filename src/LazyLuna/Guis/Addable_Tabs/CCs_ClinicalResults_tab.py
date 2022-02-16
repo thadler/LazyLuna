@@ -52,15 +52,6 @@ class CCs_ClinicalResults_Tab(QWidget):
         layout.addWidget(self.qq_canvas,  2,0, 1,1)
         layout.addWidget(self.qq_toolbar, 3,0, 1,1)
         
-        #self.bp = Boxplot()
-        #self.bp_canvas = FigureCanvas(self.bp)
-        #self.bp.set_view(view); self.bp.set_canvas(self.bp_canvas); self.bp.set_gui(gui)
-        #self.bp_canvas.setFocusPolicy(Qt.Qt.ClickFocus)
-        #self.bp_canvas.setFocus()
-        #self.bp_toolbar = NavigationToolbar(self.bp_canvas, gui)
-        #layout.addWidget(self.bp_canvas,  0,1, 1,1)
-        #layout.addWidget(self.bp_toolbar, 1,1, 1,1)
-        
         self.pair = PairedBoxplot()
         self.pair_canvas = FigureCanvas(self.pair)
         self.pair.set_view(view); self.pair.set_canvas(self.pair_canvas); self.pair.set_gui(gui)

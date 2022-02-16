@@ -3,7 +3,6 @@ from pathlib import Path
 from time import time
 from operator import itemgetter
 import pickle
-import pandas
 from uuid import uuid4
 import pydicom
 import matplotlib.pyplot as plt
@@ -142,20 +141,6 @@ class SAX_CINE_Annotation(Annotation):
         self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
         self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
 
-        
-class SAX_LGE_Annotation(Annotation):
-    def __init__(self, sop, filepath):
-        super().__init__(sop, filepath)
-
-    def set_information(self):
-        self.name = 'SAX CINE Annotation'
-        self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo',
-                              'excludeEnhancementAreaContour',
-                             'saEnhancementReferenceMyoContour']
-        self.point_names   = ['sacardialRefPoint']
-        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
-        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
-
 
 class LAX_CINE_Annotation(Annotation):
     def __init__(self, sop, filepath):
@@ -200,17 +185,57 @@ class SAX_T1_Annotation(Annotation):
         self.name = 'SAX T1 Annotation'
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo']
         self.point_names   = ['sacardialRefPoint']
-        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
+        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)
         self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
-        
-    def get_myo_mask(self, img=None):
-        h, w = (self.h, self.w) if img is None else img.shape
-        mask = CATCH_utils.to_mask(self.get_contour('lv_myo'),h,w).astype(bool)
-        return mask
     
     def get_myo_vals(self, img):
         mask = self.get_myo_mask(img)
         return img[mask]
+    
+    def get_angle_mask_to_middle_point(self, h, w):
+        p = self.get_contour('lv_endo').centroid
+        x,y = p.x, p.y
+        mask = np.zeros((h,w,3))
+        for i in range(h): mask[i,:,0] = i
+        for j in range(w): mask[:,j,1] = j
+        mask[:,:,0] -= y
+        mask[:,:,1] -= x
+        mask[:,:,2]  = np.sqrt(mask[:,:,0]**2+mask[:,:,1]**2) + 10**-9
+        angle_img = np.zeros((h,w))
+        angle_img[:int(y),int(x):] = np.arccos(mask[:int(y),int(x):,1] / mask[:int(y),int(x):,2]) * 180/np.pi
+        angle_img[:int(y),:int(x)] = np.arcsin(np.abs(mask[:int(y),:int(x),1]) / mask[:int(y),:int(x),2]) * 180/np.pi +90
+        angle_img[int(y):,:int(x)] = np.arccos(np.abs(mask[int(y):,:int(x),1]) / mask[int(y):,:int(x),2]) * 180/np.pi + 180
+        angle_img[int(y):,int(x):] = np.arcsin(mask[int(y):,int(x):,1] / mask[int(y):,int(x):,2]) * 180/np.pi + 270
+        return angle_img
+
+    def get_angle_mask_to_middle_point_by_reference_point(self, h, w, refpoint=None):
+        angle_mask = self.get_angle_mask_to_middle_point(h, w)
+        angle      = self.get_reference_angle(refpoint)
+        angle_mask = angle_mask - angle
+        angle_mask = angle_mask % 360
+        return angle_mask
+
+    def get_reference_angle(self, refpoint=None):
+        mp = self.get_contour('lv_endo').centroid
+        rp = self.get_point('sacardialRefPoint') if refpoint is None else refpoint
+        v1 = np.array([rp.x-mp.x, rp.y-mp.y])
+        v2 = np.array([1,0])
+        v1_u = v1 / np.linalg.norm(v1)
+        v2_u = v2 / np.linalg.norm(v2)
+        angle = np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))*180/np.pi
+        return angle
+
+    def get_myo_mask_by_angles(self, img, nr_bins=6, refpoint=None):
+        h, w       = img.shape
+        myo_mask   = self.get_cont_as_mask('lv_myo', h, w)
+        angle_mask = self.get_angle_mask_to_middle_point_by_reference_point(h, w, refpoint)
+        bins       = [i*360/nr_bins for i in range(0, nr_bins+1)]
+        bin_dict   = dict()
+        for i in range(nr_bins):
+            low, high = bins[i], bins[i+1]
+            vals = img[(low<=angle_mask) & (angle_mask<high) & (myo_mask!=0)]
+            bin_dict[(low, high)] = vals
+        return bin_dict
 
 
 class SAX_T2_Annotation(SAX_T1_Annotation):
@@ -221,6 +246,19 @@ class SAX_T2_Annotation(SAX_T1_Annotation):
         super().set_information()
         self.name = 'SAX T2 Annotation'
 
+
+class SAX_LGE_Annotation(SAX_T1_Annotation):
+    def __init__(self, sop, filepath):
+        super().__init__(sop, filepath)
+
+    def set_information(self):
+        self.name = 'SAX CINE Annotation'
+        self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo',
+                              'excludeEnhancementAreaContour',
+                             'saEnhancementReferenceMyoContour']
+        self.point_names   = ['sacardialRefPoint']
+        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
+        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
 
         
         
@@ -2081,8 +2119,9 @@ class SAX_CINE_View(View):
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                      as tab1
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab             as tab2
         import LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab as tab3
+        import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab                     as tab4
         
-        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab}
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab}
         self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab, 
                            'Qualitative Metrics Correlation Plot' : tab3.CCs_Qualitative_Correlationplot_Tab}
         
@@ -2212,7 +2251,9 @@ class LAX_CINE_View(View):
         """
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab          as tab1
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab as tab2
-        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab}
+        import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
+        
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab}
         self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
         
     def load_categories(self):
@@ -2319,7 +2360,10 @@ class SAX_T1_View(View):
         # register tabs here:
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab          as tab1
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab as tab2
-        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab}
+        import LazyLuna.Guis.Addable_Tabs.CC_Angle_Segments_Tab   as tab3
+        import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
+        
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 'T1 Angle Comparison': tab3.CC_Angle_Segments_Tab}
         self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
         
     def load_categories(self):
@@ -2351,8 +2395,9 @@ class SAX_T1_View(View):
         return case
     
     def customize_case(self, case, debug=False):
-        print('starting customize t1: ', case.case_name)
-        if debug: st=time()
+        if debug:
+            print('starting customize t1: ', case.case_name)
+            st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T1']
         # attach annotation type
@@ -2371,8 +2416,9 @@ class SAX_T1_View(View):
         case.attach_clinical_results([SAXMap_GLOBALT1, NR_SLICES])
         # set new type
         case.type = 'SAX T1'
-        if debug: print('Customization in SAX T1 view took: ', time()-st)
-        print('ending customize: ', case.case_name)
+        if debug: 
+            print('Customization in SAX T1 view took: ', time()-st)
+            print('ending customize: ', case.case_name)
         return case
 
 class SAX_T2_View(View):
@@ -2387,7 +2433,9 @@ class SAX_T2_View(View):
         # register tabs here:
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab          as tab1
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab as tab2
-        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab}
+        import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
+        
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab}
         self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
         
     def load_categories(self):
