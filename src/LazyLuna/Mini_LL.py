@@ -10,6 +10,7 @@ import numpy as np
 from shapely.geometry import Polygon, MultiPolygon, LineString, GeometryCollection, Point, MultiPoint
 from LazyLuna import CATCH_utils
 from shapely.affinity import translate, scale
+import pandas
 
 ###########
 # Loaders #
@@ -189,8 +190,9 @@ class SAX_T1_Annotation(Annotation):
         self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
     
     def get_myo_vals(self, img):
-        mask = self.get_myo_mask(img)
-        return img[mask]
+        h, w = img.shape
+        mask = self.get_cont_as_mask('lv_myo', h, w)
+        return img[np.where(mask!=0)]
     
     def get_angle_mask_to_middle_point(self, h, w):
         p = self.get_contour('lv_endo').centroid
@@ -806,6 +808,116 @@ class SAX_T1_Category(SAX_slice_phase_Category):
             pixel_depth = self.spacing_between_slices
             vol += (areas[d] + areas[d+1])/2 * pixel_depth
         return vol / 1000.0
+    
+    def lax_points(self):
+        self.lax_sop_fps = []
+        for sop, fp in self.case.annos_sop2filepath.items():
+            anno = LAX_CINE_Annotation(sop, fp)
+            if anno.has_point('lv_lax_extent'):
+                self.lax_sop_fps.append((sop, fp, anno, self.get_lax_image(sop)))
+    
+    def get_lax_image(self, sop):
+        for k in self.case.all_imgs_sop2filepath:
+            if sop in self.case.all_imgs_sop2filepath[k].keys():
+                return pydicom.dcmread(self.case.all_imgs_sop2filepath[k][sop], stop_before_pixels=False)
+            
+    def get_slice_distances_to_extent_points(self):
+        if hasattr(self, 'mindists_slices_lax_extpoint'):
+            return self.mindists_slices_lax_extpoint
+        if not hasattr(self, 'lax_sop_fps'): self.lax_points()
+        if not hasattr(self, 'lax_sop_fps'):
+            print('No extent points in lax images')
+            return None
+        lax_dcm      = self.lax_sop_fps[0][3]
+        lax_h, lax_w = lax_dcm.pixel_array.shape
+        lax_anno     = self.lax_sop_fps[0][2]
+        p1, p2, p3 = [[lax_anno.get_point('lv_lax_extent')[i].y, lax_anno.get_point('lv_lax_extent')[i].x] for i in range(3)]
+        extpoints_rcs = CATCH_utils.transform_ics_to_rcs(lax_dcm, np.array([p1, p2, p3]))
+        ext_st  = (extpoints_rcs[0] + extpoints_rcs[1])/2.0
+        ext_end = extpoints_rcs[2]
+        base_center = ext_st + 1/6 * (ext_end - ext_st)
+        midv_center = ext_st + 3/6 * (ext_end - ext_st)
+        apex_center = ext_st + 5/6 * (ext_end - ext_st)
+        minimal_distances = []
+        for d in range(self.nr_slices):
+            dcm    = self.get_dcm(d,0)
+            img    = self.get_img(d,0,True,True)
+            h, w   = img.shape
+            mesh   = np.meshgrid(np.arange(w), np.arange(h))
+            idxs   = np.stack((mesh[0].flatten(), mesh[1].flatten())).T
+            points = CATCH_utils.transform_ics_to_rcs(dcm, idxs)
+            dists_base = np.linalg.norm(np.subtract(points, base_center), axis=1)
+            dists_midv = np.linalg.norm(np.subtract(points, midv_center), axis=1)
+            dists_apex = np.linalg.norm(np.subtract(points, apex_center), axis=1)
+            minimal_distances.append([np.min(dists_base), np.min(dists_midv), 
+                                      np.min(dists_apex)])
+        self.mindists_slices_lax_extpoint = np.asarray(minimal_distances)
+        return self.mindists_slices_lax_extpoint
+    
+    def calc_mapping_aha_model(self):
+        # returns means and stds
+        if self.nr_slices == 1:
+            print('AHA assuming single midv slice.')
+            img, anno = self.get_img(0,0,True,False), self.get_anno(0,0)
+            m = anno.get_myo_mask_by_angles(img, nr_bins=6)
+            m_m = np.asarray([np.mean(v) for v in b.values()])
+            m_s = np.asarray([np.std(v) for v in b.values()])
+            return ([np.full(6,np.nan), np.roll(m_m,1), np.full(4,np.nan)],
+                    [np.full(6,np.nan), np.roll(m_s,1), np.full(4,np.nan)])
+        
+        if self.nr_slices == 3:
+            # assume 3 of 5 so: 0:base, 1:midv, 2:apex
+            print('AHA as three individual slices.')
+            img, anno = self.get_img(0,0,True,False), self.get_anno(0,0)
+            b = anno.get_myo_mask_by_angles(img, nr_bins=6)
+            b_m = np.asarray([np.mean(v) for v in b.values()])
+            b_s = np.asarray([np.std(v) for v in b.values()])
+            img, anno = self.get_img(1,0,True,False), self.get_anno(1,0)
+            m = anno.get_myo_mask_by_angles(img, nr_bins=6)
+            m_m = np.asarray([np.mean(v) for v in m.values()])
+            m_s = np.asarray([np.std(v) for v in m.values()])
+            img, anno = self.get_img(2,0,True,False), self.get_anno(2,0)
+            a = anno.get_myo_mask_by_angles(img, nr_bins=4)
+            a_m = np.asarray([np.mean(v) for v in a.values()])
+            a_s = np.asarray([np.std(v) for v in a.values()])
+            return ([np.roll(b_m,1),np.roll(m_m,1),np.roll(a_m,1)],
+                    [np.roll(b_s,1),np.roll(m_s,1),np.roll(a_s,1)])
+        
+        # else nr slices > 3 OR nr slices == 2
+        min_dists = self.get_slice_distances_to_extent_points()
+        if min_dists is None: 
+            print('No extent & apical points in long axis views. No AHA possible.')
+            return [np.full(6,np.nan), np.full(6,np.nan), np.full(4,np.nan)]
+        idxs      = np.argmin(min_dists, axis=1)
+        weights   = [1/x if x!=0 else np.nan for x in np.bincount(idxs)]
+        means = [np.zeros(6) if 0 in idxs else np.full(6,np.nan),
+                 np.zeros(6) if 1 in idxs else np.full(6,np.nan),
+                 np.zeros(4) if 2 in idxs else np.full(4,np.nan)]
+        stds  = [np.zeros(6) if 0 in idxs else np.full(6,np.nan),
+                 np.zeros(6) if 1 in idxs else np.full(6,np.nan),
+                 np.zeros(4) if 2 in idxs else np.full(4,np.nan)]
+        # get all vals for individual slices
+        vals_by_slice = dict()
+        for d, idx in enumerate(idxs):
+            nr_bins = 4 if idx==2 else 6
+            img, anno = self.get_img(d,0,True,False), self.get_anno(d,0)
+            vals = anno.get_myo_mask_by_angles(img, nr_bins=nr_bins)
+            vals_by_slice[d] = vals
+        # concatenate by indexes
+        vals_by_idx = dict()
+        for d, idx in enumerate(idxs):
+            if idx not in vals_by_idx.keys():
+                vals_by_idx[idx] = vals_by_slice[d]
+            else:
+                for k in vals_by_slice[d].keys():
+                    vals_by_idx[idx][k] = np.append(vals_by_idx[idx][k], vals_by_slice[d][k])
+        # vals by index to arrays
+        for idx in set(idxs):
+            means[idx] = np.asarray([np.mean(v) for v in vals_by_idx[idx].values()])
+            stds [idx] = np.asarray([np.std(v)  for v in vals_by_idx[idx].values()])
+        print('AHA via extent & apical points in long axis view.')
+        return ([np.roll(r,1) for r in means],[np.roll(r,1) for r in stds])
+    
     
 class SAX_T2_Category(SAX_T1_Category):
     def __init__(self, case, debug=False):
@@ -2362,8 +2474,9 @@ class SAX_T1_View(View):
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab as tab2
         import LazyLuna.Guis.Addable_Tabs.CC_Angle_Segments_Tab   as tab3
         import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
+        import LazyLuna.Guis.Addable_Tabs.CC_AHA_Tab              as tab5
         
-        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 'T1 Angle Comparison': tab3.CC_Angle_Segments_Tab}
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 'T1 Angle Comparison': tab3.CC_Angle_Segments_Tab, 'AHA Model' : tab5.CC_AHA_Tab}
         self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
         
     def load_categories(self):
@@ -2433,9 +2546,10 @@ class SAX_T2_View(View):
         # register tabs here:
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab          as tab1
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab as tab2
+        import LazyLuna.Guis.Addable_Tabs.CC_Angle_Segments_Tab   as tab3
         import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
         
-        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab}
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 'T2 Angle Comparison': tab3.CC_Angle_Segments_Tab}
         self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
         
     def load_categories(self):

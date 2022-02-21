@@ -201,3 +201,36 @@ def plot_points(ax, points, c='w', marker='x'):
         return
     xs, ys = [point.x for point in points], [point.y for point in points]
     ax.scatter(xs, ys, c='w', marker='x')
+    
+    
+##############################
+## Spatial Dicom Operations ##
+##############################
+def transform_ics_to_rcs(dcm, arr_points=None):
+    '''
+    ics = image coordinate system (tupel of x-, y-values in units of pixel in dicom pixel data x = column, y = row)
+    rcs = reference coordinate system (standard to store points in dicom tags)
+    Function to transform ics -> rcs in dependence of arr_points
+    :param dcm: object - pydicom object
+    :param arr_points: array - nx2 array with x and y values (units of pixels) of the points in the dicom image plane for conversion points to
+    :return: list of lists - 1 x n x 3
+    '''
+    # conversion as described in https://dicom.innolitics.com/ciods/rt-dose/roi-contour/30060039/30060040/30060050
+    # modified for inversion purpose: P = Mx + S / x = M^-1(P-S)
+    matrix = np.zeros((3, 3))
+    # read in relevant dicom tags
+    image_position   = np.asarray(dcm[0x0020, 0x0032].value, np.double)
+    direction_cosine = np.asarray(dcm[0x0020, 0x0037].value, np.double)
+    pixel_spacing    = np.asarray(dcm[0x0028, 0x0030].value, np.double)
+    # create the matrix
+    matrix[:3,0] = direction_cosine[:3]
+    matrix[:3,1] = direction_cosine[3:6]
+    orthogonal   = np.cross(direction_cosine[0:3], direction_cosine[3:])
+    matrix[:3,2] = orthogonal / np.linalg.norm(orthogonal)
+    # ics -> rcs
+    vector = np.zeros((arr_points.shape[0], 3))
+    vector[:, 1] = arr_points[:, 0] * pixel_spacing[0]
+    vector[:, 0] = arr_points[:, 1] * pixel_spacing[1]
+    product = np.transpose(np.dot(matrix, np.transpose(vector))) # x y z 1
+    product = np.add(product[:, 0:3], image_position.reshape((1, 3)))
+    return product
