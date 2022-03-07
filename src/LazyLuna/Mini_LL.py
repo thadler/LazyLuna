@@ -121,9 +121,8 @@ class Annotation:
 
     def get_cont_as_mask(self, cont_name, h, w):
         if not self.has_contour(cont_name): return np.zeros((h,w))
-        mp = MultiPolygon([self.get_contour(cont_name)])
-        # TODO belongs in the contours
-        mp = translate(mp, xoff=0.5, yoff=0.5)
+        mp = self.get_contour(cont_name)
+        if not mp.geom_type=='MultiPolygon': mp = MultiPolygon([mp])
         return CATCH_utils.to_mask(mp, h, w)
 
     def get_pixel_size(self):
@@ -139,7 +138,7 @@ class SAX_CINE_Annotation(Annotation):
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo', 'lv_pamu',
                               'rv_endo', 'rv_epi', 'rv_myo', 'rv_pamu']
         self.point_names   = ['sacardialRefPoint']
-        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
+        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)
         self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
 
 
@@ -249,19 +248,61 @@ class SAX_T2_Annotation(SAX_T1_Annotation):
         self.name = 'SAX T2 Annotation'
 
 
-class SAX_LGE_Annotation(SAX_T1_Annotation):
+class SAX_LGE_Annotation(Annotation):
     def __init__(self, sop, filepath):
         super().__init__(sop, filepath)
 
     def set_information(self):
-        self.name = 'SAX CINE Annotation'
+        self.name = 'SAX LGE Annotation'
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo',
                               'excludeEnhancementAreaContour',
-                             'saEnhancementReferenceMyoContour']
+                              'saEnhancementReferenceMyoContour',
+                              'scar_fwhm', 'scar_fwhm_excluded_area', 
+                             'scar', 'noreflow']
         self.point_names   = ['sacardialRefPoint']
         self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
         self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
 
+    def add_fwhm_scar(self, img, exclude=True, normalize_myocardium=True):
+        if not self.has_contour('saEnhancementReferenceMyoContour'): return
+        h, w  = img.shape
+        cont  = self.get_contour('saEnhancementReferenceMyoContour')
+        mask  = to_mask(cont, h, w)
+        self.scar_max = img[np.where(mask!=0)].max()
+        #threshold = myoMinimum + (myoMax-Min) / 2
+        thresh = self.scar_max/2.0
+        if normalize_myocardium:
+            mask      = to_mask(self.get_contour('lv_myo'), h, w)
+            lvmyo_min = img[np.where(mask!=0)].min()
+            thresh    = lvmyo_min + (self.scar_max - lvmyo_min)/2.0
+            #print('Possible threshs: ', self.scar_max/2.0, thresh)
+        cont = to_polygon((img>thresh).astype(np.int16))
+        cont = cont.intersection(self.get_contour('lv_myo'))
+        if exclude: cont = cont.difference(self.get_contour('excludeEnhancementAreaContour'))
+        cont = geometry_collection_to_Polygon(cont)
+        cont_name = 'scar_fwhm' + ('_excluded_area' if exclude else '')
+        self.anno[cont_name] = {'cont':cont, 'contType':'FREE', 'subpixelResolution': scale}
+        self.contour_names += [cont_name]
+            
+    def add_fwhm_scar_other_slice(self, img, other_anno, exclude=True, normalize_myocardium=True):
+        h, w  = img.shape
+        self.scar_max    = other_anno.scar_max
+        #threshold = myoMinimum + (myoMax-Min) / 2
+        thresh = self.scar_max/2.0
+        if normalize_myocardium and self.has_contour('lv_myo'):
+            mask      = to_mask(self.get_contour('lv_myo'), h, w)
+            lvmyo_min = img[np.where(mask!=0)].min()
+            lvmyo_max = img[np.where(mask!=0)].max()
+            thresh    = lvmyo_min + (self.scar_max - lvmyo_min)/2.0
+            #print('Possible threshs other slice: ', self.scar_max/2.0, thresh)
+        cont  = to_polygon((img>thresh).astype(np.int16))
+        cont  = cont.intersection(self.get_contour('lv_myo'))
+        if exclude: cont = cont.difference(self.get_contour('excludeEnhancementAreaContour'))
+        cont  = geometry_collection_to_Polygon(cont)
+        if cont.is_empty: return
+        cont_name = 'scar_fwhm' + ('_excluded_area' if exclude else '')
+        self.anno[cont_name] = {'cont':cont, 'contType':'FREE', 'subpixelResolution': scale}
+        self.contour_names += [cont_name]
         
         
 ############
@@ -929,6 +970,166 @@ class SAX_T2_Category(SAX_T1_Category):
         self.name = 'SAX T2'
         self.phase = 0
 
+class SAX_LGE_Category(SAX_slice_phase_Category):
+    def __init__(self, case, debug=False):
+        self.case = case
+        self.sop2depthandtime = self.get_sop2depthandtime(case.imgs_sop2filepath, debug=debug)
+        self.depthandtime2sop = {v:k for k,v in self.sop2depthandtime.items()}
+        self.set_nr_slices_phases()
+        self.set_image_height_width_depth()
+        self.name = 'SAX LGE'
+        self.phase = 0
+
+    def get_sop2depthandtime(self, sop2filepath, debug=False):
+        if debug: st = time()
+        # returns dict sop --> (depth, time)
+        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
+        sortable_slice_location = [float(v.SliceLocation) for sopinstanceuid, v in imgs.items()]
+        sl_len = len(set([elem for elem in sortable_slice_location]))
+        sorted_slice_location = np.array(sorted(sortable_slice_location))
+        sop2depthandtime = dict()
+        for sopinstanceuid in imgs.keys():
+            s_loc = imgs[sopinstanceuid].SliceLocation
+            for i in range(len(sorted_slice_location)):
+                if not s_loc==sorted_slice_location[i]: continue
+                sop2depthandtime[sopinstanceuid] = (i,0)
+        # potentially flip slice direction: base top x0<x1, y0>y1, z0>z1, apex top x0>x1, y0<y1, z0<z1
+        depthandtime2sop = {v:k for k,v in sop2depthandtime.items()}
+        img1, img2 = imgs[depthandtime2sop[(0,0)]], imgs[depthandtime2sop[(1,0)]]
+        img1x,img1y,img1z = list(map(float,img1.ImagePositionPatient))
+        img2x,img2y,img2z = list(map(float,img2.ImagePositionPatient))
+        if img1x<img2x and img1y>img2y and img1z>img2z: pass
+        else: #img1x>img2x and img1y<img2y and img1z<img2z:
+            max_depth = sl_len-1
+            for sop in sop2depthandtime.keys():
+                sop2depthandtime[sop] = (max_depth-sop2depthandtime[sop][0], 0)
+        if debug: print('calculating sop2sorting takes: ', time()-st)
+        return sop2depthandtime
+    
+    def get_phase(self):
+        return self.phase
+
+    def set_image_height_width_depth(self, debug=False):
+        if debug: st = time()
+        nr_slices = self.nr_slices
+        dcm1 = self.case.load_dcm(self.depthandtime2sop[(0, 0)])
+        dcm2 = self.case.load_dcm(self.depthandtime2sop[(1, 0)])
+        self.height, self.width = dcm1.pixel_array.shape
+        self.pixel_h, self.pixel_w = list(map(float, dcm1.PixelSpacing))
+        spacingbs = []
+        for d in range(nr_slices-1):
+            dcm1 = self.case.load_dcm(self.depthandtime2sop[(d,   0)])
+            dcm2 = self.case.load_dcm(self.depthandtime2sop[(d+1, 0)])
+            spacingbs += [round(np.abs(dcm1.SliceLocation - dcm2.SliceLocation), 2)]
+            try: self.slice_thickness = dcm1.SliceThickness
+            except Exception as e: print('Exception in SAX_LGE_Category, ', e)
+        self.spacing_between_slices = min(spacingbs)
+        print('Spacings: ', spacingbs)
+        self.missing_slices = []
+        for d in range(nr_slices-1):
+            dcm1 = self.case.load_dcm(self.depthandtime2sop[(d,   0)])
+            dcm2 = self.case.load_dcm(self.depthandtime2sop[(d+1, 0)])
+            curr_spacing = round(np.abs(dcm1.SliceLocation - dcm2.SliceLocation), 2)
+            if round(curr_spacing / self.spacing_between_slices) != 1:
+                for m in range(int(round(curr_spacing / self.spacing_between_slices))-1):
+                    self.missing_slices += [(d + m)]
+                
+    def set_nr_slices_phases(self):
+        dat = list(self.depthandtime2sop.keys())
+        self.nr_phases = 1
+        self.nr_slices = max(dat, key=itemgetter(0))[0]+1
+        
+    def get_dcm(self, slice_nr, phase_nr):
+        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        return self.case.load_dcm(sop)
+
+    def get_anno(self, slice_nr, phase_nr=0):
+        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        return self.case.load_anno(sop)
+
+    def get_img(self, slice_nr, phase_nr=0, value_normalize=True, window_normalize=False):
+        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+        return self.case.get_img(sop, value_normalize=value_normalize, window_normalize=window_normalize)
+
+    def get_imgs(self, value_normalize=True, window_normalize=False):
+        return [self.get_img(d, 0, value_normalize, window_normalize) for d in range(self.nr_slices)]
+
+    def get_annos(self):
+        return [self.get_anno(d,0) for d in range(self.nr_slices)]
+
+    def get_anno_with_scar_fwhm(self, slice_nr, exclude=True):
+        img  = self.get_img (slice_nr, 0)
+        anno = self.get_anno(slice_nr, 0)
+        if anno.has_contour('saEnhancementReferenceMyoContour'):
+            anno.add_fwhm_scar(img, exclude=exclude)
+            return anno
+        for i in range(self.nr_slices):
+            low_d  = max(0, slice_nr - i)
+            high_d = min(slice_nr + i, self.nr_slices-1)
+            for d in [low_d, high_d]:
+                other_anno = self.get_anno(d, 0)
+                if other_anno.has_contour('saEnhancementReferenceMyoContour'):
+                    other_img = self.get_img(d, 0)
+                    other_anno.add_fwhm_scar(other_img, exclude=exclude)
+                    anno.add_fwhm_scar_other_slice(img, other_anno, exclude=exclude)
+                    return anno
+    
+    def preprocess_scars(self):
+        for d in range(self.nr_slices):
+            anno = self.get_anno(d,0)
+            if anno.sop not in self.case.annos_sop2filepath: continue
+            new_anno = anno.anno
+            for exclude in [False, True]:
+                anno = self.get_anno_with_scar_fwhm(d, exclude)
+                new_anno = {**new_anno, **anno.anno}
+            path = self.case.annos_sop2filepath[anno.sop]
+            pickle.dump(new_anno, open(path, 'wb'), pickle.HIGHEST_PROTOCOL)
+    
+    def get_base_apex(self, cont_name, debug=False):
+        annos     = self.get_annos()
+        has_conts = [a.has_contour(cont_name) for a in annos]
+        if True not in has_conts: return -1,-1
+        base_idx = has_conts.index(True)
+        apex_idx = self.nr_slices - has_conts[::-1].index(True) - 1
+        if debug: print('Base idx / Apex idx: ', base_idx, apex_idx)
+        return base_idx, apex_idx
+    
+    def get_volume(self, cont_name, debug=False):
+        annos = self.get_annos()
+        pixel_area = self.pixel_h * self.pixel_w
+        areas = [a.get_contour(cont_name).area*pixel_area if a is not None else 0.0 for a in annos]
+        if debug: print('Areas: ', [round(a, 2) for a in areas])
+        has_conts = [a!=0 for a in areas]
+        if True not in has_conts: return 0
+        base_idx = has_conts.index(True)
+        apex_idx = self.nr_slices - has_conts[::-1].index(True) - 1
+        if debug: print('Base idx / Apex idx: ', base_idx, apex_idx)
+        vol = 0
+        for d in range(self.nr_slices):
+            pixel_depth = (self.slice_thickness+self.spacing_between_slices)/2.0 if d in [base_idx, apex_idx] else self.spacing_between_slices
+            vol += areas[d] * pixel_depth
+        # for missing slices
+        for d in self.missing_slices:
+            pixel_depth = self.spacing_between_slices
+            vol += (areas[d] + areas[d+1])/2 * pixel_depth
+        return vol / 1000.0
+    
+    def lax_points(self):
+        self.lax_sop_fps = []
+        for sop, fp in self.case.annos_sop2filepath.items():
+            anno = LAX_CINE_Annotation(sop, fp)
+            if anno.has_point('lv_lax_extent'):
+                self.lax_sop_fps.append((sop, fp, anno, self.get_lax_image(sop)))
+                #fig, ax = plt.subplots(1,1,figsize=(7,7))
+                #ax.imshow(self.lax_sop_fps[-1][-1].pixel_array)
+                #anno.plot_all_points(ax)
+                #plt.show()
+    
+    def get_lax_image(self, sop):
+        for k in self.case.all_imgs_sop2filepath:
+            if sop in self.case.all_imgs_sop2filepath[k].keys():
+                return pydicom.dcmread(self.case.all_imgs_sop2filepath[k][sop], stop_before_pixels=False)
+        
 
 ####################
 # Clinical Results #
@@ -2201,6 +2402,163 @@ class Case_Comparison:
         self.metrics = [m(self) for m in metrics]
 
 
+class SAXLGE_LVV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'LVV'
+        self.unit = '[ml]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, string=False):
+        cr = self.cat.get_volume('lv_endo')
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+class SAXLGE_LVMYOMASS(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'LVMMASS'
+        self.unit = '[g]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, string=False):
+        cr = 1.05 * self.cat.get_volume('lv_myo')
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class SAXLGE_LVMYOV(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'LVMV'
+        self.unit = '[ml]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, string=False):
+        cr = self.cat.get_volume('lv_myo')
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class SAXLGE_SCARMASS(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'SCARM'
+        self.unit = '[g]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, contname='scar', string=False):
+        #cr = 1.05 * self.cat.get_volume('scar_fwhm_res_8_excluded_area')
+        cr = 1.05 * self.cat.get_volume(contname)
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, contname='scar', string=False):
+        cr_diff = self.get_cr(contname)-other.get_cr(contname)
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+class SAXLGE_SCARVOL(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'SCARV'
+        self.unit = '[ml]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, contname='scar', string=False):
+        #cr = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
+        cr = self.cat.get_volume(contname)
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, contname='scar', string=False):
+        cr_diff = self.get_cr(contname)-other.get_cr(contname)
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+class SAXLGE_SCARF(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'SCARF'
+        self.unit = '[%]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, contname='scar', string=False):
+        #scar = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
+        scar = self.cat.get_volume(contname)
+        lvm  = self.cat.get_volume('lv_myo')
+        cr = 100.0 * (scar/(lvm+10**-9))
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, contname='scar', string=False):
+        cr_diff = self.get_cr(contname)-other.get_cr(contname)
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+class SAXLGE_EXCLMASS(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'EXCLMASS'
+        self.unit = '[g]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, string=False):
+        #scar_excl = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
+        #scar      = self.cat.get_volume('scar_fwhm_res_8')
+        scar_excl = self.cat.get_volume('scar_fwhm_excluded_area')
+        scar      = self.cat.get_volume('scar_fwhm')
+        cr = 1.05 * (scar - scar_excl)
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+    
+class SAXLGE_EXCLVOL(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'EXCLVOL'
+        self.unit = '[ml]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, string=False):
+        scar_excl = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
+        scar      = self.cat.get_volume('scar_fwhm_res_8')
+        cr = scar - scar_excl
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+            
+    
+class SAXLGE_NOREFLOWVOL(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+    def set_CR_information(self):
+        self.name = 'NOREFLOWVOL'
+        self.unit = '[ml]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+    def get_cr(self, string=False):
+        cr = self.cat.get_volume('noreflow')
+        return "{:.2f}".format(cr) if string else cr
+    def get_cr_diff(self, other, string=False):
+        cr_diff = self.get_cr()-other.get_cr()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+        
 
 ########
 # View #
@@ -2220,13 +2578,6 @@ class SAX_CINE_View(View):
                                      'rv_epi'  : self.rvcats, 'rv_pamu' : self.rvcats,  'rv_myo'  : self.rvcats}
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_pamu', 'lv_myo',
                               'rv_endo', 'rv_epi', 'rv_pamu', 'rv_myo']
-        
-
-        """
-        from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                        import CC_Metrics_Tab
-        from LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_Tab               import CCs_ClinicalResults_Tab
-        from LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab   import CCs_Qualitative_Correlationplot_Tab
-        """
         
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                      as tab1
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab             as tab2
@@ -2604,6 +2955,88 @@ class SAX_T2_View(View):
         return case
 
 
+class SAX_LGE_View(View):
+    def __init__(self):
+        self.colormap            = 'gray'
+        self.available_colormaps = ['gray']
+        self.load_categories()
+        # contour names with scars
+        self.contour_names = ['lv_endo', 'lv_myo', 'scar', 'noreflow']
+        for exclude in [False, True]:
+            cont_name = 'scar_fwhm' + ('_excluded_area' if exclude else '')
+            self.contour_names += [cont_name]
+        self.contour2categorytype = {cname:self.all for cname in self.contour_names}
+        
+        # register tabs here:
+        import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab          as tab1
+        import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab as tab2
+        import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
+        
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab}
+        self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
+        
+    def load_categories(self):
+        self.all = [SAX_LGE_Category]
+
+    def get_categories(self, case, contour_name=None):
+        types = [c for c in self.contour2categorytype[contour_name]]
+        cats  = [c for c in case.categories if type(c) in types]
+        return cats
+
+    def initialize_case(self, case, cvi_preprocess=True, debug=False):
+        if debug: st=time()
+        # switch images
+        case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX LGE']
+        # attach annotation type
+        case.attach_annotation_type(SAX_LGE_Annotation)
+        # if categories have not been attached, attach the first and init other_categories
+        # otherwise it has categories and a type, so store the old categories for later use
+        if not hasattr(case, 'other_categories'): case.other_categories = dict()
+        case.attach_categories([SAX_LGE_Category])
+        # A SCAR calculating preprocessing step is necessary for LGE
+        if debug: st_preprocess = time()
+        cat = case.categories[0]
+        if cvi_preprocess:
+            cat.preprocess_scars()
+        if debug: print('Calculating scars took: ', time()-st_preprocess)
+        if debug: print('Set of anno keys are: ', list(set([akey for a in cat.get_annos() for akey in a.anno.keys()])))
+        case.other_categories['SAX LGE'] = case.categories
+        case.categories = []
+        if debug: print('Case categories are: ', case.categories)
+        
+        # set new type
+        case.type = 'SAX LGE'
+        case.available_types.add('SAX LGE')
+        if debug: print('Customization in SAX LGE view took: ', time()-st)
+        return case
+    
+    def customize_case(self, case, debug=False):
+        if debug: st=time()
+        # switch images
+        case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX LGE']
+        # attach annotation type
+        case.attach_annotation_type(SAX_LGE_Annotation)
+        # if categories have not been attached, attach the first and init other_categories
+        # otherwise it has categories and a type, so store the old categories for later use
+        if not hasattr(case, 'categories'):
+            case.other_categories = dict()
+            case.attach_categories([SAX_LGE_Category])
+            case.other_categories['SAX LGE'] = case.categories
+        else:
+            if 'SAX LGE' in case.other_categories.keys(): case.categories = case.other_categories['SAX LGE']
+            else: case.attach_categories([SAX_LGE_Category])
+        if debug: print('Case categories are: ', case.categories)
+        # attach CRs
+        case.attach_clinical_results([SAXLGE_LVV,       SAXLGE_LVMYOV, 
+                                      SAXLGE_LVMYOMASS, SAXLGE_SCARVOL,
+                                      SAXLGE_SCARMASS,  SAXLGE_SCARF,
+                                      SAXLGE_EXCLVOL,   SAXLGE_EXCLMASS,
+                                      SAXLGE_NOREFLOWVOL])
+        # set new type
+        case.type = 'SAX LGE'
+        if debug: print('Customization in SAX LGE view took: ', time()-st)
+        return case
+    
 ##########
 # Metric #
 ##########

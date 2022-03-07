@@ -16,7 +16,7 @@ import inspect
 
 import pandas
 
-from LazyLuna.Mini_LL import Case_Comparison, SAX_CINE_View, SAX_CS_View, LAX_CINE_View, SAX_T1_View, SAX_T2_View
+from LazyLuna.Mini_LL import Case_Comparison, SAX_CINE_View, SAX_CS_View, LAX_CINE_View, SAX_T1_View, SAX_T2_View, SAX_LGE_View
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables import *
 from LazyLuna.Figures import *
@@ -45,7 +45,7 @@ class CC_Metrics_Tab(QWidget):
         self.combobox_select_contour.activated[str].connect(self.recalculate_metrics_table) 
         layout.addWidget(self.combobox_select_contour, 0, 0)
 
-        if type(view) in [SAX_CINE_View, SAX_CS_View]:
+        if type(view) in [SAX_CINE_View, SAX_CS_View, SAX_LGE_View]:
             self.metrics_table  = CC_Metrics_Table()
         elif type(view) in [SAX_T1_View]:
             self.metrics_table  = T1_CC_Metrics_Table()

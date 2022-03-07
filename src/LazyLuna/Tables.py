@@ -30,10 +30,13 @@ class DataFrameModel(QtGui.QStandardItemModel):
         return self._data.columns.size
 
     def headerData(self, x, orientation, role):
-        if orientation==QtCore.Qt.Horizontal and role==QtCore.Qt.DisplayRole:
-            return self._data.columns[x]
-        if orientation==QtCore.Qt.Vertical   and role==QtCore.Qt.DisplayRole:
-            return self._data.index[x]
+        try:
+            if orientation==QtCore.Qt.Horizontal and role==QtCore.Qt.DisplayRole:
+                return self._data.columns[x]
+            if orientation==QtCore.Qt.Vertical   and role==QtCore.Qt.DisplayRole:
+                return self._data.index[x]
+        except Exception as e:
+            print('WARNING !!!: ', e)
         return None
     
     

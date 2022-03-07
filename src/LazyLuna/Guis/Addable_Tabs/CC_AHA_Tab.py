@@ -46,15 +46,25 @@ class CC_AHA_Tab(QWidget):
         layout.addWidget(self.canvas1,  0,0, 1,1)
         layout.addWidget(self.toolbar1, 1,0, 1,1)
         
-        self.figure2 = T1_bullseye_plot()
+        self.figure2 = T1_diff_bullseye_plot()
         self.canvas2 = FigureCanvas(self.figure2)
-        self.figure2.set_values(view, cc.case2, self.canvas2)
+        self.figure2.set_values(view, cc, self.canvas2)
         self.figure2.visualize()
         self.canvas2.setFocusPolicy(Qt.Qt.ClickFocus)
         self.canvas2.setFocus()
         self.toolbar2 = NavigationToolbar(self.canvas2, gui)
         layout.addWidget(self.canvas2,  0,1, 1,1)
         layout.addWidget(self.toolbar2, 1,1, 1,1)
+        
+        self.figure3 = T1_bullseye_plot()
+        self.canvas3 = FigureCanvas(self.figure3)
+        self.figure3.set_values(view, cc.case2, self.canvas3)
+        self.figure3.visualize()
+        self.canvas3.setFocusPolicy(Qt.Qt.ClickFocus)
+        self.canvas3.setFocus()
+        self.toolbar3 = NavigationToolbar(self.canvas3, gui)
+        layout.addWidget(self.canvas3,  0,2, 1,1)
+        layout.addWidget(self.toolbar2, 1,2, 1,1)
         
         self.setLayout(layout)
 

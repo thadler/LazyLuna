@@ -70,16 +70,19 @@ class CC_CRs_Images_Tab(QWidget):
         return v_names
     
     def select_view(self):
-        view_name = self.combobox_select_view.currentText()
-        v         = self.get_view(view_name)
-        cc        = copy.deepcopy(self.base_cc)
-        self.cc   = Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2))
-        cat       = self.cc.case1.categories[0]
-        # recalculate CRs and reinitialize Figure
-        self.cr_table.calculate([self.cc])
-        self.cr_tableView.setModel(self.cr_table.to_pyqt5_table_model())
-        self.img_fig.set_values(v, self.cc, self.img_canvas)
-        self.img_fig.visualize(0, cat)
+        try:
+            view_name = self.combobox_select_view.currentText()
+            v         = self.get_view(view_name)
+            cc        = copy.deepcopy(self.base_cc)
+            self.cc   = Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2))
+            cat       = self.cc.case1.categories[0]
+            # recalculate CRs and reinitialize Figure
+            self.cr_table.calculate([self.cc])
+            self.cr_tableView.setModel(self.cr_table.to_pyqt5_table_model())
+            self.img_fig.set_values(v, self.cc, self.img_canvas)
+            self.img_fig.visualize(0, cat)
+        except Exception as e:
+            print('Exception in select_view: ', e)
 
 
         
