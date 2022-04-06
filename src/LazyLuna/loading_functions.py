@@ -169,3 +169,56 @@ def get_cases_table(cases, paths, debug=False):
 
 
 
+########################
+# Loaders from Mini_LL #
+########################
+
+def read_annos_into_sop2filepaths(path, debug=False):
+    if debug: st = time()
+    paths = [f for f in os.listdir(path) if 'case' not in f]
+    anno_sop2filepath = dict()
+    for p in paths:
+        anno_sop2filepath[p.replace('.pickle','')] = os.path.join(path, p)
+    if debug: print('Reading annos took: ', time()-st)
+    return anno_sop2filepath
+
+def read_dcm_images_into_sop2filepaths(path, debug=False):
+    if debug: st = time()
+    sop2filepath = dict()
+    for n in ['SAX CINE', 'SAX CS', 'SAX T1', 'SAX T2', 'LAX 2CV', 'LAX 3CV', 'LAX 4CV', 'SAX LGE', 'None']:
+        sop2filepath[n] = dict()
+    for p in Path(path).glob('**/*.dcm'):
+        try:
+            dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
+            name = str(dcm[0x0b, 0x10].value).replace('Lazy Luna: ', '') # LL Tag
+            sop2filepath[name][dcm.SOPInstanceUID] = str(p)
+        except Exception as e:
+            if debug: print(dcm, '\nException: ', e)
+    if debug: print('Reading images took: ', time()-st)
+    return sop2filepath
+
+# returns the base paths for Cases
+def get_imgs_and_annotation_paths(bp_imgs, bp_annos):
+    """
+    bp_imgs is a folder structured like:
+    bp_imgs
+    |--> imgs folder 1 --> dicoms within
+    |--> imgs folder 2 --> ...
+    |--> ...
+    bp_annos is a folder like:
+    bp_annos
+    |--> pickles folder 1 --> pickles within
+    |--> pickles folder 2 ...
+    """
+    imgpaths_annopaths_tuples = []
+    img_folders = os.listdir(bp_imgs)
+    for i, img_f in enumerate(img_folders):
+        case_path = os.path.join(bp_imgs, img_f)
+        for p in Path(case_path).glob('**/*.dcm'):
+            dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
+            if not hasattr(dcm, 'StudyInstanceUID'): continue
+            imgpaths_annopaths_tuples += [(os.path.normpath(case_path), os.path.normpath(os.path.join(bp_annos, dcm.StudyInstanceUID)))]
+            break
+    return imgpaths_annopaths_tuples
+
+

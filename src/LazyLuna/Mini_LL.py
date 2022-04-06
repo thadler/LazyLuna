@@ -8,112 +8,69 @@ import pydicom
 import matplotlib.pyplot as plt
 import numpy as np
 from shapely.geometry import Polygon, MultiPolygon, LineString, GeometryCollection, Point, MultiPoint
-from LazyLuna import CATCH_utils
+from LazyLuna import utils, loading_functions
 from shapely.affinity import translate, scale
 import pandas
-
-###########
-# Loaders #
-###########
-
-def read_annos_into_sop2filepaths(path, debug=False):
-    if debug: st = time()
-    paths = [f for f in os.listdir(path) if 'case' not in f]
-    anno_sop2filepath = dict()
-    for p in paths:
-        anno_sop2filepath[p.replace('.pickle','')] = os.path.join(path, p)
-    if debug: print('Reading annos took: ', time()-st)
-    return anno_sop2filepath
-
-def read_dcm_images_into_sop2filepaths(path, debug=False):
-    if debug: st = time()
-    sop2filepath = dict()
-    for n in ['SAX CINE', 'SAX CS', 'SAX T1', 'SAX T2', 'LAX 2CV', 'LAX 3CV', 'LAX 4CV', 'SAX LGE', 'None']:
-        sop2filepath[n] = dict()
-    for p in Path(path).glob('**/*.dcm'):
-        try:
-            dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
-            name = str(dcm[0x0b, 0x10].value).replace('Lazy Luna: ', '') # LL Tag
-            sop2filepath[name][dcm.SOPInstanceUID] = str(p)
-        except Exception as e:
-            if debug: print(dcm, '\nException: ', e)
-    if debug: print('Reading images took: ', time()-st)
-    return sop2filepath
-
-# returns the base paths for Cases
-def get_imgs_and_annotation_paths(bp_imgs, bp_annos):
-    """
-    bp_imgs is a folder structured like:
-    bp_imgs
-    |--> imgs folder 1 --> dicoms within
-    |--> imgs folder 2 --> ...
-    |--> ...
-    bp_annos is a folder like:
-    bp_annos
-    |--> pickles folder 1 --> pickles within
-    |--> pickles folder 2 ...
-    """
-    imgpaths_annopaths_tuples = []
-    img_folders = os.listdir(bp_imgs)
-    for i, img_f in enumerate(img_folders):
-        case_path = os.path.join(bp_imgs, img_f)
-        for p in Path(case_path).glob('**/*.dcm'):
-            dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
-            if not hasattr(dcm, 'StudyInstanceUID'): continue
-            imgpaths_annopaths_tuples += [(os.path.normpath(case_path), os.path.normpath(os.path.join(bp_annos, dcm.StudyInstanceUID)))]
-            break
-    return imgpaths_annopaths_tuples
 
 ##############
 # Annotation #
 ##############
 
 class Annotation:
-    def __init__(self, sop, filepath):
-        self.sop = sop
+    def __init__(self, filepath, sop=None):
         try:    self.anno = pickle.load(open(filepath, 'rb'))
         except: self.anno = dict()
-        self.set_information()
+        self.sop = sop
 
-    def plot_all_contour_outlines(self, ax, debug=False):
-        for c in self.available_contour_names():
-            CATCH_utils.plot_outlines(ax, self.get_contour(c))
+    def plot_all_contour_outlines(self, ax, c='w', debug=False):
+        for cname in self.available_contour_names():
+            utils.plot_outlines(ax, self.get_contour(cname), edge_c=c)
             
     def plot_contour_outlines(self, ax, cont_name, edge_c=(1,1,1,1.0), debug=False):
         if self.has_contour(cont_name):
-            CATCH_utils.plot_outlines(ax, self.get_contour(cont_name), edge_c)
+            utils.plot_outlines(ax, self.get_contour(cont_name), edge_c)
 
-    def plot_all_points(self, ax):
+    def plot_all_points(self, ax, c='w', marker='x', s=None):
         for p in self.available_point_names():
-            self.plot_point(ax, p)
+            self.plot_point(ax, p, c, marker, s)
 
     def plot_contour_face(self, ax, cont_name, c='r', alpha=0.4):
         if not self.has_contour(cont_name): return
-        CATCH_utils.plot_geo_face(ax, self.get_contour(cont_name), c=c, ec=c, alpha=alpha)
+        utils.plot_geo_face(ax, self.get_contour(cont_name), c=c, ec=c, alpha=alpha)
 
-    def plot_point(self, ax, point_name):
+    def plot_point(self, ax, point_name, c='w', marker='x', s=None):
         if not self.has_point(point_name): return
-        CATCH_utils.plot_points(ax, self.get_point(point_name))
+        utils.plot_points(ax, self.get_point(point_name), c=c, marker=marker, s=s)
 
     def plot_cont_comparison(self, ax, other_anno, cont_name, alpha=0.4):
         cont1, cont2 = self.get_contour(cont_name), other_anno.get_contour(cont_name)
-        CATCH_utils.plot_geo_face_comparison(ax, cont1, cont2, alpha=alpha)
+        utils.plot_geo_face_comparison(ax, cont1, cont2, alpha=alpha)
 
     def available_contour_names(self):
-        return [c for c in self.contour_names if self.has_contour(c)]
+        return [c for c in self.anno.keys() if self.has_contour(c)]
 
     def has_contour(self, cont_name):
-        return cont_name in self.anno.keys()
+        if not cont_name in self.anno.keys():              return False
+        if not 'cont' in self.anno[cont_name]:             return False
+        a = self.anno[cont_name]['cont']
+        if a.is_empty:                                     return False
+        if a.geom_type not in ['Polygon', 'MultiPolygon']: return False
+        return True
 
     def get_contour(self, cont_name):
         if self.has_contour(cont_name): return self.anno[cont_name]['cont']
-        else:                           return Polygon()
+        else: return Polygon()
 
     def available_point_names(self):
-        return [p for p in self.point_names if self.has_point(p)]
+        return [p for p in self.anno.keys() if self.has_point(p)]
 
     def has_point(self, point_name):
-        return point_name in self.anno.keys()
+        if not point_name in self.anno.keys():         return False
+        if not 'cont' in self.anno[point_name]:        return False
+        a = self.anno[point_name]['cont']
+        if a.is_empty:                                 return False
+        if a.geom_type not in ['Point', 'MultiPoint']: return False
+        return True
 
     def get_point(self, point_name):
         if self.has_point(point_name): return self.anno[point_name]['cont']
@@ -123,40 +80,24 @@ class Annotation:
         if not self.has_contour(cont_name): return np.zeros((h,w))
         mp = self.get_contour(cont_name)
         if not mp.geom_type=='MultiPolygon': mp = MultiPolygon([mp])
-        return CATCH_utils.to_mask(mp, h, w)
+        return utils.to_mask(mp, h, w)
 
     def get_pixel_size(self):
-        return (self.pixel_h, self.pixel_w)
+        ph, pw = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)
+        return (ph, pw)
+    
+    def get_image_size(self):
+        h, w = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
+        return (h,w)
 
-
-class SAX_CINE_Annotation(Annotation):
-    def __init__(self, sop, filepath):
-        super().__init__(sop, filepath)
-
-    def set_information(self):
-        self.name = 'SAX CINE Annotation'
-        self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo', 'lv_pamu',
-                              'rv_endo', 'rv_epi', 'rv_myo', 'rv_pamu']
-        self.point_names   = ['sacardialRefPoint']
-        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)
-        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
-
-
-class LAX_CINE_Annotation(Annotation):
-    def __init__(self, sop, filepath):
-        super().__init__(sop, filepath)
-
-    def set_information(self):
-        self.name = 'LAX CINE Annotation'
-        self.contour_names = ['lv_lax_endo', 'lv_lax_myo', 'rv_lax_endo', 'ra', 'la', 'Atrial', 'Epicardial', 'Pericardial']
-        self.point_names   = ['lv_lax_extent', 'laxRaExtentPoints', 'laxLaExtentPoints']
-        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)#1.98,1.98
-        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
-        
+    ######################
+    # LAX CINE functions #
+    ######################
     def length_LV(self):
         if not self.has_point('lv_lax_extent'): return 0
         extent = self.get_point('lv_lax_extent')
-        lv_ext1, lv_ext2, apex = scale(extent, xfact=self.pixel_w, yfact=self.pixel_h)
+        pw, ph = self.get_pixel_size()
+        lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
         mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
         dist = mitral.distance(apex)
         return dist
@@ -164,7 +105,8 @@ class LAX_CINE_Annotation(Annotation):
     def length_LA(self):
         if not self.has_point('laxLaExtentPoints'): return 0
         extent = self.get_point('laxLaExtentPoints')
-        lv_ext1, lv_ext2, apex = scale(extent, xfact=self.pixel_w, yfact=self.pixel_h)
+        pw, ph = self.get_pixel_size()
+        lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
         mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
         dist = mitral.distance(apex)
         return dist
@@ -172,27 +114,20 @@ class LAX_CINE_Annotation(Annotation):
     def length_RA(self):
         if not self.has_point('laxRaExtentPoints'): return 0
         extent = self.get_point('laxRaExtentPoints')
-        lv_ext1, lv_ext2, apex = scale(extent, xfact=self.pixel_w, yfact=self.pixel_h)
+        pw, ph = self.get_pixel_size()
+        lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
         mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
         dist = mitral.distance(apex)
         return dist
-        
-class SAX_T1_Annotation(Annotation):
-    def __init__(self, sop, filepath):
-        super().__init__(sop, filepath)
-
-    def set_information(self):
-        self.name = 'SAX T1 Annotation'
-        self.contour_names = ['lv_endo', 'lv_epi', 'lv_myo']
-        self.point_names   = ['sacardialRefPoint']
-        self.pixel_h, self.pixel_w = self.anno['info']['pixelSize'] if 'info' in self.anno.keys() and 'pixelSize' in self.anno['info'].keys() else (-1,-1)
-        self.h,       self.w       = self.anno['info']['imageSize'] if 'info' in self.anno.keys() and 'imageSize' in self.anno['info'].keys() else (-1,-1)
     
-    def get_myo_vals(self, img):
+    def get_pixel_values(self, cont_name, img):
         h, w = img.shape
-        mask = self.get_cont_as_mask('lv_myo', h, w)
+        mask = self.get_cont_as_mask(cont_name, h, w)
         return img[np.where(mask!=0)]
-    
+        
+    #####################
+    # Mapping functions #
+    #####################
     def get_angle_mask_to_middle_point(self, h, w):
         p = self.get_contour('lv_endo').centroid
         x,y = p.x, p.y
@@ -239,17 +174,8 @@ class SAX_T1_Annotation(Annotation):
         return bin_dict
 
 
-class SAX_T2_Annotation(SAX_T1_Annotation):
-    def __init__(self, sop, filepath):
-        super().__init__(sop, filepath)
-
-    def set_information(self):
-        super().set_information()
-        self.name = 'SAX T2 Annotation'
-
-
 class SAX_LGE_Annotation(Annotation):
-    def __init__(self, sop, filepath):
+    def __init__(self, filepath, sop):
         super().__init__(sop, filepath)
 
     def set_information(self):
@@ -267,19 +193,19 @@ class SAX_LGE_Annotation(Annotation):
         if not self.has_contour('saEnhancementReferenceMyoContour'): return
         h, w  = img.shape
         cont  = self.get_contour('saEnhancementReferenceMyoContour')
-        mask  = to_mask(cont, h, w)
+        mask  = utils.to_mask(cont, h, w)
         self.scar_max = img[np.where(mask!=0)].max()
         #threshold = myoMinimum + (myoMax-Min) / 2
         thresh = self.scar_max/2.0
         if normalize_myocardium:
-            mask      = to_mask(self.get_contour('lv_myo'), h, w)
+            mask      = utils.to_mask(self.get_contour('lv_myo'), h, w)
             lvmyo_min = img[np.where(mask!=0)].min()
             thresh    = lvmyo_min + (self.scar_max - lvmyo_min)/2.0
             #print('Possible threshs: ', self.scar_max/2.0, thresh)
-        cont = to_polygon((img>thresh).astype(np.int16))
+        cont = utils.to_polygon((img>thresh).astype(np.int16))
         cont = cont.intersection(self.get_contour('lv_myo'))
         if exclude: cont = cont.difference(self.get_contour('excludeEnhancementAreaContour'))
-        cont = geometry_collection_to_Polygon(cont)
+        cont = utils.geometry_collection_to_Polygon(cont)
         cont_name = 'scar_fwhm' + ('_excluded_area' if exclude else '')
         self.anno[cont_name] = {'cont':cont, 'contType':'FREE', 'subpixelResolution': scale}
         self.contour_names += [cont_name]
@@ -290,15 +216,15 @@ class SAX_LGE_Annotation(Annotation):
         #threshold = myoMinimum + (myoMax-Min) / 2
         thresh = self.scar_max/2.0
         if normalize_myocardium and self.has_contour('lv_myo'):
-            mask      = to_mask(self.get_contour('lv_myo'), h, w)
+            mask      = utils.to_mask(self.get_contour('lv_myo'), h, w)
             lvmyo_min = img[np.where(mask!=0)].min()
             lvmyo_max = img[np.where(mask!=0)].max()
             thresh    = lvmyo_min + (self.scar_max - lvmyo_min)/2.0
             #print('Possible threshs other slice: ', self.scar_max/2.0, thresh)
-        cont  = to_polygon((img>thresh).astype(np.int16))
+        cont  = utils.to_polygon((img>thresh).astype(np.int16))
         cont  = cont.intersection(self.get_contour('lv_myo'))
         if exclude: cont = cont.difference(self.get_contour('excludeEnhancementAreaContour'))
-        cont  = geometry_collection_to_Polygon(cont)
+        cont  = utils.geometry_collection_to_Polygon(cont)
         if cont.is_empty: return
         cont_name = 'scar_fwhm' + ('_excluded_area' if exclude else '')
         self.anno[cont_name] = {'cont':cont, 'contType':'FREE', 'subpixelResolution': scale}
@@ -853,7 +779,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
     def lax_points(self):
         self.lax_sop_fps = []
         for sop, fp in self.case.annos_sop2filepath.items():
-            anno = LAX_CINE_Annotation(sop, fp)
+            anno = Annotation(fp, sop)
             if anno.has_point('lv_lax_extent'):
                 self.lax_sop_fps.append((sop, fp, anno, self.get_lax_image(sop)))
     
@@ -873,7 +799,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
         lax_h, lax_w = lax_dcm.pixel_array.shape
         lax_anno     = self.lax_sop_fps[0][2]
         p1, p2, p3 = [[lax_anno.get_point('lv_lax_extent')[i].y, lax_anno.get_point('lv_lax_extent')[i].x] for i in range(3)]
-        extpoints_rcs = CATCH_utils.transform_ics_to_rcs(lax_dcm, np.array([p1, p2, p3]))
+        extpoints_rcs = utils.transform_ics_to_rcs(lax_dcm, np.array([p1, p2, p3]))
         ext_st  = (extpoints_rcs[0] + extpoints_rcs[1])/2.0
         ext_end = extpoints_rcs[2]
         base_center = ext_st + 1/6 * (ext_end - ext_st)
@@ -886,7 +812,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
             h, w   = img.shape
             mesh   = np.meshgrid(np.arange(w), np.arange(h))
             idxs   = np.stack((mesh[0].flatten(), mesh[1].flatten())).T
-            points = CATCH_utils.transform_ics_to_rcs(dcm, idxs)
+            points = utils.transform_ics_to_rcs(dcm, idxs)
             dists_base = np.linalg.norm(np.subtract(points, base_center), axis=1)
             dists_midv = np.linalg.norm(np.subtract(points, midv_center), axis=1)
             dists_apex = np.linalg.norm(np.subtract(points, apex_center), axis=1)
@@ -1117,7 +1043,7 @@ class SAX_LGE_Category(SAX_slice_phase_Category):
     def lax_points(self):
         self.lax_sop_fps = []
         for sop, fp in self.case.annos_sop2filepath.items():
-            anno = LAX_CINE_Annotation(sop, fp)
+            anno = Annotation(sop, fp)
             if anno.has_point('lv_lax_extent'):
                 self.lax_sop_fps.append((sop, fp, anno, self.get_lax_image(sop)))
                 #fig, ax = plt.subplots(1,1,figsize=(7,7))
@@ -2294,7 +2220,7 @@ class SAXMap_GLOBALT1(Clinical_Result):
     def get_cr(self, string=False):
         cr = []
         for d in range(self.cat.nr_slices):
-            cr += self.cat.get_anno(d,0).get_myo_vals(self.cat.get_img(d,0)).tolist()
+            cr += self.cat.get_anno(d,0).get_pixel_values('lv_myo', self.cat.get_img(d,0)).tolist()
         cr = np.nanmean(cr)
         return "{:.2f}".format(cr) if string else cr
     def get_cr_diff(self, other, string=False):
@@ -2323,9 +2249,9 @@ class Case:
         self.reader_name  = reader_name
         self.type         = 'None'
         self.available_types = set()
-        self.all_imgs_sop2filepath  = read_dcm_images_into_sop2filepaths(imgs_path, debug)
+        self.all_imgs_sop2filepath  = loading_functions.read_dcm_images_into_sop2filepaths(imgs_path, debug)
         self.studyinstanceuid       = self._get_studyinstanceuid()
-        self.annos_sop2filepath     = read_annos_into_sop2filepaths(annos_path, debug)
+        self.annos_sop2filepath     = loading_functions.read_annos_into_sop2filepaths(annos_path, debug)
         if debug: print('Initializing Case took: ', time()-st)
 
     def _get_studyinstanceuid(self):
@@ -2349,7 +2275,7 @@ class Case:
 
     def load_anno(self, sop):
         if sop not in self.annos_sop2filepath.keys(): return self.annotation_type(sop, None)
-        return self.annotation_type(sop, self.annos_sop2filepath[sop])
+        return self.annotation_type(self.annos_sop2filepath[sop], sop)
 
     def get_img(self, sop, value_normalize=True, window_normalize=True):
         dcm = self.load_dcm(sop)
@@ -2603,7 +2529,7 @@ class SAX_CINE_View(View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CINE']
         # attach annotation type
-        case.attach_annotation_type(SAX_CINE_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -2623,7 +2549,7 @@ class SAX_CINE_View(View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CINE']
         # attach annotation type
-        case.attach_annotation_type(SAX_CINE_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
@@ -2656,7 +2582,7 @@ class SAX_CS_View(SAX_CINE_View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CS']
         # attach annotation type
-        case.attach_annotation_type(SAX_CINE_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -2675,7 +2601,7 @@ class SAX_CS_View(SAX_CINE_View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CS']
         # attach annotation type
-        case.attach_annotation_type(SAX_CINE_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if 'SAX CS' in case.other_categories.keys(): case.categories = case.other_categories['SAX CS']
@@ -2740,7 +2666,7 @@ class LAX_CINE_View(View):
         # switch images
         case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'], **case.all_imgs_sop2filepath['LAX 3CV'], **case.all_imgs_sop2filepath['LAX 4CV']}
         # attach annotation type
-        case.attach_annotation_type(LAX_CINE_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -2764,7 +2690,7 @@ class LAX_CINE_View(View):
         # switch images
         case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'], **case.all_imgs_sop2filepath['LAX 3CV'], **case.all_imgs_sop2filepath['LAX 4CV']}
         # attach annotation type
-        case.attach_annotation_type(LAX_CINE_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
@@ -2843,7 +2769,7 @@ class SAX_T1_View(View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T1']
         # attach annotation type
-        case.attach_annotation_type(SAX_T1_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -2865,7 +2791,7 @@ class SAX_T1_View(View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T1']
         # attach annotation type
-        case.attach_annotation_type(SAX_T1_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
@@ -2916,7 +2842,7 @@ class SAX_T2_View(View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T2']
         # attach annotation type
-        case.attach_annotation_type(SAX_T2_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -2936,7 +2862,7 @@ class SAX_T2_View(View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T2']
         # attach annotation type
-        case.attach_annotation_type(SAX_T2_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
@@ -3072,20 +2998,20 @@ class DiceMetric(Metric):
 
     def get_val(self, geo1, geo2, dcm=None, string=False):
         try:
-            m = CATCH_utils.dice(geo1, geo2)
+            m = utils.dice(geo1, geo2)
             return "{:.2f}".format(m) if string else m
         except Exception as e:
             print(e)
             return '0.00' if string else 0.0
 
-    def calculate_all_vals(self, debug=False):
+    def calculate_all_vals(self, view, debug=False):
         if debug: st = time(); nr_conts = 0
         sopandcontname2metricval = dict()
         for sop in self.get_all_sops():
             anno1, anno2 = self.cc.case1.load_anno(sop), self.cc.case2.load_anno(sop)
-            for c in anno1.contour_names:
+            for c in view.contour_names:
                 if debug and (anno1.has_contour(c) or anno2.has_contour(c)): nr_conts += 1
-                sopandcontname2metricval[(sop, c)] = CATCH_utils.dice(anno1.get_contour(c), anno2.get_contour(c))
+                sopandcontname2metricval[(sop, c)] = utils.dice(anno1.get_contour(c), anno2.get_contour(c))
         if debug: print('Calculating all DSC values for ', nr_conts, ' contours took: ', time()-st, ' seconds.')
         return sopandcontname2metricval
 
@@ -3098,18 +3024,18 @@ class HausdorffMetric(Metric):
         self.unit = '[mm]'
 
     def get_val(self, geo1, geo2, dcm=None, string=False):
-        m = CATCH_utils.hausdorff(geo1, geo2)
+        m = utils.hausdorff(geo1, geo2)
         return "{:.2f}".format(m) if string else m
 
-    def calculate_all_vals(self, debug=False):
+    def calculate_all_vals(self, view, debug=False):
         if debug: st = time(); nr_conts = 0
         sopandcontname2metricval = dict()
         for sop in self.get_all_sops():
             anno1, anno2 = self.cc.case1.load_anno(sop), self.cc.case2.load_anno(sop)
             ph, pw = anno1.get_pixel_size()
-            for c in anno1.contour_names:
+            for c in view.contour_names:
                 if debug and (anno1.has_contour(c) or anno2.has_contour(c)): nr_conts += 1
-                hd = ph * CATCH_utils.hausdorff(anno1.get_contour(c), anno2.get_contour(c))
+                hd = ph * utils.hausdorff(anno1.get_contour(c), anno2.get_contour(c))
                 sopandcontname2metricval[(sop, c)] = hd
         if debug: print('Calculating all HD values for ', nr_conts, ' contours took: ', time()-st, ' seconds.')
         return sopandcontname2metricval
@@ -3127,14 +3053,14 @@ class mlDiffMetric(Metric):
         m      = (pw*ph*vd/1000.0) * (geo1.area - geo2.area)
         return "{:.2f}".format(m) if string else m
 
-    def calculate_all_vals(self, debug=False):
+    def calculate_all_vals(self, view, debug=False):
         if debug: st = time(); nr_conts = 0
         sopandcontname2metricval = dict()
         for sop in self.get_all_sops():
             anno1, anno2 = self.cc.case1.load_anno(sop), self.cc.case2.load_anno(sop)
             vd           = self.cc.case1.load_dcm(sop).SliceThickness
             ph, pw       = anno1.get_pixel_size()
-            for c in anno1.contour_names:
+            for c in view.contour_names:
                 if debug and (anno1.has_contour(c) or anno2.has_contour(c)): nr_conts += 1
                 ml_diff = (pw*ph*vd/1000.0) * (anno1.get_contour(c).area - anno2.get_contour(c).area)
                 sopandcontname2metricval[(sop, c)] = ml_diff
@@ -3156,23 +3082,23 @@ class T1AvgDiffMetric(Metric):
     def get_val(self, geo1, geo2, img1, img2, string=False):
         # imgs = get_img (d,0,True,False)
         h,     w     = img1.shape
-        mask1, mask2 = CATCH_utils.to_mask(geo1,h,w).astype(bool), CATCH_utils.to_mask(geo2,h,w).astype(bool)
+        mask1, mask2 = utils.to_mask(geo1,h,w).astype(bool), utils.to_mask(geo2,h,w).astype(bool)
         myo1_vals, myo2_vals = img1[mask1], img2[mask2]
         global_t1_1 = np.mean(myo1_vals)
         global_t1_2 = np.mean(myo2_vals)
         m           = global_t1_1 - global_t1_2
         return "{:.2f}".format(m) if string else m
         
-    def calculate_all_vals(self, debug=False):
+    def calculate_all_vals(self, view, debug=False):
         if debug: st = time(); nr_conts = 0
         sopandcontname2metricval = dict()
         for sop in self.get_all_sops():
             img1,  img2  = self.cc.case1.load_img(sop,True,False), self.cc.case2.load_img(sop,True,False)
             anno1, anno2 = self.cc.case1.load_anno(sop), self.cc.case2.load_anno(sop)
-            for c in anno1.contour_names:
+            for c in view.contour_names:
                 if debug and (anno1.has_contour(c) or anno2.has_contour(c)): nr_conts += 1
                 sopandcontname2metricval[(sop, c)] = self.get_val(anno1.get_contour(c), anno2.get_contour(c), img1, img2)
-        if debug: print('Calculating all DSC values for ', nr_conts, ' contours took: ', time()-st, ' seconds.')
+        if debug: print('Calculating all T1AvgDiff values for ', nr_conts, ' contours took: ', time()-st, ' seconds.')
         return sopandcontname2metricval
 
 class T1AvgReaderMetric(Metric):
@@ -3186,22 +3112,22 @@ class T1AvgReaderMetric(Metric):
     def get_val(self, geo, img, string=False):
         # imgs = get_img (d,0,True,False)
         h, w = img.shape
-        mask = CATCH_utils.to_mask(geo, h,w).astype(bool)
+        mask = utils.to_mask(geo, h,w).astype(bool)
         myo_vals  = img[mask]
         global_t1 = np.mean(myo_vals)
         m         = global_t1
         return "{:.2f}".format(m) if string else m
         
-    def calculate_all_vals(self, debug=False):
+    def calculate_all_vals(self, view, debug=False):
         if debug: st = time(); nr_conts = 0
         sopandcontname2metricval = dict()
         for sop in self.get_all_sops():
             img  = self.cc.case1.load_img(sop,True,False)
             anno = self.cc.case1.load_anno(sop)
-            for c in anno1.contour_names:
+            for c in view.contour_names:
                 if debug and (anno1.has_contour(c) or anno2.has_contour(c)): nr_conts += 1
                 sopandcontname2metricval[(sop, c)] = self.get_val(anno.get_contour(c), img)
-        if debug: print('Calculating all DSC values for ', nr_conts, ' contours took: ', time()-st, ' seconds.')
+        if debug: print('Calculating all T1Avg values for ', nr_conts, ' contours took: ', time()-st, ' seconds.')
         return sopandcontname2metricval
         
 class AngleDiffMetric(Metric):

@@ -18,7 +18,7 @@ import pandas
 
 from LazyLuna import Mini_LL
 from LazyLuna.Tables import *
-from LazyLuna import CATCH_utils
+from LazyLuna import utils
         
 from mpl_interactions import ioff, panhandler, zoom_factory
 
@@ -853,9 +853,9 @@ class Qualitative_Correlationplot(Visualization):
                 axes[0].set_title('Phase: '+cat_name.replace('SAX ',''));   axes[1].set_title('Slice: '+str(slice_nr))
                 axes[2].set_title('ml Diff: {:.1f}'.format(mldiff)+'[ml]'); axes[3].set_title('Dice: {:.1f}'.format(dice)+'[%]')
                     
-                if not cont1.is_empty: CATCH_utils.plot_geo_face(axes[0], cont1, c='r')
-                if not cont1.is_empty or not cont2.is_empty: CATCH_utils.plot_geo_face_comparison(axes[1], cont1, cont2)
-                if not cont2.is_empty: CATCH_utils.plot_geo_face(axes[2], cont2, c='b')
+                if not cont1.is_empty: utils.plot_geo_face(axes[0], cont1, c='r')
+                if not cont1.is_empty or not cont2.is_empty: utils.plot_geo_face_comparison(axes[1], cont1, cont2)
+                if not cont2.is_empty: utils.plot_geo_face(axes[2], cont2, c='b')
                 pst = Polygon([[0,0],[1,1],[1,0]]) 
                 patches = [[PolygonPatch(pst, facecolor=c, edgecolor=c, alpha=0.4)] for c in ['red','green','blue']]
                 handles = [[cc.case1.reader_name], [cc.case1.reader_name+' & '+cc.case2.reader_name], [cc.case2.reader_name]]
@@ -896,8 +896,12 @@ class T1_bullseye_plot(Visualization):
         #cmap = plt.cm.viridis
         cmap = plt.cm.gnuplot # ??? which colormap?
         cmap = plt.cm.bwr
+        
+        print(minv, maxv)
         if minv is None: minv=np.min(means)
         if maxv is None: maxv=np.max(means)
+        print(minv, maxv)
+        
         minv, maxv = min([minv, 995]), max([maxv, 1005])
         minv = min([minv, 1000 - (maxv-1000)])
         maxv = max([maxv, 1000 + (1000 - minv)])

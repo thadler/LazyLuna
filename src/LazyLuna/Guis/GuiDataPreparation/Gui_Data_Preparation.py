@@ -141,34 +141,26 @@ class Window(QtWidgets.QMainWindow):
         cases = []
         sax_cine_view = SAX_CINE_View()
         sax_cs_view   = SAX_CS_View()
+        lax_cine_view = LAX_CINE_View()
         sax_t1_view   = SAX_T1_View()
         sax_t2_view   = SAX_T2_View()
-        for imgp, annop in imgsanno_paths:
+        sax_lge_view  = SAX_LGE_View()
+        views = [sax_cine_view, sax_cs_view, lax_cine_view, sax_t1_view, 
+                 sax_t2_view, sax_lge_view]
+        for i, (imgp, annop) in enumerate(imgsanno_paths):
+            print(i, imgp)
             self.ui.case_conversion_text_edit.append('Image and Annotation paths:/n'+imgp+'/n'+annop)
             if not os.path.exists(annop): 
                 self.ui.case_conversion_text_edit.append('No annotations: '+annop)
                 continue
             case = Case(imgp, annop, os.path.basename(imgp), os.path.basename(bp_annos))
-            try: 
-                case = sax_cine_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('CINE view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at CINE view: '+str(e))
-            try:
-                case = sax_cs_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('CS view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at CS view: '+str(e))
-            try:
-                case = sax_t1_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('T1 view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at T1 view: '+str(e))
-            try:
-                case = sax_t2_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('T2 view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at T2 view: '+str(e))
+            for v in views:
+                try:
+                    case = v.initialize_case(case)
+                    self.ui.case_conversion_text_edit.append(str(v.__class__)+' worked for: '+case.case_name)
+                except Exception as e:
+                    self.ui.case_conversion_text_edit.append(str(v.__class__)+' FAILED for: '+case.case_name+',  '+str(e))
+                    
             case.store(bp_cases)
     
     def transform_case(self):
@@ -179,6 +171,7 @@ class Window(QtWidgets.QMainWindow):
         cases = []
         sax_cine_view = SAX_CINE_View()
         sax_cs_view   = SAX_CS_View()
+        lax_cine_view = LAX_CINE_View()
         sax_t1_view   = SAX_T1_View()
         sax_t2_view   = SAX_T2_View()
         for imgp, annop in imgsanno_paths:
@@ -200,6 +193,11 @@ class Window(QtWidgets.QMainWindow):
                 self.ui.case_conversion_text_edit.append('CS view worked for: '+case.case_name)
             except Exception as e: 
                 self.ui.case_conversion_text_edit.append('Failed at CS view: '+str(e))
+            try:
+                case = lax_cine_view.initialize_case(case)
+                self.ui.case_conversion_text_edit.append('LAX CINE view worked for: '+case.case_name)
+            except Exception as e: 
+                self.ui.case_conversion_text_edit.append('Failed at LAX CINE view: '+str(e))
             try:
                 case = sax_t1_view.initialize_case(case)
                 self.ui.case_conversion_text_edit.append('T1 view worked for: '+case.case_name)
