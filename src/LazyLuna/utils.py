@@ -7,7 +7,6 @@ from shapely.geometry import Polygon, MultiPolygon, LineString, GeometryCollecti
 from skimage.measure import find_contours
 from rasterio import features
 
-import cv2
 from PIL import Image, ImageDraw
 from descartes import PolygonPatch
 import matplotlib.pyplot as plt
