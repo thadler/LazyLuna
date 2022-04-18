@@ -1067,8 +1067,8 @@ class Clinical_Result:
         self.name = ''
         self.unit = '[]'
 
-    def get_cr(self, string=False):             pass
-    def get_cr_diff(self, other, string=False): pass
+    def get_val(self, string=False):             pass
+    def get_val_diff(self, other, string=False): pass
 
 class LVSAX_ESV(Clinical_Result):
     def __init__(self, case):
@@ -1080,12 +1080,12 @@ class LVSAX_ESV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_volume('lv_endo', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LVSAX_EDV(Clinical_Result):
@@ -1098,11 +1098,11 @@ class LVSAX_EDV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_volume('lv_endo', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class RVSAX_ESV(Clinical_Result):
@@ -1115,12 +1115,12 @@ class RVSAX_ESV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_RV_ES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_volume('rv_endo', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class RVSAX_EDV(Clinical_Result):
@@ -1133,12 +1133,12 @@ class RVSAX_EDV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_RV_ED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_volume('rv_endo', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 # Phases
@@ -1152,11 +1152,11 @@ class LVSAX_ESPHASE(Clinical_Result):
         self.unit = '[#]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         return str(self.cat.phase) if string else self.cat.phase
 
-    def get_cr_diff(self, other, string=False):
-        p1, p2, nrp = self.get_cr(), other.get_cr(), self.cat.nr_phases
+    def get_val_diff(self, other, string=False):
+        p1, p2, nrp = self.get_val(), other.get_val(), self.cat.nr_phases
         cr_diff = min(abs(p1-p2), (min(p1,p2) - max(p1,p2)) % nrp) # module ring difference
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
@@ -1200,11 +1200,11 @@ class NR_SLICES(Clinical_Result):
         self.unit = '[#]'
         self.cat  = [c for c in self.case.categories if hasattr(c, 'nr_slices')][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         return str(self.cat.nr_slices) if string else self.cat.nr_slices
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LVSAX_MYO(Clinical_Result):
@@ -1217,12 +1217,12 @@ class LVSAX_MYO(Clinical_Result):
         self.unit = '[g]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = 1.05 * self.cat.get_volume('lv_myo', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class RVSAX_MYO(Clinical_Result):
@@ -1235,12 +1235,12 @@ class RVSAX_MYO(Clinical_Result):
         self.unit = '[g]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_RV_ED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = 1.05 * self.cat.get_volume('rv_myo', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class RVSAX_SV(Clinical_Result):
@@ -1254,13 +1254,13 @@ class RVSAX_SV(Clinical_Result):
         self.cat_es  = [c for c in self.case.categories if isinstance(c, SAX_RV_ES_Category)][0]
         self.cat_ed  = [c for c in self.case.categories if isinstance(c, SAX_RV_ED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         esv = self.cat_es.get_volume('rv_endo', self.cat_es.phase)
         edv = self.cat_ed.get_volume('rv_endo', self.cat_ed.phase)
         return "{:.2f}".format(edv - esv) if string else edv - esv
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class RVSAX_EF(Clinical_Result):
@@ -1274,13 +1274,13 @@ class RVSAX_EF(Clinical_Result):
         self.cat_es  = [c for c in self.case.categories if isinstance(c, SAX_RV_ES_Category)][0]
         self.cat_ed  = [c for c in self.case.categories if isinstance(c, SAX_RV_ED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         esv = self.cat_es.get_volume('rv_endo', self.cat_es.phase)
         edv = self.cat_ed.get_volume('rv_endo', self.cat_ed.phase) + 10**-9
         return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LVSAX_SV(Clinical_Result):
@@ -1294,13 +1294,13 @@ class LVSAX_SV(Clinical_Result):
         self.cat_es  = [c for c in self.case.categories if isinstance(c, SAX_LV_ES_Category)][0]
         self.cat_ed  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         esv = self.cat_es.get_volume('lv_endo', self.cat_es.phase)
         edv = self.cat_ed.get_volume('lv_endo', self.cat_ed.phase)
         return "{:.2f}".format(edv - esv) if string else edv - esv
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LVSAX_EF(Clinical_Result):
@@ -1314,13 +1314,13 @@ class LVSAX_EF(Clinical_Result):
         self.cat_es  = [c for c in self.case.categories if isinstance(c, SAX_LV_ES_Category)][0]
         self.cat_ed  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         esv = self.cat_es.get_volume('lv_endo', self.cat_es.phase)
         edv = self.cat_ed.get_volume('lv_endo', self.cat_ed.phase) + 10**-9
         return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 ###########
@@ -1346,14 +1346,14 @@ class LAX_4CV_LVESV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('lv_lax_endo', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_LVEDV(Clinical_Result):
@@ -1366,14 +1366,14 @@ class LAX_4CV_LVEDV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('lv_lax_endo', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_LVM(Clinical_Result):
@@ -1386,7 +1386,7 @@ class LAX_4CV_LVM(Clinical_Result):
         self.unit = '[g]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         endo_area = self.cat.get_area('lv_lax_endo',  self.cat.phase)
         epi_area  = endo_area + self.cat.get_area('lv_lax_myo',  self.cat.phase)
         L         = self.cat.get_anno(0, self.cat.phase).length_LV()
@@ -1395,8 +1395,8 @@ class LAX_4CV_LVM(Clinical_Result):
         cr        = 1.05 * (epi_area - endo_area)
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 
@@ -1412,7 +1412,7 @@ class LAX_4CV_LVSV(Clinical_Result):
         self.cat_es  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
         self.cat_ed  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat_es.get_area('lv_lax_endo', self.cat_es.phase)
         anno = self.cat_es.get_anno(0, self.cat_es.phase)
         esv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
@@ -1421,8 +1421,8 @@ class LAX_4CV_LVSV(Clinical_Result):
         edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
         return "{:.2f}".format(edv - esv) if string else edv - esv
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_LVEF(Clinical_Result):
@@ -1436,7 +1436,7 @@ class LAX_4CV_LVEF(Clinical_Result):
         self.cat_es  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
         self.cat_ed  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat_es.get_area('lv_lax_endo', self.cat_es.phase)
         anno = self.cat_es.get_anno(0, self.cat_es.phase)
         esv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
@@ -1445,8 +1445,8 @@ class LAX_4CV_LVEF(Clinical_Result):
         edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000 + 10**-9
         return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
     
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_4CV_ESAtrialFatArea(Clinical_Result):
@@ -1459,13 +1459,13 @@ class LAX_4CV_ESAtrialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Atrial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_4CV_EDAtrialFatArea(Clinical_Result):
@@ -1478,13 +1478,13 @@ class LAX_4CV_EDAtrialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Atrial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_4CV_ESEpicardialFatArea(Clinical_Result):
@@ -1497,13 +1497,13 @@ class LAX_4CV_ESEpicardialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Epicardial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_4CV_EDEpicardialFatArea(Clinical_Result):
@@ -1516,13 +1516,13 @@ class LAX_4CV_EDEpicardialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Epicardial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_ESPericardialFatArea(Clinical_Result):
@@ -1535,13 +1535,13 @@ class LAX_4CV_ESPericardialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Pericardial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_4CV_EDPericardialFatArea(Clinical_Result):
@@ -1554,13 +1554,13 @@ class LAX_4CV_EDPericardialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Pericardial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 
@@ -1580,14 +1580,14 @@ class LAX_2CV_LVESV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('lv_lax_endo', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_2CV_LVEDV(Clinical_Result):
@@ -1600,14 +1600,14 @@ class LAX_2CV_LVEDV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('lv_lax_endo', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_2CV_LVM(Clinical_Result):
@@ -1620,7 +1620,7 @@ class LAX_2CV_LVM(Clinical_Result):
         self.unit = '[g]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         endo_area = self.cat.get_area('lv_lax_endo',  self.cat.phase)
         epi_area  = endo_area + self.cat.get_area('lv_lax_myo',  self.cat.phase)
         L         = self.cat.get_anno(0, self.cat.phase).length_LV()
@@ -1629,8 +1629,8 @@ class LAX_2CV_LVM(Clinical_Result):
         cr        = 1.05 * (epi_area - endo_area)
         return "{:.2f}".format(cr) if string else cr
     
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_2CV_LVSV(Clinical_Result):
@@ -1644,7 +1644,7 @@ class LAX_2CV_LVSV(Clinical_Result):
         self.cat_es  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
         self.cat_ed  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat_es.get_area('lv_lax_endo', self.cat_es.phase)
         anno = self.cat_es.get_anno(0, self.cat_es.phase)
         esv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
@@ -1653,8 +1653,8 @@ class LAX_2CV_LVSV(Clinical_Result):
         edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
         return "{:.2f}".format(edv - esv) if string else edv - esv
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_2CV_LVEF(Clinical_Result):
@@ -1668,7 +1668,7 @@ class LAX_2CV_LVEF(Clinical_Result):
         self.cat_es  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
         self.cat_ed  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat_es.get_area('lv_lax_endo', self.cat_es.phase)
         anno = self.cat_es.get_anno(0, self.cat_es.phase)
         esv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000
@@ -1677,8 +1677,8 @@ class LAX_2CV_LVEF(Clinical_Result):
         edv  = 8/(3*np.pi) * (area**2)/anno.length_LV() / 1000 + 10**-9
         return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 
@@ -1692,13 +1692,13 @@ class LAX_2CV_ESAtrialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Atrial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_2CV_EDAtrialFatArea(Clinical_Result):
@@ -1711,13 +1711,13 @@ class LAX_2CV_EDAtrialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Atrial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff    
 
 class LAX_2CV_ESEpicardialFatArea(Clinical_Result):
@@ -1730,13 +1730,13 @@ class LAX_2CV_ESEpicardialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Epicardial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_2CV_EDEpicardialFatArea(Clinical_Result):
@@ -1749,13 +1749,13 @@ class LAX_2CV_EDEpicardialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Epicardial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_2CV_ESPericardialFatArea(Clinical_Result):
@@ -1768,13 +1768,13 @@ class LAX_2CV_ESPericardialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Pericardial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_2CV_EDPericardialFatArea(Clinical_Result):
@@ -1787,13 +1787,13 @@ class LAX_2CV_EDPericardialFatArea(Clinical_Result):
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('Pericardial', self.cat.phase)
         area = area / 100.0
         return "{:.2f}".format(area) if string else area
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 ###########
@@ -1810,7 +1810,7 @@ class LAX_BIPLANE_LVESV(Clinical_Result):
         self.cat1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVES_Category)][0]
         self.cat2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area1 = self.cat1.get_area('lv_lax_endo', self.cat1.phase)
         area2 = self.cat2.get_area('lv_lax_endo', self.cat2.phase)
         anno1 = self.cat1.get_anno(0, self.cat1.phase)
@@ -1819,8 +1819,8 @@ class LAX_BIPLANE_LVESV(Clinical_Result):
         cr    = 8/(3*np.pi) * (area1*area2)/L / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class LAX_BIPLANE_LVEDV(Clinical_Result):
@@ -1834,7 +1834,7 @@ class LAX_BIPLANE_LVEDV(Clinical_Result):
         self.cat1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
         self.cat2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area1 = self.cat1.get_area('lv_lax_endo', self.cat1.phase)
         area2 = self.cat2.get_area('lv_lax_endo', self.cat2.phase)
         anno1 = self.cat1.get_anno(0, self.cat1.phase)
@@ -1843,8 +1843,8 @@ class LAX_BIPLANE_LVEDV(Clinical_Result):
         cr    = 8/(3*np.pi) * (area1*area2)/L / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_BIPLANE_LVSV(Clinical_Result):
@@ -1860,7 +1860,7 @@ class LAX_BIPLANE_LVSV(Clinical_Result):
         self.cated1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
         self.cated2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area1 = self.cates1.get_area('lv_lax_endo', self.cates1.phase)
         area2 = self.cates2.get_area('lv_lax_endo', self.cates2.phase)
         anno1 = self.cates1.get_anno(0, self.cates1.phase)
@@ -1876,8 +1876,8 @@ class LAX_BIPLANE_LVSV(Clinical_Result):
         cr    = edv - esv
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_BIPLANE_LVEF(Clinical_Result):
@@ -1893,7 +1893,7 @@ class LAX_BIPLANE_LVEF(Clinical_Result):
         self.cated1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LVED_Category)][0]
         self.cated2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LVED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area1 = self.cates1.get_area('lv_lax_endo', self.cates1.phase)
         area2 = self.cates2.get_area('lv_lax_endo', self.cates2.phase)
         anno1 = self.cates1.get_anno(0, self.cates1.phase)
@@ -1909,8 +1909,8 @@ class LAX_BIPLANE_LVEF(Clinical_Result):
         cr    = (edv - esv) / edv
         return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 ################
@@ -1929,12 +1929,12 @@ class LAX_4CV_RAESAREA(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_area('ra', self.cat.phase) / 100
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_RAEDAREA(Clinical_Result):
@@ -1947,12 +1947,12 @@ class LAX_4CV_RAEDAREA(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_area('ra', self.cat.phase) / 100
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_RAESV(Clinical_Result):
@@ -1965,14 +1965,14 @@ class LAX_4CV_RAESV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('ra', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_RAEDV(Clinical_Result):
@@ -1985,14 +1985,14 @@ class LAX_4CV_RAEDV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('ra', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
     
@@ -2011,12 +2011,12 @@ class LAX_4CV_LAESAREA(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_area('la', self.cat.phase) / 100
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_LAEDAREA(Clinical_Result):
@@ -2029,12 +2029,12 @@ class LAX_4CV_LAEDAREA(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_area('la', self.cat.phase) / 100
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_LAESV(Clinical_Result):
@@ -2047,14 +2047,14 @@ class LAX_4CV_LAESV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('la', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_4CV_LAEDV(Clinical_Result):
@@ -2067,14 +2067,14 @@ class LAX_4CV_LAEDV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('la', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 ############
@@ -2092,12 +2092,12 @@ class LAX_2CV_LAESAREA(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_area('la', self.cat.phase) / 100
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_2CV_LAEDAREA(Clinical_Result):
@@ -2110,12 +2110,12 @@ class LAX_2CV_LAEDAREA(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_area('la', self.cat.phase) / 100
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_2CV_LAESV(Clinical_Result):
@@ -2128,14 +2128,14 @@ class LAX_2CV_LAESV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAES_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('la', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_2CV_LAEDV(Clinical_Result):
@@ -2148,14 +2148,14 @@ class LAX_2CV_LAEDV(Clinical_Result):
         self.unit = '[ml]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAED_Category)][0]
 
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area = self.cat.get_area('la', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
         cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
         return "{:.2f}".format(cr) if string else cr
 
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
     
@@ -2172,7 +2172,7 @@ class LAX_BIPLANAR_LAESV(Clinical_Result):
         self.unit = '[ml]'
         self.cat1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAES_Category)][0]
         self.cat2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAES_Category)][0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area1 = self.cat1.get_area('la', self.cat1.phase)
         L1    = self.cat1.get_anno(0, self.cat1.phase).length_LA()
         area2 = self.cat2.get_area('la', self.cat2.phase)
@@ -2180,8 +2180,8 @@ class LAX_BIPLANAR_LAESV(Clinical_Result):
         L     = min(L1, L2)
         cr    = 8/(3*np.pi) * (area1*area2)/L / 1000
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class LAX_BIPLANAR_LAEDV(Clinical_Result):
@@ -2193,7 +2193,7 @@ class LAX_BIPLANAR_LAEDV(Clinical_Result):
         self.unit = '[ml]'
         self.cat1 = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAED_Category)][0]
         self.cat2 = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAED_Category)][0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         area1 = self.cat1.get_area('la', self.cat1.phase)
         L1    = self.cat1.get_anno(0, self.cat1.phase).length_LA()
         area2 = self.cat2.get_area('la', self.cat2.phase)
@@ -2201,8 +2201,8 @@ class LAX_BIPLANAR_LAEDV(Clinical_Result):
         L     = min(L1, L2)
         cr    = 8/(3*np.pi) * (area1*area2)/L / 1000
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 
@@ -2217,14 +2217,14 @@ class SAXMap_GLOBALT1(Clinical_Result):
         self.name = 'GLOBAL_T1'
         self.unit = '[ms]'
         self.cat  = self.case.categories[0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = []
         for d in range(self.cat.nr_slices):
             cr += self.cat.get_anno(d,0).get_pixel_values('lv_myo', self.cat.get_img(d,0)).tolist()
         cr = np.nanmean(cr)
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class SAXMap_GLOBALT2(SAXMap_GLOBALT1):
@@ -2337,11 +2337,11 @@ class SAXLGE_LVV(Clinical_Result):
         self.unit = '[ml]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_volume('lv_endo')
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class SAXLGE_LVMYOMASS(Clinical_Result):
@@ -2353,11 +2353,11 @@ class SAXLGE_LVMYOMASS(Clinical_Result):
         self.unit = '[g]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = 1.05 * self.cat.get_volume('lv_myo')
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class SAXLGE_LVMYOV(Clinical_Result):
@@ -2369,11 +2369,11 @@ class SAXLGE_LVMYOV(Clinical_Result):
         self.unit = '[ml]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_volume('lv_myo')
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class SAXLGE_SCARMASS(Clinical_Result):
@@ -2385,12 +2385,12 @@ class SAXLGE_SCARMASS(Clinical_Result):
         self.unit = '[g]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, contname='scar', string=False):
+    def get_val(self, contname='scar', string=False):
         #cr = 1.05 * self.cat.get_volume('scar_fwhm_res_8_excluded_area')
         cr = 1.05 * self.cat.get_volume(contname)
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, contname='scar', string=False):
-        cr_diff = self.get_cr(contname)-other.get_cr(contname)
+    def get_val_diff(self, other, contname='scar', string=False):
+        cr_diff = self.get_val(contname)-other.get_val(contname)
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 class SAXLGE_SCARVOL(Clinical_Result):
@@ -2402,12 +2402,12 @@ class SAXLGE_SCARVOL(Clinical_Result):
         self.unit = '[ml]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, contname='scar', string=False):
+    def get_val(self, contname='scar', string=False):
         #cr = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
         cr = self.cat.get_volume(contname)
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, contname='scar', string=False):
-        cr_diff = self.get_cr(contname)-other.get_cr(contname)
+    def get_val_diff(self, other, contname='scar', string=False):
+        cr_diff = self.get_val(contname)-other.get_val(contname)
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class SAXLGE_SCARF(Clinical_Result):
@@ -2419,14 +2419,14 @@ class SAXLGE_SCARF(Clinical_Result):
         self.unit = '[%]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, contname='scar', string=False):
+    def get_val(self, contname='scar', string=False):
         #scar = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
         scar = self.cat.get_volume(contname)
         lvm  = self.cat.get_volume('lv_myo')
         cr = 100.0 * (scar/(lvm+10**-9))
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, contname='scar', string=False):
-        cr_diff = self.get_cr(contname)-other.get_cr(contname)
+    def get_val_diff(self, other, contname='scar', string=False):
+        cr_diff = self.get_val(contname)-other.get_val(contname)
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
 class SAXLGE_EXCLMASS(Clinical_Result):
@@ -2438,15 +2438,15 @@ class SAXLGE_EXCLMASS(Clinical_Result):
         self.unit = '[g]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         #scar_excl = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
         #scar      = self.cat.get_volume('scar_fwhm_res_8')
         scar_excl = self.cat.get_volume('scar_fwhm_excluded_area')
         scar      = self.cat.get_volume('scar_fwhm')
         cr = 1.05 * (scar - scar_excl)
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
     
     
@@ -2459,13 +2459,13 @@ class SAXLGE_EXCLVOL(Clinical_Result):
         self.unit = '[ml]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         scar_excl = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
         scar      = self.cat.get_volume('scar_fwhm_res_8')
         cr = scar - scar_excl
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
             
     
@@ -2478,11 +2478,11 @@ class SAXLGE_NOREFLOWVOL(Clinical_Result):
         self.unit = '[ml]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
-    def get_cr(self, string=False):
+    def get_val(self, string=False):
         cr = self.cat.get_volume('noreflow')
         return "{:.2f}".format(cr) if string else cr
-    def get_cr_diff(self, other, string=False):
-        cr_diff = self.get_cr()-other.get_cr()
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
         
 

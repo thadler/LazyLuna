@@ -105,7 +105,7 @@ class CC_ClinicalResultsTable(Table):
             try: # due to cases that couldn't be fitted
                 row = [c1.case_name, c1.reader_name, c2.reader_name]
                 for cr1, cr2 in zip(c1.crs, c2.crs):
-                    row += [cr1.get_cr(), cr2.get_cr(), cr1.get_cr_diff(cr2)]
+                    row += [cr1.get_val(), cr2.get_val(), cr1.get_val_diff(cr2)]
                 rows.append(row)
             except: rows.append([np.nan for _ in range(len(case1.crs)*3+3)])
         df = DataFrame(rows, columns=columns)
@@ -184,9 +184,9 @@ class CC_ClinicalResultsAveragesTable(Table):
         for cc in case_comparisons:
             c1, c2 = cc.case1, cc.case2
             for cr1, cr2 in zip(c1.crs, c2.crs):
-                cr_dict1[cr1.name].append(cr1.get_cr())
-                cr_dict2[cr1.name].append(cr2.get_cr())
-                cr_dict3[cr1.name].append(cr1.get_cr_diff(cr2))
+                cr_dict1[cr1.name].append(cr1.get_val())
+                cr_dict2[cr1.name].append(cr2.get_val())
+                cr_dict3[cr1.name].append(cr1.get_val_diff(cr2))
         rows = []
         for cr_name in cr_dict1.keys():
             row = [cr_name]

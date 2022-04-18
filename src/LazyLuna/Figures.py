@@ -454,8 +454,8 @@ class BlandAltman(Visualization):
         
         rows = []
         for cc in case_comparisons:
-            cr1 = [cr.get_cr() for cr in cc.case1.crs if cr.name==cr_name][0]
-            cr2 = [cr.get_cr() for cr in cc.case2.crs if cr.name==cr_name][0]
+            cr1 = [cr.get_val() for cr in cc.case1.crs if cr.name==cr_name][0]
+            cr2 = [cr.get_val() for cr in cc.case2.crs if cr.name==cr_name][0]
             rows.append([(cr1+cr2)/2.0, cr1-cr2])
         df = DataFrame(rows, columns=[cr_name, cr_name+' difference'])
         sns.scatterplot(ax=ax, x=cr_name, y=cr_name+' difference', data=df, markers='o', 
@@ -504,7 +504,7 @@ class BlandAltman(Visualization):
                 for tab_name, tab in self.view.case_tabs.items(): 
                     t = tab()
                     t.make_tab(self.gui, self.view, cc)
-                    self.gui.tabs.addTab(t, tab_name)
+                    self.gui.tabs.addTab(t, tab_name+': '+cc.case1.case_name)
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
@@ -537,8 +537,8 @@ class PairedBoxplot(Visualization):
         swarm_palette   = sns.color_palette(["#061C36", "#061C36"])
         rows = []
         for cc in case_comparisons:
-            cr1 = [cr.get_cr() for cr in cc.case1.crs if cr.name==cr_name][0]
-            cr2 = [cr.get_cr() for cr in cc.case2.crs if cr.name==cr_name][0]
+            cr1 = [cr.get_val() for cr in cc.case1.crs if cr.name==cr_name][0]
+            cr2 = [cr.get_val() for cr in cc.case2.crs if cr.name==cr_name][0]
             rows.extend([[readername1, cr1], [readername2, cr2]])
         df = DataFrame(rows, columns=['Reader', cr_name])
         print(df)
@@ -565,23 +565,33 @@ class PairedBoxplot(Visualization):
             ax.plot(x, y, color="black", alpha=0.4, linewidth=0.3)
         
         texts = [cc.case1.case_name for cc in case_comparisons]
+        
+        # sorts cr names by cr value
+        ccs1 = sorted([cc for cc in case_comparisons], key=lambda cc: [cr for cr in cc.case1.crs if cr.name==cr_name][0].get_val())
+        ccs2 = sorted([cc for cc in case_comparisons], key=lambda cc: [cr for cr in cc.case2.crs if cr.name==cr_name][0].get_val())
+        texts1 = [cc.case1.case_name for cc in ccs1]
+        texts2 = [cc.case1.case_name for cc in ccs2]
+        
+        ccs   = [ccs1, ccs2]
+        texts = [texts1, texts2]
+        
         annot = ax.annotate("", xy=(0,0), xytext=(20,20), textcoords="offset points", 
                             bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
         annot.set_visible(False)
-        
         if not hasattr(self, 'canvas'): return
-        def update_annot(collection, ind):
+        
+        def update_annot(collection, i, ind):
             pos = collection.get_offsets()[ind["ind"][0]]
             annot.xy = pos
-            annot.set_text(texts[ind['ind'][0]])
+            annot.set_text(texts[i][ind['ind'][0]])
         
         def hover(event):
             vis = annot.get_visible()
             if event.inaxes==ax:
-                for collection in ax.collections:
+                for i, collection in enumerate(ax.collections):
                     cont, ind = collection.contains(event)
                     if cont:
-                        update_annot(collection, ind)
+                        update_annot(collection, i, ind)
                         annot.set_visible(True)
                         self.canvas.draw_idle()
                     else:
@@ -592,13 +602,14 @@ class PairedBoxplot(Visualization):
         def onclick(event):
             vis = annot.get_visible()
             if event.inaxes==ax:
-                cont, ind = ax.collections[0].contains(event)
-                name = [cc.case1.case_name for cc in case_comparisons][ind['ind'][0]]
-                cc = [cc for cc in case_comparisons][ind['ind'][0]]
-                for tab_name, tab in self.view.case_tabs.items(): 
-                    t = tab()
-                    t.make_tab(self.gui, self.view, cc)
-                    self.gui.tabs.addTab(t, tab_name)
+                for i, collection in enumerate(ax.collections):
+                    cont, ind = collection.contains(event)
+                    if cont:
+                        cc = ccs[i][ind['ind'][0]]
+                        for tab_name, tab in self.view.case_tabs.items(): 
+                            t = tab()
+                            t.make_tab(self.gui, self.view, cc)
+                            self.gui.tabs.addTab(t, tab_name+': '+cc.case1.case_name)
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
@@ -631,7 +642,7 @@ class Boxplot(Visualization):
         for cc in case_comparisons:
             cr1 = [cr for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr for cr in cc.case2.crs if cr.name==cr_name][0]
-            rows.append([cc.case1.reader_name+'-'+cc.case2.reader_name, cr1.get_cr_diff(cr2)])
+            rows.append([cc.case1.reader_name+'-'+cc.case2.reader_name, cr1.get_val_diff(cr2)])
         df = DataFrame(rows, columns=['Reader', cr_name+' difference'])
 
         # Plot
@@ -676,7 +687,7 @@ class Boxplot(Visualization):
                 for tab_name, tab in self.view.case_tabs.items(): 
                     t = tab()
                     t.make_tab(self.gui, self.view, cc)
-                    self.gui.tabs.addTab(t, tab_name)
+                    self.gui.tabs.addTab(t, tab_name+': '+cc.case1.case_name)
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
@@ -709,7 +720,7 @@ class QQPlot(Visualization):
         for cc in case_comparisons:
             cr1 = [cr for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr for cr in cc.case2.crs if cr.name==cr_name][0]
-            rows.append([cc.case1.reader_name+'-'+cc.case2.reader_name, cr1.get_cr_diff(cr2)])
+            rows.append([cc.case1.reader_name+'-'+cc.case2.reader_name, cr1.get_val_diff(cr2)])
         df = DataFrame(rows, columns=['Reader', cr_name+' difference'])
 
         # Plot
@@ -753,7 +764,7 @@ class QQPlot(Visualization):
                 for tab_name, tab in self.view.case_tabs.items(): 
                     t = tab()
                     t.make_tab(self.gui, self.view, cc)
-                    self.gui.tabs.addTab(t, tab_name)
+                    self.gui.tabs.addTab(t, tab_name+': '+cc.case1.case_name)
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)

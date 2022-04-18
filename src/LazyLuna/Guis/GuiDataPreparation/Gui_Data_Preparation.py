@@ -2,6 +2,7 @@ import sys
 import os
 import numpy as np
 import pandas
+import pydicom
 
 from PyQt5 import Qt, QtWidgets, QtGui, QtCore, uic
 
@@ -36,6 +37,8 @@ class Window(QtWidgets.QMainWindow):
         self.ui.reader_folder_btn.clicked.connect(self.set_reader_folder_path)
         self.ui.load_table_btn   .clicked.connect(self.present_table)
         
+        # suggest LL tags
+        self.ui.pushButton_2  .clicked.connect(self.suggest_LL_tags)
         # setting LL tags
         self.ui.SAX_CINE_add_to_dict.clicked.connect(self.set_sax_cine_LL_tags)
         self.ui.SAX_CS_add_to_dict  .clicked.connect(self.set_sax_cs_LL_tags)
@@ -174,42 +177,24 @@ class Window(QtWidgets.QMainWindow):
         lax_cine_view = LAX_CINE_View()
         sax_t1_view   = SAX_T1_View()
         sax_t2_view   = SAX_T2_View()
-        for imgp, annop in imgsanno_paths:
-            if single_imgs_path not in imgp: continue
-            print('Image path: ', imgp)
-            self.ui.case_conversion_text_edit.append('\nImage and Annotation paths:/n'+imgp+'/n'+annop)
+        sax_lge_view  = SAX_LGE_View()
+        views = [sax_cine_view, sax_cs_view, lax_cine_view, sax_t1_view, 
+                 sax_t2_view, sax_lge_view]
+        for i, (imgp, annop) in enumerate(imgsanno_paths):
+            print(i, imgp)
+            self.ui.case_conversion_text_edit.append('Image and Annotation paths:/n'+imgp+'/n'+annop)
             if not os.path.exists(annop): 
                 self.ui.case_conversion_text_edit.append('No annotations: '+annop)
                 continue
             case = Case(imgp, annop, os.path.basename(imgp), os.path.basename(bp_annos))
-            try: 
-                #case = sax_cine_view.customize_case(case)
-                case = sax_cine_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('CINE view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at CINE view: '+str(e))
-            try:
-                case = sax_cs_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('CS view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at CS view: '+str(e))
-            try:
-                case = lax_cine_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('LAX CINE view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at LAX CINE view: '+str(e))
-            try:
-                case = sax_t1_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('T1 view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at T1 view: '+str(e))
-            try:
-                case = sax_t2_view.initialize_case(case)
-                self.ui.case_conversion_text_edit.append('T2 view worked for: '+case.case_name)
-            except Exception as e: 
-                self.ui.case_conversion_text_edit.append('Failed at T2 view: '+str(e))
+            for v in views:
+                try:
+                    case = v.initialize_case(case)
+                    self.ui.case_conversion_text_edit.append(str(v.__class__)+' worked for: '+case.case_name)
+                except Exception as e:
+                    self.ui.case_conversion_text_edit.append(str(v.__class__)+' FAILED for: '+case.case_name+',  '+str(e))
+                    
             case.store(bp_cases)
-            #cases.append(case)
         
         
     def present_table(self):
@@ -229,6 +214,50 @@ class Window(QtWidgets.QMainWindow):
         pandas_model = DataFrameModel(self.information_df, parent=self)
         self.ui.image_information_table_view.setModel(pandas_model)
 
+        
+    def acceptable_orientation(self, dcm):
+        try: 
+            if sum(dcm.ImageOrientationPatient)==2: return False
+        except Exception as e: pass
+        return True
+        
+    def suggest_LL_tags(self):
+        table = self.information_df
+        divide_by_series_uid = self.ui.differentiation_radio_btn.isChecked()
+        sax_cine_sds = []
+        for row in range(table.shape[0]):
+            sd = table.at[row,'series_descr']
+            if '2cv' in sd: continue 
+            if '3cv' in sd: continue 
+            if '4cv' in sd: continue
+            if 'pre_MOLLI' in sd and 'MOCO_T1' in sd and not 'T1S' in sd:
+                table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX T1'
+            if sd.startswith('T2') and 'MOCO_T2' in sd:
+                table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX T2'
+            if not divide_by_series_uid:
+                # check number of annotations
+                # check orientation != 2 (removes axial images)
+                # check larger > 7*25
+                try:
+                    if int(table.at[row,'nr_annos'])==0:   continue
+                    if int(table.at[row,'nr_imgs' ])<7*25: continue
+                    dcm_paths = get_img_paths_for_series_descr(self.imgs_df, table.at[row,'series_descr'])
+                    if not self.acceptable_orientation(pydicom.dcmread(dcm_paths[0], stop_before_pixels=True)): continue
+                    sax_cine_sds.append(sd)
+                except Exception as e:
+                    pass
+        # set sax cine tag
+        if not divide_by_series_uid and len(sax_cine_sds)==1:
+            sax_cine_sd = sax_cine_sds[0]
+            for row in range(table.shape[0]):
+                sd = table.at[row,'series_descr']
+                if sd==sax_cine_sd:
+                    table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX CINE'
+        pandas_model = DataFrameModel(table, parent=self)
+        self.ui.image_information_table_view.setModel(pandas_model)
+        
+        
+        
     def set_sax_cine_LL_tags(self): self.set_LL_tags('Lazy Luna: SAX CINE')
     def set_sax_cs_LL_tags(self):   self.set_LL_tags('Lazy Luna: SAX CS')
     def set_lax_2cv_LL_tags(self):  self.set_LL_tags('Lazy Luna: LAX 2CV')
@@ -241,7 +270,6 @@ class Window(QtWidgets.QMainWindow):
     
     def set_LL_tags(self, name):
         table = self.ui.image_information_table_view
-        divide_by_series_uid = self.ui.differentiation_radio_btn.isChecked()
         idxs  = table.selectionModel().selectedIndexes()
         for idx in sorted(idxs):
             self.information_df.at[idx.row(),'Change LL_tag'] = name
