@@ -16,7 +16,7 @@ import numpy as np
 
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables import *
-from LazyLuna.Mini_LL import Case_Comparison, SAX_CS_View, SAX_CINE_View
+from LazyLuna.Mini_LL import Case_Comparison
 from LazyLuna.Guis.Addable_Tabs.CCs_Overview_Tab import CCs_Overview_Tab
 from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab import CC_Metrics_Tab
 
@@ -120,6 +120,7 @@ class MyTabWidget(QWidget):
         if dialog.exec_() == QDialog.Accepted:
             basepath = dialog.selectedFiles()[0]
             self.case_folder_path.setText(basepath)
+        print('Basepath: ', basepath)
         self.get_segmenters()
     
     def set_segmenter(self):
@@ -155,7 +156,8 @@ class MyTabWidget(QWidget):
             self.combobox_select_segmenter2.clear()
             self.combobox_select_segmenter .addItems(['Select a Reader'] + readers)
             self.combobox_select_segmenter2.addItems(['Select a Reader'] + readers)
-        except:
+        except Exception as e:
+            print('Get segmenters: ', e)
             pass
     
 

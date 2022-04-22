@@ -16,10 +16,11 @@ import inspect
 
 import pandas
 
-from LazyLuna.Mini_LL import Case_Comparison, SAX_CINE_View, SAX_CS_View
+from LazyLuna.Mini_LL import Case_Comparison
 from LazyLuna.loading_functions import *
-from LazyLuna.Tables import *
+from LazyLuna.Tables  import *
 from LazyLuna.Figures import *
+from LazyLuna         import Views
 
 
 class CCs_Overview_Tab(QWidget):
@@ -114,30 +115,17 @@ class CCs_Overview_Tab(QWidget):
             view = self.get_view(view_name)
             view_folder_path = os.path.join(export_folder_path, view_name)
             if not os.path.exists(view_folder_path): os.mkdir(view_folder_path)
-            self.gui.cc_table.store(os.path.join(export_folder_path, 'table1.csv'))
-            self.overview_table.store(os.path.join(view_folder_path, 'overview_table.csv'))
-            cr_table = CC_ClinicalResultsTable()
-            cr_table.calculate(self.case_comparisons)
-            cr_table.store(os.path.join(view_folder_path, 'clinical_results.csv'))
-            cr_overview_figure = SAX_BlandAltman()
-            cr_overview_figure.visualize(self.case_comparisons)
-            cr_overview_figure.store(view_folder_path)
-            metrics_table = CCs_MetricsTable()
-            metrics_table.calculate(self.case_comparisons, self.get_view(view_name))
-            metrics_table.store(os.path.join(view_folder_path, 'metrics_phase_slice_table.csv'))
-            failed_segmentation_folder_path = os.path.join(view_folder_path, 'Failed_Segmentations')
-            if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
-            failed_annotation_comparison = Failed_Annotation_Comparison_Yielder()
-            failed_annotation_comparison.set_values(view, self.case_comparisons)
-            failed_annotation_comparison.store(failed_segmentation_folder_path)
-            table = SAX_Cine_CCs_pretty_averageCRs_averageMetrics_Table()
-            table.calculate(self.case_comparisons, view)
-            table.present_metrics()
-            table.store(os.path.join(view_folder_path, 'metrics_table_by_contour_position.csv'))
-            table.present_crs()
-            table.store(os.path.join(view_folder_path, 'crvs_and_metrics.csv'))
         except Exception as e:
             print(e)
+        
+        try:
+            self.gui.cc_table.store(os.path.join(export_folder_path, 'table.csv'))
+            self.overview_table.store(os.path.join(view_folder_path, 'overview_table.csv'))
+        except Exception as e:
+            print(e)
+            
+        view.store_information(self.case_comparisons, view_folder_path)
+            
         
         
         
@@ -165,11 +153,11 @@ class CCs_Overview_Tab(QWidget):
         return
     
     def get_view(self, vname):
-        view = [c[1] for c in inspect.getmembers(Mini_LL, inspect.isclass) if issubclass(c[1], Mini_LL.View) if c[0]==vname][0]
+        view = [c[1] for c in inspect.getmembers(Views, inspect.isclass) if issubclass(c[1], Views.View) if c[0]==vname][0]
         return view()
     
     def get_view_names(self):
-        v_names = [c[0] for c in inspect.getmembers(Mini_LL, inspect.isclass) if issubclass(c[1], Mini_LL.View) if c[0]!='View']
+        v_names = [c[0] for c in inspect.getmembers(Views, inspect.isclass) if issubclass(c[1], Views.View) if c[0]!='View']
         return v_names
     
     def select_view(self):

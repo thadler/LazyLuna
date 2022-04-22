@@ -6,12 +6,15 @@ import pydicom
 
 from PyQt5 import Qt, QtWidgets, QtGui, QtCore, uic
 
+import inspect
+
 from matplotlib.backends.backend_qt5agg import (NavigationToolbar2QT as NavigationToolbar)
 
 from catch_converter.parse_contours import parse_cvi42ws
 from LazyLuna.loading_functions import *
 from LazyLuna.Mini_LL import *
-from LazyLuna.Tables import DataFrameModel
+from LazyLuna         import Views
+from LazyLuna.Tables  import DataFrameModel
 from LazyLuna.Guis.GuiDataPreparation import Gui_Data_Preparation2
 
 
@@ -142,14 +145,8 @@ class Window(QtWidgets.QMainWindow):
         bp_cases = self.ui.cases_folder_path
         imgsanno_paths = get_imgs_and_annotation_paths(bp_imgs, bp_annos)
         cases = []
-        sax_cine_view = SAX_CINE_View()
-        sax_cs_view   = SAX_CS_View()
-        lax_cine_view = LAX_CINE_View()
-        sax_t1_view   = SAX_T1_View()
-        sax_t2_view   = SAX_T2_View()
-        sax_lge_view  = SAX_LGE_View()
-        views = [sax_cine_view, sax_cs_view, lax_cine_view, sax_t1_view, 
-                 sax_t2_view, sax_lge_view]
+        views = [v[1]() for v in inspect.getmembers(Views, inspect.isclass) if issubclass(v[1], Views.View) if v[0]!='View']
+        print('Views: ', views)
         for i, (imgp, annop) in enumerate(imgsanno_paths):
             print(i, imgp)
             self.ui.case_conversion_text_edit.append('Image and Annotation paths:/n'+imgp+'/n'+annop)
@@ -172,14 +169,7 @@ class Window(QtWidgets.QMainWindow):
         bp_cases = self.ui.cases_folder_path
         imgsanno_paths = get_imgs_and_annotation_paths(os.path.split(single_imgs_path)[0], bp_annos)
         cases = []
-        sax_cine_view = SAX_CINE_View()
-        sax_cs_view   = SAX_CS_View()
-        lax_cine_view = LAX_CINE_View()
-        sax_t1_view   = SAX_T1_View()
-        sax_t2_view   = SAX_T2_View()
-        sax_lge_view  = SAX_LGE_View()
-        views = [sax_cine_view, sax_cs_view, lax_cine_view, sax_t1_view, 
-                 sax_t2_view, sax_lge_view]
+        views = [v[1]() for v in inspect.getmembers(Views, inspect.isclass) if issubclass(v[1], Views.View) if v[0]!='View']
         for i, (imgp, annop) in enumerate(imgsanno_paths):
             print(i, imgp)
             self.ui.case_conversion_text_edit.append('Image and Annotation paths:/n'+imgp+'/n'+annop)

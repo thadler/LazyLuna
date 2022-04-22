@@ -16,7 +16,7 @@ import inspect
 
 import pandas
 
-from LazyLuna.Mini_LL import Case_Comparison, SAX_CINE_View, SAX_CS_View
+from LazyLuna.Mini_LL import Case_Comparison
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables import *
 from LazyLuna.Figures import *

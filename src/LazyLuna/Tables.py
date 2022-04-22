@@ -445,6 +445,50 @@ class CCs_MetricsTable(Table):
             table = table[cols]
             cases.append(table)
         self.df = pandas.concat(cases, axis=0, ignore_index=True)
+        
+
+class T1_CCs_MetricsTable(Table):
+    def calculate(self, case_comparisons, view):
+        cases = []
+        for cc in case_comparisons:
+            cc_table = T1_CC_Metrics_Table()
+            cc_table.calculate(cc)
+            tables = []
+            for c_i, contname in enumerate(view.contour_names):
+                cc_table.present_contour_df(contname, pretty=False)
+                cc_table.df = cc_table.df.rename(columns={k:contname+' '+k for k in cc_table.df.columns if 'slice' not in k})
+                if c_i!=0: cc_table.df.drop(labels='slice', axis=1, inplace=True)
+                tables.append(cc_table.df)
+            table = pandas.concat(tables, axis=1)
+            table['Case']    = cc.case1.case_name
+            table['Reader1'] = cc.case1.reader_name
+            table['Reader2'] = cc.case2.reader_name
+            cols = list(table.columns)[-3:] + list(table.columns)[:-3]
+            table = table[cols]
+            cases.append(table)
+        self.df = pandas.concat(cases, axis=0, ignore_index=True)
+                
+
+class T2_CCs_MetricsTable(Table):
+    def calculate(self, case_comparisons, view):
+        cases = []
+        for cc in case_comparisons:
+            cc_table = T2_CC_Metrics_Table()
+            cc_table.calculate(cc)
+            tables = []
+            for c_i, contname in enumerate(view.contour_names):
+                cc_table.present_contour_df(contname, pretty=False)
+                cc_table.df = cc_table.df.rename(columns={k:contname+' '+k for k in cc_table.df.columns if 'slice' not in k})
+                if c_i!=0: cc_table.df.drop(labels='slice', axis=1, inplace=True)
+                tables.append(cc_table.df)
+            table = pandas.concat(tables, axis=1)
+            table['Case']    = cc.case1.case_name
+            table['Reader1'] = cc.case1.reader_name
+            table['Reader2'] = cc.case2.reader_name
+            cols = list(table.columns)[-3:] + list(table.columns)[:-3]
+            table = table[cols]
+            cases.append(table)
+        self.df = pandas.concat(cases, axis=0, ignore_index=True)
                 
 
 class CC_AngleAvgT1ValuesTable(Table):

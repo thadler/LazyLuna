@@ -16,10 +16,11 @@ import inspect
 
 import pandas
 
-from LazyLuna.Mini_LL import Case_Comparison, SAX_CINE_View, SAX_CS_View, LAX_CINE_View, SAX_T1_View, SAX_T2_View
+from LazyLuna.Mini_LL import Case_Comparison
 from LazyLuna.loading_functions import *
-from LazyLuna.Tables import *
+from LazyLuna.Tables  import *
 from LazyLuna.Figures import *
+from LazyLuna         import Views
 
 
 class CC_CRs_Images_Tab(QWidget):
@@ -62,11 +63,11 @@ class CC_CRs_Images_Tab(QWidget):
         layout.setRowStretch(2, 3)
 
     def get_view(self, vname):
-        view = [c[1] for c in inspect.getmembers(Mini_LL, inspect.isclass) if issubclass(c[1], Mini_LL.View) if c[0]==vname][0]
+        view = [c[1] for c in inspect.getmembers(Views, inspect.isclass) if issubclass(c[1], Views.View) if c[0]==vname][0]
         return view()
     
     def get_view_names(self):
-        v_names = [c[0] for c in inspect.getmembers(Mini_LL, inspect.isclass) if issubclass(c[1], Mini_LL.View) if c[0]!='View']
+        v_names = [c[0] for c in inspect.getmembers(Views, inspect.isclass) if issubclass(c[1], Views.View) if c[0]!='View']
         return v_names
     
     def select_view(self):
