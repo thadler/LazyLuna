@@ -321,7 +321,11 @@ class SAX_T1_View(View):
         import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
         import LazyLuna.Guis.Addable_Tabs.CC_AHA_Tab              as tab5
         
-        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 'T1 Angle Comparison': tab3.CC_Angle_Segments_Tab, 'AHA Model' : tab5.CC_AHA_Tab}
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 
+                           'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 
+                           'T1 Angle Comparison': tab3.CC_Angle_Segments_Tab#, 
+                           #'AHA Model' : tab5.CC_AHA_Tab
+                          }
         self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
         
     def load_categories(self):
