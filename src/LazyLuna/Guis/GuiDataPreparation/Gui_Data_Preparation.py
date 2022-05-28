@@ -212,40 +212,42 @@ class Window(QtWidgets.QMainWindow):
         return True
         
     def suggest_LL_tags(self):
-        table = self.information_df
-        divide_by_series_uid = self.ui.differentiation_radio_btn.isChecked()
-        sax_cine_sds = []
-        for row in range(table.shape[0]):
-            sd = table.at[row,'series_descr']
-            if '2cv' in sd: continue 
-            if '3cv' in sd: continue 
-            if '4cv' in sd: continue
-            if 'pre_MOLLI' in sd and 'MOCO_T1' in sd and not 'T1S' in sd:
-                table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX T1'
-            if sd.startswith('T2') and 'MOCO_T2' in sd:
-                table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX T2'
-            if not divide_by_series_uid:
-                # check number of annotations
-                # check orientation != 2 (removes axial images)
-                # check larger > 7*25
-                try:
-                    if int(table.at[row,'nr_annos'])==0:   continue
-                    if int(table.at[row,'nr_imgs' ])<7*25: continue
-                    dcm_paths = get_img_paths_for_series_descr(self.imgs_df, table.at[row,'series_descr'])
-                    if not self.acceptable_orientation(pydicom.dcmread(dcm_paths[0], stop_before_pixels=True)): continue
-                    sax_cine_sds.append(sd)
-                except Exception as e:
-                    pass
-        # set sax cine tag
-        if not divide_by_series_uid and len(sax_cine_sds)==1:
-            sax_cine_sd = sax_cine_sds[0]
+        try:
+            table = self.information_df
+            divide_by_series_uid = self.ui.differentiation_radio_btn.isChecked()
+            sax_cine_sds = []
             for row in range(table.shape[0]):
                 sd = table.at[row,'series_descr']
-                if sd==sax_cine_sd:
-                    table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX CINE'
-        pandas_model = DataFrameModel(table, parent=self)
-        self.ui.image_information_table_view.setModel(pandas_model)
-        
+                if '2cv' in sd: continue 
+                if '3cv' in sd: continue 
+                if '4cv' in sd: continue
+                if 'pre_MOLLI' in sd and 'MOCO_T1' in sd and not 'T1S' in sd:
+                    table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX T1'
+                if sd.startswith('T2') and 'MOCO_T2' in sd:
+                    table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX T2'
+                if not divide_by_series_uid:
+                    # check number of annotations
+                    # check orientation != 2 (removes axial images)
+                    # check larger > 7*25
+                    try:
+                        if int(table.at[row,'nr_annos'])==0:   continue
+                        if int(table.at[row,'nr_imgs' ])<7*25: continue
+                        dcm_paths = get_img_paths_for_series_descr(self.imgs_df, table.at[row,'series_descr'])
+                        if not self.acceptable_orientation(pydicom.dcmread(dcm_paths[0], stop_before_pixels=True)): continue
+                        sax_cine_sds.append(sd)
+                    except Exception as e:
+                        pass
+            # set sax cine tag
+            if not divide_by_series_uid and len(sax_cine_sds)==1:
+                sax_cine_sd = sax_cine_sds[0]
+                for row in range(table.shape[0]):
+                    sd = table.at[row,'series_descr']
+                    if sd==sax_cine_sd:
+                        table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX CINE'
+            pandas_model = DataFrameModel(table, parent=self)
+            self.ui.image_information_table_view.setModel(pandas_model)
+        except Exception as e:
+            print('Failed suggesting labels: ', e)
         
         
     def set_sax_cine_LL_tags(self): self.set_LL_tags('Lazy Luna: SAX CINE')

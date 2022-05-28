@@ -75,14 +75,17 @@ class CCs_ClinicalResults_Tab(QWidget):
         
         
     def update_figures(self):
-        idx = self.crs_TableView.selectionModel().selectedIndexes()[0]
-        row, col = idx.row(), idx.column()
-        print(col, row)
-        cr_name = self.crs_table.df['Clinical Result'].iloc[row]
-        print(cr_name)
-        
-        self.qq.visualize(self.ccs, cr_name)
-        #self.bp.visualize(self.ccs, cr_name)
-        self.pair.visualize(self.ccs, cr_name)
-        self.ba.visualize(self.ccs, cr_name)
+        try:
+            idx = self.crs_TableView.selectionModel().selectedIndexes()[0]
+            row, col = idx.row(), idx.column()
+            print(col, row)
+            cr_name = self.crs_table.df['Clinical Result'].iloc[row]
+            print(cr_name)
+
+            self.qq.visualize(self.ccs, cr_name)
+            #self.bp.visualize(self.ccs, cr_name)
+            self.pair.visualize(self.ccs, cr_name)
+            self.ba.visualize(self.ccs, cr_name)
+        except Exception as e:
+            print('Failed: ', e)
         

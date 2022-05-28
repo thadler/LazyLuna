@@ -95,8 +95,26 @@ class MyTabWidget(QWidget):
         self.layout.addWidget(self.tabs)
         
         
+    def get_paths_from_table(self):
+        # if nothing selected, return all paths, else just the selected
+        try:
+            idxs = self.caseTableView.selectionModel().selectedIndexes()
+            if len(idxs)==0: return self.get_paths()
+            paths1, paths2 = [], []
+            for idx in idxs:
+                row, col = idx.row(), idx.column()
+                #print(row)
+                path1 = self.cc_table.df['Path1'].iloc[row]
+                path2 = self.cc_table.df['Path2'].iloc[row]
+                paths1.append(path1)
+                paths2.append(path2)
+            return paths1, paths2
+        except Exception as e:
+            print('Error in function get_paths_from_table: ', e)
+        
     def load_case_comparisons(self):
-        paths1, paths2 = self.get_paths()
+        # get selected paths
+        paths1, paths2 = self.get_paths_from_table()
         if paths1==[]: return
         cases1 = [pickle.load(open(p,'rb')) for p in paths1]
         cases2 = [pickle.load(open(p,'rb')) for p in paths2]

@@ -1,4 +1,5 @@
 import os
+import traceback
 from pathlib import Path
 from time import time
 import pickle
@@ -128,6 +129,7 @@ class Annotation:
     # Mapping functions #
     #####################
     def get_angle_mask_to_middle_point(self, h, w):
+        if not self.has_contour('lv_endo'): return np.ones((h,w))*np.nan
         p = self.get_contour('lv_endo').centroid
         x,y = p.x, p.y
         mask = np.zeros((h,w,3))
@@ -151,6 +153,8 @@ class Annotation:
         return angle_mask
 
     def get_reference_angle(self, refpoint=None):
+        if not self.has_contour('lv_endo'):         return np.nan
+        if not self.has_point('sacardialRefPoint'): return np.nan
         mp = self.get_contour('lv_endo').centroid
         rp = self.get_point('sacardialRefPoint') if refpoint is None else refpoint
         v1 = np.array([rp.x-mp.x, rp.y-mp.y])
@@ -359,8 +363,8 @@ class DiceMetric(Metric):
         try:
             m = utils.dice(geo1, geo2)
             return "{:.2f}".format(m) if string else m
-        except Exception as e:
-            print(e)
+        except Exception: 
+            print('Dice Metric failed:/n', traceback.format_exc())
             return '0.00' if string else 0.0
 
     def calculate_all_vals(self, view, debug=False):
@@ -506,6 +510,8 @@ class AngleDiffMetric(Metric):
         v2 = np.array(ext2 - lv_mid2)
         v1_u = v1 / np.linalg.norm(v1)
         v2_u = v2 / np.linalg.norm(v2)
+        if len(v1_u)!=len(v2_u):    return 'nan' if string else np.nan
+        if len(v1_u)==len(v2_u)==0: return "{:.2f}".format(0) if string else 0
         angle = np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))*180/np.pi
         return "{:.2f}".format(angle) if string else angle
     

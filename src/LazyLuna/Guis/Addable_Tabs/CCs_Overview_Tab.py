@@ -37,6 +37,7 @@ class CCs_Overview_Tab(QWidget):
         #########################################
         ## Temporary: replace with Select view ##
         #########################################
+        print('In overview tab: Nr CCs: ', len(case_comparisons))
         self.all_case_comparisons = case_comparisons
 
         ###########
@@ -53,7 +54,7 @@ class CCs_Overview_Tab(QWidget):
         layout.addWidget(self.patient_overview_lbl, 0,2, 1,1)
 
         self.overview_table = CC_StatsOverviewTable()
-        self.overview_table.calculate(gui.cc_table)
+        self.overview_table.calculate(case_comparisons)
         self.overview_TableView = QTableView()
         self.overview_TableView.setModel(self.overview_table.to_pyqt5_table_model())
         layout.addWidget(self.overview_TableView, 1, 2, 10,1)
@@ -174,7 +175,7 @@ class CCs_Overview_Tab(QWidget):
         self.case_comparisons = new_ccs
         self.combobox_case_tab.clear(); self.combobox_case_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.case_tabs])
         self.combobox_stats_tab.clear(); self.combobox_stats_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.stats_tabs])
-        self.overview_table.calculate(self.gui.cc_table, view_name.replace('_View','').replace('_',' '))
+        self.overview_table.calculate(new_ccs)
         self.overview_TableView.setModel(self.overview_table.to_pyqt5_table_model())
         self.case_comparisons = [Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2)) for cc in self.case_comparisons]
 

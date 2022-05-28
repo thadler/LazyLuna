@@ -1,4 +1,5 @@
 import os
+import traceback
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -300,24 +301,38 @@ class Angle_Segment_Comparison(Visualization):
             columns = ['Reader', 'Angle Bins', 'Value']
             df = pandas.DataFrame(rows, columns=columns)
             custom_palette  = sns.color_palette([sns.color_palette("Blues")[3], sns.color_palette("Purples")[3]])
-            sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R1'],   ax=axes[0], capsize=.2, palette=custom_palette)
-            sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R1-R2'],ax=axes[1], capsize=.2, palette=custom_palette)
-            sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R2'],   ax=axes[2], capsize=.2, palette=custom_palette)
-            ymax = df['Value'].mean() + df['Value'].std()*2
-            axes[0].set_ylim([0, ymax]); axes[0].tick_params(rotation=45)
-            axes[2].set_ylim([0, ymax]); axes[2].tick_params(rotation=45)
-            ymin = df[df['Reader']=='R1-R2']['Value'].min()
-            ymax = df[df['Reader']=='R1-R2']['Value'].max()
-            ymin, ymax = min(ymin, -ymax)*1.05, max(-ymin, ymax)*1.05
-            axes[1].tick_params(rotation=45)
-            axes[1].set_ylim([ymin, ymax])
-            textstr = 'Angle [°] counterclockwise from\n'#the reference point.'
-            if byreader is None: textstr += "each reader's reference point."
-            if byreader == 1   : textstr += r1+"'s reference point."
-            if byreader == 2   : textstr += r2+"'s reference point."
-            props = dict(boxstyle='round', facecolor='w', alpha=0.5)
-            axes[2].text(0.05, 0.05, textstr, transform=axes[2].transAxes, fontsize=10,
-            verticalalignment='bottom', bbox=props)
+            try:
+                sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R1'],   ax=axes[0], capsize=.2, palette=custom_palette)
+            except Exception: print(traceback.format_exc())
+            try:
+                sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R1-R2'],ax=axes[1], capsize=.2, palette=custom_palette)
+            except Exception: print(traceback.format_exc())
+            try:
+                sns.barplot(x='Angle Bins', y='Value', data=df[df['Reader']=='R2'],   ax=axes[2], capsize=.2, palette=custom_palette)
+            except Exception: print(traceback.format_exc())
+            try:
+                ymax = df['Value'].mean() + df['Value'].std()*2
+                axes[0].set_ylim([0, ymax]); axes[0].tick_params(rotation=45)
+            except Exception: print(traceback.format_exc())
+            try:
+                axes[2].set_ylim([0, ymax]); axes[2].tick_params(rotation=45)
+                ymin = df[df['Reader']=='R1-R2']['Value'].min()
+                ymax = df[df['Reader']=='R1-R2']['Value'].max()
+                ymin, ymax = min(ymin, -ymax)*1.05, max(-ymin, ymax)*1.05
+                axes[1].tick_params(rotation=45)
+                axes[1].set_ylim([ymin, ymax])
+            except Exception: print(traceback.format_exc())
+            try:
+                textstr = 'Angle [°] counterclockwise from\n'#the reference point.'
+                if byreader is None: textstr += "each reader's reference point."
+                if byreader == 1   : textstr += r1+"'s reference point."
+                if byreader == 2   : textstr += r2+"'s reference point."
+                props = dict(boxstyle='round', facecolor='w', alpha=0.5)
+            except Exception: print(traceback.format_exc())
+            try:
+                axes[2].text(0.05, 0.05, textstr, transform=axes[2].transAxes, fontsize=10,
+                verticalalignment='bottom', bbox=props)
+            except Exception: print(traceback.format_exc())
         
         else:
             h, w  = img1.shape; extent=(0, w, h, 0)

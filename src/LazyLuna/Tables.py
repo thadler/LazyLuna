@@ -73,27 +73,6 @@ class CC_OverviewTable(Table):
         self.df = cc_df
     
 
-class CC_StatsOverviewTable(Table):
-    def calculate(self, cc_overview_table, restrict_to_view=None):
-        cc_df = cc_overview_table.df
-        if restrict_to_view is not None: 
-            cc_df = cc_df[cc_df[restrict_to_view]]
-        columns = ['Nr Cases','Age (Y)','Gender (M/F)','Weight (kg)','Height (m)']
-        rows = [[len(cc_df.index), 
-                 '{:.1f}'.format(cc_df['Age (Y)'].mean())+' ('+'{:.1f}'.format(cc_df['Age (Y)'].std())+')',
-                 self.gender_string(cc_df),
-                 '{:.1f}'.format(cc_df['Weight (kg)'].mean())+' ('+'{:.1f}'.format(cc_df['Weight (kg)'].std())+')',
-                 '{:.1f}'.format(cc_df['Height (m)'].mean())+' ('+'{:.2f}'.format(cc_df['Height (m)'].std())+')']]
-        information_summary_df  = DataFrame(rows, columns=columns)
-        self.df = information_summary_df
-        
-    def gender_string(self, cc_df): # to resolve key errors when the cohort is only male or female
-        counts     = cc_df['Gender (M/F)'].value_counts()
-        nr_males   = counts['M'] if 'M' in counts.keys() else 0
-        nr_females = counts['F'] if 'F' in counts.keys() else 0
-        return str(nr_males)+'/'+str(nr_females)
-    
-    
 class CC_ClinicalResultsTable(Table):
     def calculate(self, case_comparisons, with_dices=True, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
@@ -529,5 +508,99 @@ class CC_AngleAvgT1ValuesTable(Table):
         
 
 
+class CC_StatsOverviewTable(Table):
+    def get_dcm(self, cc):
+        case = cc.case1
+        for k in case.all_imgs_sop2filepath.keys():
+            try: sop = next(iter(case.all_imgs_sop2filepath[k]))
+            except: continue
+            return pydicom.dcmread(case.all_imgs_sop2filepath[k][sop])
+    def get_age(self, cc):
+        try:
+            age = self.get_dcm(cc).data_element('PatientAge').value
+            age = float(age[:-1]) if age!='' else np.nan
+        except: age=np.nan
+        return age
+    def get_gender(self, cc):
+        try:
+            gender = self.get_dcm(cc).data_element('PatientSex').value
+            gender = gender if gender in ['M','F'] else np.nan
+        except: gender=np.nan
+        return gender
+    def get_weight(self, cc):
+        try:
+            weight = self.get_dcm(cc).data_element('PatientWeight').value
+            weight = float(weight) if weight is not None else np.nan
+        except: weight=np.nan
+        return weight
+    def get_height(self, cc):
+        try:
+            h = self.get_dcm(cc).data_element('PatientSize').value
+            h = np.nan if h is None else float(h)/100 if float(h)>3 else float(h)
+        except: h=np.nan
+        return h
+    
+    def calculate(self, ccs):
+        columns = ['Nr Cases','Age (Y)','Gender (M/F)','Weight (kg)','Height (m)']
+        ages    = np.array([self.get_age(cc) for cc in ccs])
+        genders = [self.get_gender(cc) for cc in ccs]
+        weights = np.array([self.get_weight(cc) for cc in ccs])
+        heights = np.array([self.get_height(cc) for cc in ccs])
+        
+        rows = [[len(ccs), '{:.1f}'.format(np.mean(ages))+' ('+'{:.1f}'.format(np.std(ages))+')', 
+                str(np.sum(genders=='M'))+'/'+str(np.sum(genders=='F')), 
+                '{:.1f}'.format(np.mean(weights))+' ('+'{:.1f}'.format(np.std(weights))+')', 
+                '{:.1f}'.format(np.mean(heights))+' ('+'{:.1f}'.format(np.std(heights))+')']]
+        
+        information_summary_df  = DataFrame(rows, columns=columns)
+        self.df = information_summary_df
+        
+    
+    
+        
+"""
+def get_cases_table(cases, paths, debug=False):
+    def get_dcm(case):
+        for k in case.all_imgs_sop2filepath.keys():
+            try: sop = next(iter(case.all_imgs_sop2filepath[k]))
+            except: continue
+            return pydicom.dcmread(case.all_imgs_sop2filepath[k][sop])
+    def get_age(case):
+        try:
+            age = get_dcm(case).data_element('PatientAge').value
+            age = float(age[:-1]) if age!='' else np.nan
+        except: age=np.nan
+        return age
+    def get_gender(case):
+        try:
+            gender = get_dcm(case).data_element('PatientSex').value
+            gender = gender if gender in ['M','F'] else np.nan
+        except: gender=np.nan
+        return gender
+    def get_weight(case):
+        try:
+            weight = get_dcm(case).data_element('PatientWeight').value
+            weight = float(weight) if weight is not None else np.nan
+        except: weight=np.nan
+        return weight
+    def get_height(case):
+        try:
+            h = get_dcm(case).data_element('PatientSize').value
+            h = np.nan if h is None else float(h)/100 if float(h)>3 else float(h)
+        except: h=np.nan
+        return h
+    if debug: st = time()
+    columns = ['Case Name', 'Reader', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 
+               'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE', 'Path']
+    #print([c.available_types for c in cases])
+    rows    = sorted([[c.case_name, c.reader_name, get_age(c), get_gender(c), get_weight(c), get_height(c), 
+                       'SAX CINE' in c.available_types, 'SAX CS' in c.available_types, 'LAX CINE' in c.available_types, 
+                       'SAX T1' in c.available_types, 'SAX T2' in c.available_types, 'SAX LGE' in c.available_types, paths[i]] 
+                      for i, c in enumerate(cases)],
+                     key=lambda p: str(p[0]))
+    df      = pandas.DataFrame(rows, columns=columns)
+    if debug: print('Took: ', time()-st)
+    return df
+"""
     
     

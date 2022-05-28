@@ -20,6 +20,7 @@ class SAX_slice_phase_Category:
         self.name = 'none'
         self.phase = np.nan
 
+    """
     def get_sop2depthandtime(self, sop2filepath, debug=False):
         if debug: st = time()
         if hasattr(self.case, 'categories'):
@@ -29,7 +30,9 @@ class SAX_slice_phase_Category:
                     return c.sop2depthandtime
         # returns dict sop --> (depth, time)
         imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
+        #print('Images: ', len(imgs))
         sortable_slice_location_and_instance_number = [[float(v.SliceLocation), float(v.InstanceNumber)] for sopinstanceuid, v in imgs.items()]
+        print('sortable thing: ', sortable_slice_location_and_instance_number)
         sl_len = len(set([elem[0] for elem in sortable_slice_location_and_instance_number]))
         in_len = len(set([elem[1] for elem in sortable_slice_location_and_instance_number]))
         sorted_slice_location_and_instance_number = sorted(sortable_slice_location_and_instance_number, key=itemgetter(0,1))
@@ -40,6 +43,7 @@ class SAX_slice_phase_Category:
             s_loc, i_nr = imgs[sopinstanceuid].SliceLocation, imgs[sopinstanceuid].InstanceNumber
             for i in range(len(sorted_slice_location_and_instance_number)):
                 for j in range(len(sorted_slice_location_and_instance_number[i])):
+                    #print(sorted_slice_location_and_instance_number[i, j])
                     curr_s_loc, curr_i_nr = sorted_slice_location_and_instance_number[i, j]
                     if not (s_loc==curr_s_loc and i_nr==curr_i_nr): continue
                     sop2depthandtime[sopinstanceuid] = (i,j)
@@ -49,8 +53,48 @@ class SAX_slice_phase_Category:
         img1x,img1y,img1z = list(map(float,img1.ImagePositionPatient))
         img2x,img2y,img2z = list(map(float,img2.ImagePositionPatient))
         if img1x<img2x and img1y>img2y and img1z>img2z: pass
-        else: #img1x>img2x and img1y<img2y and img1z<img2z:
+        else: #img1x>img2x or img1y<img2y or img1z<img2z:
             max_depth = sl_len-1
+            for sop in sop2depthandtime.keys():
+                sop2depthandtime[sop] = (max_depth-sop2depthandtime[sop][0], sop2depthandtime[sop][1])
+        if debug: print('calculating sop2sorting takes: ', time()-st)
+        return sop2depthandtime
+    """
+    
+    def get_sop2depthandtime(self, sop2filepath, debug=False):
+        if debug: st = time()
+        if hasattr(self.case, 'categories'):
+            for c in self.case.categories:
+                if hasattr(c, 'sop2depthandtime'):
+                    if debug: print('calculating sop2sorting takes: ', time()-st)
+                    return c.sop2depthandtime
+        # returns dict sop --> (depth, time)
+        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
+        
+        # NEW
+        sortable = [[k,v.SliceLocation,v.InstanceNumber] for k,v in imgs.items()]
+        #sortable = [[k,float(v.SliceLocation),float(v.AcquisitionNumber)] for k,v in imgs.items()]
+        slice_nrs = {x:i for i,x in enumerate(sorted(list(set([x[1] for x in sortable]))))}
+        sortable = [s+[slice_nrs[s[1]]] for s in sortable]
+        sortable_by_slice = {d:[] for d in slice_nrs.values()}
+        for s in sortable: sortable_by_slice[s[-1]].append(s)
+        for d in range(len(sortable_by_slice.keys())):
+            sortable_by_slice[d] = sorted(sortable_by_slice[d], key=lambda s:s[2])
+            for p in range(len(sortable_by_slice[d])):
+                sortable_by_slice[d][p].append(p)
+        sop2depthandtime = dict()
+        for d in range(len(sortable_by_slice.keys())):
+            for s in sortable_by_slice[d]:
+                sop2depthandtime[s[0]] = (s[-2],s[-1])
+        
+        # potentially flip slice direction: base top x0<x1, y0>y1, z0>z1, apex top x0>x1, y0<y1, z0<z1
+        depthandtime2sop = {v:k for k,v in sop2depthandtime.items()}
+        img1, img2 = imgs[depthandtime2sop[(0,0)]], imgs[depthandtime2sop[(1,0)]]
+        img1x,img1y,img1z = list(map(float,img1.ImagePositionPatient))
+        img2x,img2y,img2z = list(map(float,img2.ImagePositionPatient))
+        if img1x<img2x and img1y>img2y and img1z>img2z: pass
+        else: #img1x>img2x or img1y<img2y or img1z<img2z:
+            max_depth = max(sortable_by_slice.keys())
             for sop in sop2depthandtime.keys():
                 sop2depthandtime[sop] = (max_depth-sop2depthandtime[sop][0], sop2depthandtime[sop][1])
         if debug: print('calculating sop2sorting takes: ', time()-st)

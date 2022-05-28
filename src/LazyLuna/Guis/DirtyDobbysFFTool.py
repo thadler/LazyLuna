@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QGridLayout, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout, QTextEdit, QTableView, QComboBox, QHeaderView, QLabel, QFileDialog, QDialog, QLineEdit
+from PyQt5.QtWidgets import QMainWindow, QGridLayout, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout, QTextEdit, QTableView, QComboBox, QHeaderView, QLabel, QFileDialog, QDialog, QLineEdit, QMessageBox
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.QtCore import pyqtSlot
 
@@ -14,6 +14,7 @@ import pydicom
 import numpy as np
 from pathlib import Path
 from pandas import DataFrame
+from time import time
 
 from catch_converter.parse_contours import parse_cvi42ws
 from LazyLuna.Mini_LL import *
@@ -187,6 +188,17 @@ class MyTabWidget(QWidget):
             imgs_path1, annos_path = [(p1,p2) for (p1,p2) in paths if p1==case_path][0]
             imgs_path2 = self.imgs_folder_path2.text()
             out_path   = self.out_folder_path.text()
+        except Exception as e:
+            print('Failed setting fields: ', e)
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("*Breaks into Tears* You're so gracious, Miss!\n")
+            text = "GUI Fields were overlooked:\n" + str(e)
+            error_dialog.setInformativeText(text)
+            error_dialog.setWindowTitle("Error")
+            error_dialog.exec_()
+
+        try:
             
             # load annos
             annos = [Annotation(os.path.join(annos_path,a), a.replace('.pickle','')) for a in os.listdir(annos_path) if 'case' not in a]
@@ -207,7 +219,7 @@ class MyTabWidget(QWidget):
                     pass
             dcms = {dcm.SOPInstanceUID:dcm for dcm in dcms}
             print('Loaded Images 1')
-            
+
             # loading images 2
             sd = 'stanre_rs3dt2d_1111_iiNav_IRprep_Dixon-TRA_Acc3.5_GMDMocoCGSense_W_tf2d14 _retro_iPAT_ sax + RV 7 0_FF'
             dcms2 = []
@@ -230,7 +242,20 @@ class MyTabWidget(QWidget):
                         dcms_tmp[sop] = dcm2
             dcms2 = dcms_tmp
             print('Loaded Images 2')
-            
+
+
+        except Exception as e:
+            print('Failed Loading Stuff: ', e)
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("*Irons Fingers* Bad House Elf!\n")
+            text = "I always knew you were a grand wizard..."
+            text += "\nI failed to load images or annotations. Are they there:\n" + str(e)
+            error_dialog.setInformativeText(text)
+            error_dialog.setWindowTitle("Error")
+            error_dialog.exec_()
+
+        try: 
             # Store Tables and Category
             cat = FF_Category(dcms, dcms2, annos)
             store_path = os.path.join(out_path, os.path.basename(case_path))
@@ -242,9 +267,16 @@ class MyTabWidget(QWidget):
             self.figure.set_canvas(self.canvas)
             self.figure.visualize()
         
-        
         except Exception as e:
             print('Failed Loading Stuff: ', e)
+            error_dialog = QMessageBox()
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setText("*Bangs Head*\n Bad Dobby! Bad Dobby!")
+            text = "I'm sorry, Harry Potter, sir!"
+            text += "\nI was unable to load certain FF images or store the data. Slices may be missing:\n" + str(e)
+            error_dialog.setInformativeText(text)
+            error_dialog.setWindowTitle("Error")
+            error_dialog.exec_()
         
 
 class FF_Category:
@@ -307,7 +339,7 @@ class FF_Category:
         total_vol = 0
         for d in range(self.nr_slices):
             anno = self.get_anno(d)
-            area = anno.get_contour('lv_myo').area - anno.get_contour('rv_pamu').area
+            area = anno.get_contour('lv_myo').area# - anno.get_contour('rv_pamu').area
             pd   = (self.slice_thickness+self.spacing_between_slices)/2 if d in [top_idx, bot_idx] else self.spacing_between_slices
             total_vol += ph * pw * pd * area
         return total_vol / 1000
@@ -318,7 +350,7 @@ class FF_Category:
         pd = self.spacing_between_slices
         for d in range(self.nr_slices):
             anno = self.get_anno(d)
-            area1 = ph*pw*(anno.get_contour('lv_myo').area - anno.get_contour('rv_pamu').area)
+            area1 = ph*pw*(anno.get_contour('lv_myo').area)# - anno.get_contour('rv_pamu').area)
             area2 = ph*pw*self.get_ff_in_myo(d).area
             vol1  = pd * area1
             rows.append([area1, pd*area1/1000, area2, pd*area2/1000])
@@ -356,10 +388,12 @@ class FFMapVisualization(Figure):
         self.canvas = canvas
     
     def visualize(self):
+        st = time()
         cat    = self.cat
         d      = self.d
         ph, pw = self.cat.ph, self.cat.pw
         extent = (0, self.w, self.h, 0)
+        self.clear()
         axes   = self.subplots(1, 3)
         axes[0].get_shared_x_axes().join(*axes)
         axes[0].get_shared_y_axes().join(*axes)
@@ -371,8 +405,8 @@ class FFMapVisualization(Figure):
         if self.add_annotation:
             self.suptitle('Slice: ' + str(d))
             anno.plot_contour_face(axes[0], 'lv_myo')
-            anno.plot_contour_face(axes[0], 'rv_pamu', 'b')
-            anno.plot_contour_face(axes[1], 'lv_epi')
+            #anno.plot_contour_face(axes[0], 'rv_pamu', 'b')
+            anno.plot_contour_face(axes[1], 'lv_myo')
             #anno.plot_contour_face(axes[1], 'rv_pamu', 'b')
             ff_pixel_polygon = cat.get_ff_in_myo(d)
             utils.plot_outlines(axes[2], ff_pixel_polygon, 'r')
@@ -383,6 +417,7 @@ class FFMapVisualization(Figure):
         self.tight_layout()
         self.canvas.draw()
         self.canvas.flush_events()
+        print('Took: ', time()-st)
     
     def keyPressEvent(self, event):
         if event.key == 'shift': self.add_annotation = not self.add_annotation
