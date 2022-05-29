@@ -92,7 +92,7 @@ class SAX_BlandAltman(Visualization):
         ax.legend(handles[:2], labels[:2], title="Segmented by both", fontsize=14)
         ax.set_ylabel('[%]', fontsize=14)
         ax.set_xlabel("", fontsize=14)
-        ax.set_ylim(ymin=75, ymax=100)
+        ax.set_ylim(ymin=65, ymax=101)
         for i, boxplot in enumerate(dicebp.artists):
             if i%2 == 0: boxplot.set_facecolor(custom_palette[i//2])
             else:        boxplot.set_facecolor(custom_palette2[i//2])
