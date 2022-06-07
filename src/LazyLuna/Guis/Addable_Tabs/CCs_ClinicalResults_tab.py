@@ -79,7 +79,7 @@ class CCs_ClinicalResults_Tab(QWidget):
             idx = self.crs_TableView.selectionModel().selectedIndexes()[0]
             row, col = idx.row(), idx.column()
             print(col, row)
-            cr_name = self.crs_table.df['Clinical Result'].iloc[row]
+            cr_name = self.crs_table.df['Clinical Result'].iloc[row].split(' ')[0]
             print(cr_name)
 
             self.qq.visualize(self.ccs, cr_name)
