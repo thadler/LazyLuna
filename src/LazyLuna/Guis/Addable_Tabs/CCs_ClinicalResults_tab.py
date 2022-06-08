@@ -13,6 +13,7 @@ import copy
 import sys
 import os
 import inspect
+import traceback
 
 import pandas
 
@@ -87,5 +88,6 @@ class CCs_ClinicalResults_Tab(QWidget):
             self.pair.visualize(self.ccs, cr_name)
             self.ba.visualize(self.ccs, cr_name)
         except Exception as e:
-            print('Failed: ', e)
+            print(traceback.format_exc())
+        return
         

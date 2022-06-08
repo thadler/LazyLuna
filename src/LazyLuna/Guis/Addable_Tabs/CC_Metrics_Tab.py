@@ -13,6 +13,7 @@ import copy
 import sys
 import os
 import inspect
+import traceback
 
 import pandas
 
@@ -83,7 +84,7 @@ class CC_Metrics_Tab(QWidget):
             self.metrics_table.present_contour_df(cont_name)
             self.metrics_table.present_contour_df(cont_name)
             self.metrics_TableView.setModel(self.metrics_table.to_pyqt5_table_model())
-        except Exception as e: print(e); pass
+        except Exception as e: print(traceback.format_exc())
         try: self.annotation_comparison_figure.visualize(0, cat, cont_name)
-        except Exception as e: print(e); pass
+        except Exception as e: print(traceback.format_exc())
         

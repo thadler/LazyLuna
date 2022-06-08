@@ -13,6 +13,7 @@ import copy
 import sys
 import os
 import inspect
+import traceback
 
 import pandas
 
@@ -131,26 +132,32 @@ class CCs_Overview_Tab(QWidget):
         
         
     def create_stats_tab(self):
-        tab_name  = self.combobox_stats_tab  .currentText()
-        view_name = self.combobox_select_view.currentText()
-        if tab_name=='Choose a Tab' or view_name=='Choose a View': return
-        view = self.get_view(self.combobox_select_view.currentText())
-        tab  = [v for k,v in view.stats_tabs.items() if k==tab_name][0]()
-        tab.make_tab(self.gui, view, self.case_comparisons)
-        self.gui.tabs.addTab(tab, 'Clinical Results')
+        try:
+            tab_name  = self.combobox_stats_tab  .currentText()
+            view_name = self.combobox_select_view.currentText()
+            if tab_name=='Choose a Tab' or view_name=='Choose a View': return
+            view = self.get_view(self.combobox_select_view.currentText())
+            tab  = [v for k,v in view.stats_tabs.items() if k==tab_name][0]()
+            tab.make_tab(self.gui, view, self.case_comparisons)
+            self.gui.tabs.addTab(tab, 'Clinical Results')
+        except Exception as e:
+            print(traceback.format_exc())
         return
     
     def create_case_tab(self):
-        case_name = self.combobox_case       .currentText()
-        tab_name  = self.combobox_case_tab   .currentText()
-        view_name = self.combobox_select_view.currentText()
-        if case_name=='Choose a Case' or tab_name=='Choose a Tab' or view_name=='Choose a View': return
-        view = self.get_view(self.combobox_select_view.currentText())
-        cc   = [cc for cc in self.case_comparisons if cc.case1.case_name==case_name][0]
-        #tab  = [v for k,v in view.case_tabs.items()][0]()
-        tab  = [v for k,v in view.case_tabs.items() if k==tab_name][0]()
-        tab.make_tab(self.gui, view, cc)
-        self.gui.tabs.addTab(tab, 'Metrics and Figure: '+cc.case1.case_name)
+        try:
+            case_name = self.combobox_case       .currentText()
+            tab_name  = self.combobox_case_tab   .currentText()
+            view_name = self.combobox_select_view.currentText()
+            if case_name=='Choose a Case' or tab_name=='Choose a Tab' or view_name=='Choose a View': return
+            view = self.get_view(self.combobox_select_view.currentText())
+            cc   = [cc for cc in self.case_comparisons if cc.case1.case_name==case_name][0]
+            #tab  = [v for k,v in view.case_tabs.items()][0]()
+            tab  = [v for k,v in view.case_tabs.items() if k==tab_name][0]()
+            tab.make_tab(self.gui, view, cc)
+            self.gui.tabs.addTab(tab, 'Metrics and Figure: '+cc.case1.case_name)
+        except Exception as e:
+            print(traceback.format_exc())
         return
     
     def get_view(self, vname):
@@ -171,7 +178,7 @@ class CCs_Overview_Tab(QWidget):
                 new_cc = Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2))
                 new_ccs.append(new_cc)
             except Exception as e:
-                print('Failed customize at: ', i, cc.case1.case_name, e)
+                print('Failed customize at: ', i, cc.case1.case_name, '/n', traceback.format_exc())
         self.case_comparisons = new_ccs
         self.combobox_case_tab.clear(); self.combobox_case_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.case_tabs])
         self.combobox_stats_tab.clear(); self.combobox_stats_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.stats_tabs])
