@@ -101,10 +101,13 @@ class CCs_Overview_Tab(QWidget):
         self.setLayout(layout)
 
     def set_export_storage_folder_path(self):
-        dialog = QFileDialog(self.gui, '')
-        dialog.setFileMode(QFileDialog.DirectoryOnly)
-        if dialog.exec_()==QDialog.Accepted:
-            self.export_storage_folder_path.setText(dialog.selectedFiles()[0])
+        try:
+            dialog = QFileDialog(self.gui, '')
+            dialog.setFileMode(QFileDialog.DirectoryOnly)
+            if dialog.exec_()==QDialog.Accepted:
+                self.export_storage_folder_path.setText(dialog.selectedFiles()[0])
+        except Exception as e:
+            print(traceback.format_exc())
     
     def store_all(self):
         try:
@@ -118,13 +121,13 @@ class CCs_Overview_Tab(QWidget):
             view_folder_path = os.path.join(export_folder_path, view_name)
             if not os.path.exists(view_folder_path): os.mkdir(view_folder_path)
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
         
         try:
             self.gui.cc_table.store(os.path.join(export_folder_path, 'table.csv'))
             self.overview_table.store(os.path.join(view_folder_path, 'overview_table.csv'))
         except Exception as e:
-            print(e)
+            print(traceback.format_exc())
             
         view.store_information(self.case_comparisons, view_folder_path)
             
@@ -169,22 +172,25 @@ class CCs_Overview_Tab(QWidget):
         return v_names
     
     def select_view(self):
-        view_name = self.combobox_select_view.currentText()
-        v = self.get_view(view_name)
-        new_ccs = []
-        for i in range(len(self.all_case_comparisons)):
-            cc = copy.deepcopy(self.all_case_comparisons[i])
-            try:
-                new_cc = Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2))
-                new_ccs.append(new_cc)
-            except Exception as e:
-                print('Failed customize at: ', i, cc.case1.case_name, '/n', traceback.format_exc())
-        self.case_comparisons = new_ccs
-        self.combobox_case_tab.clear(); self.combobox_case_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.case_tabs])
-        self.combobox_stats_tab.clear(); self.combobox_stats_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.stats_tabs])
-        self.overview_table.calculate(new_ccs)
-        self.overview_TableView.setModel(self.overview_table.to_pyqt5_table_model())
-        self.case_comparisons = [Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2)) for cc in self.case_comparisons]
+        try:
+            view_name = self.combobox_select_view.currentText()
+            v = self.get_view(view_name)
+            new_ccs = []
+            for i in range(len(self.all_case_comparisons)):
+                cc = copy.deepcopy(self.all_case_comparisons[i])
+                try:
+                    new_cc = Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2))
+                    new_ccs.append(new_cc)
+                except Exception as e:
+                    print('Failed customize at: ', i, cc.case1.case_name, '/n', traceback.format_exc())
+            self.case_comparisons = new_ccs
+            self.combobox_case_tab.clear(); self.combobox_case_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.case_tabs])
+            self.combobox_stats_tab.clear(); self.combobox_stats_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.stats_tabs])
+            self.overview_table.calculate(new_ccs)
+            self.overview_TableView.setModel(self.overview_table.to_pyqt5_table_model())
+            self.case_comparisons = [Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2)) for cc in self.case_comparisons]
+        except Exception as e:
+            print(traceback.format_exc())
 
     
 
