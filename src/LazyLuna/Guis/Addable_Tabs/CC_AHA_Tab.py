@@ -13,13 +13,14 @@ import copy
 import sys
 import os
 import inspect
+import traceback
 
 import pandas
 
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables import *
 from LazyLuna.Figures import *
-
+        
 
 class CC_AHA_Tab(QWidget):
     def __init__(self):
@@ -35,48 +36,40 @@ class CC_AHA_Tab(QWidget):
         layout = QGridLayout(gui)
         layout.setSpacing(7)
         
-        self.figure1 = T1_bullseye_plot()
-        self.canvas1 = FigureCanvas(self.figure1)
-        self.figure1.set_values(view, cc.case1, self.canvas1)
-        self.figure1.visualize()
-        self.canvas1.setFocusPolicy(Qt.Qt.ClickFocus)
-        self.canvas1.setFocus()
-        self.toolbar1 = NavigationToolbar(self.canvas1, gui)
-        layout.addWidget(self.canvas1,  0,0, 1,1)
-        layout.addWidget(self.toolbar1, 1,0, 1,1)
+        try:
+            
+            self.readerchoice_combobox = QComboBox()
+            self.readerchoice_combobox.addItems(['Select Reader', 'R1', 'R2'])
+            self.readerchoice_combobox.activated[str].connect(self.update)
+            layout.addWidget(self.readerchoice_combobox, 0,0, 1,1)
         
-        self.figure2 = T1_diff_bullseye_plot()
-        self.canvas2 = FigureCanvas(self.figure2)
-        self.figure2.set_values(view, cc, self.canvas2)
-        self.figure2.visualize()
-        self.canvas2.setFocusPolicy(Qt.Qt.ClickFocus)
-        self.canvas2.setFocus()
-        self.toolbar2 = NavigationToolbar(self.canvas2, gui)
-        layout.addWidget(self.canvas2,  0,1, 1,1)
-        layout.addWidget(self.toolbar2, 1,1, 1,1)
-        
-        self.figure3 = T1_bullseye_plot()
-        self.canvas3 = FigureCanvas(self.figure3)
-        self.figure3.set_values(view, cc.case2, self.canvas3)
-        self.figure3.visualize()
-        self.canvas3.setFocusPolicy(Qt.Qt.ClickFocus)
-        self.canvas3.setFocus()
-        self.toolbar3 = NavigationToolbar(self.canvas3, gui)
-        layout.addWidget(self.canvas3,  0,2, 1,1)
-        layout.addWidget(self.toolbar2, 1,2, 1,1)
+            self.figure = T1_bullseye_plot()
+            self.canvas = FigureCanvas(self.figure)
+            #self.figure.set_values(view, cc.case1, self.canvas)
+            #self.figure.visualize()
+            self.canvas.setFocusPolicy(Qt.Qt.ClickFocus)
+            self.canvas.setFocus()
+            self.toolbar = NavigationToolbar(self.canvas, gui)
+            layout.addWidget(self.canvas,   0, 1, 10,2)
+            layout.addWidget(self.toolbar, 11, 1,  1,2)
+            
+        except Exception as e:
+            print(traceback.format_exc())
         
         self.setLayout(layout)
 
         
-    def recalculate_metrics_table(self):
-        cont_name = self.combobox_select_contour.currentText()
-        if cont_name=='Choose a Contour': return
-        cat = self.view.get_categories(self.cc.case1, cont_name)[0]
+    def update(self):
         try:
-            self.metrics_table.present_contour_df(cont_name)
-            self.metrics_table.present_contour_df(cont_name)
-            self.metrics_TableView.setModel(self.metrics_table.to_pyqt5_table_model())
-        except Exception as e: print(e); pass
-        try: self.annotation_comparison_figure.visualize(0, cat, cont_name)
-        except Exception as e: print(e); pass
+            reader = self.readerchoice_combobox.currentText()
+            if reader=='Select Reader': return
+            if reader=='R1':
+                self.figure.set_values(self.view, self.cc.case1, self.canvas)
+                self.figure.visualize()
+            if reader=='R2':
+                self.figure.set_values(self.view, self.cc.case2, self.canvas)
+                self.figure.visualize()
+        except Exception as e:
+            print(traceback.format_exc())
         
+            

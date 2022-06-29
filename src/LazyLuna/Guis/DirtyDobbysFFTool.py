@@ -1,12 +1,3 @@
-from PyQt5.QtWidgets import QMainWindow, QGridLayout, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout, QTextEdit, QTableView, QComboBox, QHeaderView, QLabel, QFileDialog, QDialog, QLineEdit, QMessageBox
-from PyQt5.QtGui import QIcon, QColor
-from PyQt5.QtCore import pyqtSlot
-
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
-
 import sys
 import os
 import pickle
@@ -14,7 +5,6 @@ import pydicom
 import numpy as np
 from pathlib import Path
 from pandas import DataFrame
-from time import time
 
 from catch_converter.parse_contours import parse_cvi42ws
 from LazyLuna.Mini_LL import *
@@ -339,7 +329,7 @@ class FF_Category:
         total_vol = 0
         for d in range(self.nr_slices):
             anno = self.get_anno(d)
-            area = anno.get_contour('lv_myo').area# - anno.get_contour('rv_pamu').area
+            area = anno.get_contour('lv_myo').area - anno.get_contour('rv_pamu').area
             pd   = (self.slice_thickness+self.spacing_between_slices)/2 if d in [top_idx, bot_idx] else self.spacing_between_slices
             total_vol += ph * pw * pd * area
         return total_vol / 1000
@@ -350,7 +340,7 @@ class FF_Category:
         pd = self.spacing_between_slices
         for d in range(self.nr_slices):
             anno = self.get_anno(d)
-            area1 = ph*pw*(anno.get_contour('lv_myo').area)# - anno.get_contour('rv_pamu').area)
+            area1 = ph*pw*(anno.get_contour('lv_myo').area - anno.get_contour('rv_pamu').area)
             area2 = ph*pw*self.get_ff_in_myo(d).area
             vol1  = pd * area1
             rows.append([area1, pd*area1/1000, area2, pd*area2/1000])
@@ -388,12 +378,10 @@ class FFMapVisualization(Figure):
         self.canvas = canvas
     
     def visualize(self):
-        st = time()
         cat    = self.cat
         d      = self.d
         ph, pw = self.cat.ph, self.cat.pw
         extent = (0, self.w, self.h, 0)
-        self.clear()
         axes   = self.subplots(1, 3)
         axes[0].get_shared_x_axes().join(*axes)
         axes[0].get_shared_y_axes().join(*axes)
@@ -405,8 +393,8 @@ class FFMapVisualization(Figure):
         if self.add_annotation:
             self.suptitle('Slice: ' + str(d))
             anno.plot_contour_face(axes[0], 'lv_myo')
-            #anno.plot_contour_face(axes[0], 'rv_pamu', 'b')
-            anno.plot_contour_face(axes[1], 'lv_myo')
+            anno.plot_contour_face(axes[0], 'rv_pamu', 'b')
+            anno.plot_contour_face(axes[1], 'lv_epi')
             #anno.plot_contour_face(axes[1], 'rv_pamu', 'b')
             ff_pixel_polygon = cat.get_ff_in_myo(d)
             utils.plot_outlines(axes[2], ff_pixel_polygon, 'r')
@@ -417,7 +405,6 @@ class FFMapVisualization(Figure):
         self.tight_layout()
         self.canvas.draw()
         self.canvas.flush_events()
-        print('Took: ', time()-st)
     
     def keyPressEvent(self, event):
         if event.key == 'shift': self.add_annotation = not self.add_annotation

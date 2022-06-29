@@ -221,7 +221,8 @@ class LAX_CINE_View(View):
         self.lv_cats  = [LAX_4CV_LVES_Category, LAX_4CV_LVED_Category, LAX_2CV_LVES_Category, LAX_2CV_LVED_Category]
         self.myo_cats = [LAX_4CV_LVED_Category, LAX_2CV_LVED_Category]
         self.rv_cats  = [LAX_4CV_RVES_Category, LAX_4CV_RVED_Category]
-        self.la_cats  = [LAX_2CV_LAES_Category, LAX_2CV_LAED_Category]
+        self.la_cats  = [LAX_2CV_LAES_Category, LAX_2CV_LAED_Category,
+                         LAX_4CV_LAES_Category, LAX_4CV_LAED_Category]
         self.ra_cats  = [LAX_4CV_RAES_Category, LAX_4CV_RAED_Category]
         
     def get_categories(self, case, contour_name=None):
@@ -232,7 +233,8 @@ class LAX_CINE_View(View):
     def initialize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
-        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'], **case.all_imgs_sop2filepath['LAX 3CV'], **case.all_imgs_sop2filepath['LAX 4CV']}
+        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'],
+                                  **case.all_imgs_sop2filepath['LAX 4CV']}
         # attach annotation type
         case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
@@ -256,7 +258,8 @@ class LAX_CINE_View(View):
     def customize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
-        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'], **case.all_imgs_sop2filepath['LAX 3CV'], **case.all_imgs_sop2filepath['LAX 4CV']}
+        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'], 
+                                  **case.all_imgs_sop2filepath['LAX 4CV']}
         # attach annotation type
         case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
@@ -280,6 +283,7 @@ class LAX_CINE_View(View):
                                           LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
         if debug: print('Case categories are: ', case.categories)
         # attach CRs
+        """
         case.attach_clinical_results([LAX_4CV_LVESV,      LAX_4CV_LVEDV,
                                       LAX_4CV_LVSV,       LAX_4CV_LVEF,
                                       LAX_2CV_LVESV,      LAX_2CV_LVEDV,
@@ -300,6 +304,14 @@ class LAX_CINE_View(View):
                        LAX_4CV_ESEpicardialFatArea,  LAX_4CV_EDEpicardialFatArea,
                        LAX_2CV_ESPericardialFatArea, LAX_2CV_EDPericardialFatArea,
                        LAX_4CV_ESPericardialFatArea, LAX_4CV_EDPericardialFatArea])
+        """
+        case.attach_clinical_results([LAX_4CV_RAESAREA,   LAX_4CV_RAEDAREA,
+                                      LAX_4CV_RAESV,      LAX_4CV_RAEDV,
+                                      LAX_4CV_LAESAREA,   LAX_4CV_LAEDAREA,
+                                      LAX_4CV_LAESV,      LAX_4CV_LAEDV,
+                                      LAX_2CV_LAESAREA,   LAX_2CV_LAEDAREA,
+                                      LAX_2CV_LAESV,      LAX_2CV_LAEDV,
+                                      LAX_BIPLANAR_LAESV, LAX_BIPLANAR_LAEDV])
         # set new type
         case.type = 'LAX CINE'
         if debug: print('Customization in LAX CINE view took: ', time()-st)
@@ -320,13 +332,19 @@ class SAX_T1_View(View):
         import LazyLuna.Guis.Addable_Tabs.CC_Angle_Segments_Tab   as tab3
         import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
         import LazyLuna.Guis.Addable_Tabs.CC_AHA_Tab              as tab5
+        import LazyLuna.Guis.Addable_Tabs.CC_AHA_Diff_Tab         as tab6
+        import LazyLuna.Guis.Addable_Tabs.CCs_AHA_Tab             as tab7
+        import LazyLuna.Guis.Addable_Tabs.CCs_AHA_Diff_Tab        as tab8
         
         self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 
                            'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 
-                           'T1 Angle Comparison': tab3.CC_Angle_Segments_Tab#, 
-                           #'AHA Model' : tab5.CC_AHA_Tab
+                           'T1 Angle Comparison': tab3.CC_Angle_Segments_Tab, 
+                           'AHA Model' : tab5.CC_AHA_Tab, 
+                           'AHA Diff Model' : tab6.CC_AHA_Diff_Tab
                           }
-        self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
+        self.stats_tabs = {'Clinical Results' : tab2.CCs_ClinicalResults_Tab,
+                           'Averaged AHA Tab' : tab7.CCs_AHA_Tab,
+                           'Averaged AHA Diff Tab' : tab8.CCs_AHA_Diff_Tab}
         
     def load_categories(self):
         self.all = [SAX_T1_Category]
@@ -533,7 +551,8 @@ class SAX_LGE_View(View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX LGE']
         # attach annotation type
-        case.attach_annotation_type(SAX_LGE_Annotation)
+        #case.attach_annotation_type(SAX_LGE_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -560,7 +579,7 @@ class SAX_LGE_View(View):
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX LGE']
         # attach annotation type
-        case.attach_annotation_type(SAX_LGE_Annotation)
+        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):

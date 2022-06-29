@@ -62,14 +62,16 @@ class CCs_ClinicalResults_Tab(QWidget):
         layout.addWidget(self.pair_canvas,  0,1, 1,1)
         layout.addWidget(self.pair_toolbar, 1,1, 1,1)
         
-        self.ba = BlandAltman()
-        self.ba_canvas = FigureCanvas(self.ba)
-        self.ba.set_view(view); self.ba.set_canvas(self.ba_canvas); self.ba.set_gui(gui)
-        self.ba_canvas.setFocusPolicy(Qt.Qt.ClickFocus)
-        self.ba_canvas.setFocus()
+        self.ba = BlandAltman()                # instantiating visualization
+        self.ba_canvas = FigureCanvas(self.ba) # wrapping visualization
+        self.ba.set_view(view)                 # setting auxilliary information
+        self.ba.set_canvas(self.ba_canvas)     # ""
+        self.ba.set_gui(gui)                   # ""
+        self.ba_canvas.setFocusPolicy(Qt.Qt.ClickFocus) # focus policy 
+        self.ba_canvas.setFocus()                       # ""
         self.ba_toolbar = NavigationToolbar(self.ba_canvas, gui)
-        layout.addWidget(self.ba_canvas,  2,1, 1,1)
-        layout.addWidget(self.ba_toolbar, 3,1, 1,1)
+        layout.addWidget(self.ba_canvas,  2,1, 1,1) # adding vis to PyQt5 tab
+        layout.addWidget(self.ba_toolbar, 3,1, 1,1) # ""
         
         #layout.setRowStretch(0, 3)
         self.setLayout(layout)

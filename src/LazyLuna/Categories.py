@@ -6,6 +6,7 @@ from operator import itemgetter
 import numpy as np
 import pydicom
 from time import time
+import traceback
 
 from LazyLuna.Mini_LL import Annotation
 
@@ -271,12 +272,20 @@ class LAX_Category:
         return self.case.load_dcm(sop)
 
     def get_anno(self, slice_nr, phase_nr):
-        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
-        return self.case.load_anno(sop)
+        try:
+            sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+            return self.case.load_anno(sop)
+        except Exception as e:
+            print(traceback.format_exc())
+            return Annotation(None)
 
     def get_img(self, slice_nr, phase_nr, value_normalize=True, window_normalize=True):
-        sop = self.depthandtime2sop[(slice_nr, phase_nr)]
-        return self.case.get_img(sop, value_normalize=value_normalize, window_normalize=window_normalize)
+        try:
+            sop = self.depthandtime2sop[(slice_nr, phase_nr)]
+            return self.case.get_img(sop, value_normalize=value_normalize, window_normalize=window_normalize)
+        except Exception as e:
+            print(traceback.format_exc())
+            return np.zeros((self.height, self.width))
 
     def get_area(self, cont_name, phase):
         if np.isnan(phase): return 0.0
@@ -862,7 +871,7 @@ class SAX_LGE_Category(SAX_slice_phase_Category):
     def lax_points(self):
         self.lax_sop_fps = []
         for sop, fp in self.case.annos_sop2filepath.items():
-            anno = Annotation(sop, fp)
+            anno = Annotation(fp, sop)
             if anno.has_point('lv_lax_extent'):
                 self.lax_sop_fps.append((sop, fp, anno, self.get_lax_image(sop)))
                 #fig, ax = plt.subplots(1,1,figsize=(7,7))

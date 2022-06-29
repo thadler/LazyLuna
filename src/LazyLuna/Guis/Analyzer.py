@@ -133,13 +133,16 @@ class MyTabWidget(QWidget):
         
         
     def set_case_folder(self):
-        dialog = QFileDialog(self, '')
-        dialog.setFileMode(QFileDialog.DirectoryOnly)
-        if dialog.exec_() == QDialog.Accepted:
-            basepath = dialog.selectedFiles()[0]
-            self.case_folder_path.setText(basepath)
-        print('Basepath: ', basepath)
-        self.get_segmenters()
+        try:
+            dialog = QFileDialog(self, '')
+            dialog.setFileMode(QFileDialog.DirectoryOnly)
+            if dialog.exec_() == QDialog.Accepted:
+                basepath = dialog.selectedFiles()[0]
+                self.case_folder_path.setText(basepath)
+            print('Basepath: ', basepath)
+            self.get_segmenters()
+        except Exception as e:
+            print(e)
     
     def set_segmenter(self):
         paths1, paths2 = self.get_paths()
@@ -163,9 +166,9 @@ class MyTabWidget(QWidget):
         self.caseTableView.setModel(self.cc_table.to_pyqt5_table_model())
         
     def get_segmenters(self):
-        case_folder_path = self.case_folder_path.text()
-        if not os.path.exists(case_folder_path): return
         try:
+            case_folder_path = self.case_folder_path.text()
+            if not os.path.exists(case_folder_path): return
             paths   = [str(p) for p in Path(case_folder_path).glob('**/*.pickle')]
             cases   = [pickle.load(open(p,'rb')) for p in paths]
             self.cases_df = get_cases_table(cases, paths, False)

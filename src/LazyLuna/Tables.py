@@ -6,6 +6,7 @@ from pandas import DataFrame
 from LazyLuna.loading_functions import *
 from LazyLuna import Mini_LL
 from PyQt5 import Qt, QtWidgets, QtGui, QtCore, uic
+import traceback
 
 
 ########################################################################
@@ -218,6 +219,7 @@ class LAX_CC_Metrics_Table(Table):
         self.metric_vals = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader)
         self.metric_vals = self.metric_vals[['category', 'slice', 'contour name', 'ml diff', 'abs ml diff', 'DSC', 'HD', 'has_contour1', 'has_contour2']]
         self.metric_vals.sort_values(by='slice', axis=0, ascending=True, inplace=True, ignore_index=True)
+        print('Here:/n', self.metric_vals)
         
     def present_contour_df(self, contour_name, pretty=True):
         self.df = self.metric_vals[self.metric_vals['contour name']==contour_name]
@@ -225,7 +227,7 @@ class LAX_CC_Metrics_Table(Table):
             self.df[['ml diff', 'abs ml diff', 'HD']] = self.df[['ml diff', 'abs ml diff', 'HD']].round(1)
             self.df[['DSC']] = self.df[['DSC']].astype(int)
         unique_cats = self.df['category'].unique()
-        print(unique_cats)
+        df = DataFrame()
         for cat_i, cat in enumerate(unique_cats):
             print(cat_i)
             curr = self.df[self.df['category']==cat]
