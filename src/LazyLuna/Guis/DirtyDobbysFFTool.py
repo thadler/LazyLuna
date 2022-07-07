@@ -1,3 +1,7 @@
+from PyQt5.QtWidgets import QMainWindow, QGridLayout, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout, QTextEdit, QTableView, QComboBox, QHeaderView, QLabel, QFileDialog, QDialog, QLineEdit, QMessageBox
+from PyQt5.QtGui import QIcon, QColor
+from PyQt5.QtCore import pyqtSlot
+
 import sys
 import os
 import pickle
@@ -5,6 +9,7 @@ import pydicom
 import numpy as np
 from pathlib import Path
 from pandas import DataFrame
+import traceback
 
 from catch_converter.parse_contours import parse_cvi42ws
 from LazyLuna.Mini_LL import *
@@ -50,12 +55,12 @@ class MyTabWidget(QWidget):
         self.tab1.layout = QGridLayout(self)
         self.tab1.layout.setSpacing(7)
         
-        # choose dcms1 path
-        self.imgs_folder_button1 = QPushButton('Select Imgs Folder 1')
-        self.imgs_folder_button1.clicked.connect(self.set_dcms1_folder)
-        self.tab1.layout.addWidget(self.imgs_folder_button1, 0, 0)
-        self.imgs_folder_path1 = QLineEdit('')
-        self.tab1.layout.addWidget(self.imgs_folder_path1, 1, 0)
+        # choose dcms path
+        self.imgs_folder_button = QPushButton('Select Imgs Folder')
+        self.imgs_folder_button.clicked.connect(self.set_dcms_folder)
+        self.tab1.layout.addWidget(self.imgs_folder_button, 0, 0)
+        self.imgs_folder_path = QLineEdit('')
+        self.tab1.layout.addWidget(self.imgs_folder_path, 1, 0)
         
         # choose annos path
         self.annos_folder_button = QPushButton('Select WS Folder')
@@ -64,32 +69,20 @@ class MyTabWidget(QWidget):
         self.annos_folder_path = QLineEdit('')
         self.tab1.layout.addWidget(self.annos_folder_path, 3, 0)
         
-        # select case
-        self.combobox_select_case = QComboBox()
-        self.combobox_select_case.setStatusTip('Choose Case.')
-        self.combobox_select_case.addItems(['Choose Case'])
-        #self.combobox_select_case.activated[str].connect(function) 
-        self.tab1.layout.addWidget(self.combobox_select_case, 4, 0)
         
-        # choose dcms2 path
-        self.imgs_folder_button2 = QPushButton('Select Imgs Folder 2')
-        self.imgs_folder_button2.clicked.connect(self.set_dcms2_folder)
-        self.tab1.layout.addWidget(self.imgs_folder_button2, 5, 0)
-        self.imgs_folder_path2 = QLineEdit('')
-        self.tab1.layout.addWidget(self.imgs_folder_path2, 6, 0)
         
         # choose output path
         self.out_folder_button = QPushButton('Select Output Folder')
         self.out_folder_button.clicked.connect(self.set_output_folder)
-        self.tab1.layout.addWidget(self.out_folder_button, 7, 0)
+        self.tab1.layout.addWidget(self.out_folder_button, 5, 0)
         self.out_folder_path = QLineEdit('')
-        self.tab1.layout.addWidget(self.out_folder_path, 8, 0)
+        self.tab1.layout.addWidget(self.out_folder_path, 6, 0)
         
         
         #load button
         self.button_load = QPushButton("Load Stuff")
         self.button_load.clicked.connect(self.load_stuff)
-        self.tab1.layout.addWidget(self.button_load, 9, 0)
+        self.tab1.layout.addWidget(self.button_load, 7, 0)
         
         # Visualization
         self.figure = FFMapVisualization()
@@ -113,51 +106,44 @@ class MyTabWidget(QWidget):
         ########################
         self.layout.addWidget(self.tabs)
         
-    def set_dcms1_folder(self):
+    def set_dcms_folder(self):
         try:
             dialog = QFileDialog(self, '')
             dialog.setFileMode(QFileDialog.DirectoryOnly)
             if dialog.exec_() == QDialog.Accepted:
                 path = dialog.selectedFiles()[0]
-                self.imgs_folder_path1.setText(path)
+                self.imgs_folder_path.setText(path)
                 self.set_chooser()
         except Exception as e:
-            print('Setting Imgs path 1 failed: ', e)
+            print('Setting Images path failed: ', e)
+            print(traceback.format_exc())
     
     def set_annos_folder(self): 
-        dialog = QFileDialog(self, '')
-        dialog.setFileMode(QFileDialog.DirectoryOnly)
-        if dialog.exec_() == QDialog.Accepted:
-            path = dialog.selectedFiles()[0]
-            self.annos_folder_path.setText(path)
-        try:
-            parse_cvi42ws(path, path, process=True, debug=False)
-            self.set_chooser()
-        except Exception as e:
-            print('Setting Anno path failed: ', e)
-            
-            
-    def set_chooser(self):
-        try:
-            path1 = self.imgs_folder_path1.text()
-            path2 = self.annos_folder_path.text()
-            if path1=='' or path2=='': return
-            paths = get_imgs_and_annotation_paths(path1, path2)
-            names = [p[0] for p in paths]
-            self.combobox_select_case .clear()
-            self.combobox_select_case .addItems(['Select a Case'] + names)
-        except Exception as e:
-            print('Setting Chooser failed: ', e)
-        
-    def set_dcms2_folder(self):
         try:
             dialog = QFileDialog(self, '')
             dialog.setFileMode(QFileDialog.DirectoryOnly)
             if dialog.exec_() == QDialog.Accepted:
                 path = dialog.selectedFiles()[0]
-                self.imgs_folder_path2.setText(path)
+                self.annos_folder_path.setText(path)
+            parse_cvi42ws(path, path, process=True, debug=False)
+            self.set_relevant_paths()
         except Exception as e:
-            print('Setting Imgs path 2 failed: ', e)
+            print('Setting Anno path failed: ', e)
+            print(traceback.format_exc())
+            
+            
+    def set_relevant_paths(self):
+        try:
+            path1 = self.imgs_folder_path.text()
+            path2 = self.annos_folder_path.text()
+            parent_path = str(Path(path1).parent.absolute())
+            if path1=='' or path2=='': return
+            paths = get_imgs_and_annotation_paths(parent_path, path2)
+            self.imgs_path, self.annos_path = [p for p in paths if path1 in p[0]][0]
+            print('FOLDERS: ', self.imgs_path, self.annos_path)
+        except Exception as e:
+            print('Setting Chooser failed: ', e)
+            print(traceback.format_exc())
             
     def set_output_folder(self):
         try:
@@ -168,87 +154,75 @@ class MyTabWidget(QWidget):
                 self.out_folder_path.setText(path)
         except Exception as e:
             print('Setting Output path failed: ', e)
+            print(traceback.format_exc())
         
     def load_stuff(self):
         try:
-            imgs_path1 = self.imgs_folder_path1.text()
-            annos_path = self.annos_folder_path.text()
-            paths = get_imgs_and_annotation_paths(imgs_path1, annos_path)
-            case_path = self.combobox_select_case.currentText()
-            imgs_path1, annos_path = [(p1,p2) for (p1,p2) in paths if p1==case_path][0]
-            imgs_path2 = self.imgs_folder_path2.text()
+            imgs_path  = self.imgs_path
+            annos_path = self.annos_path
             out_path   = self.out_folder_path.text()
         except Exception as e:
             print('Failed setting fields: ', e)
+            print(traceback.format_exc())
             error_dialog = QMessageBox()
             error_dialog.setIcon(QMessageBox.Critical)
             error_dialog.setText("*Breaks into Tears* You're so gracious, Miss!\n")
-            text = "GUI Fields were overlooked:\n" + str(e)
+            text = "Paths were not selected:\n" + str(traceback.format_exc())
             error_dialog.setInformativeText(text)
             error_dialog.setWindowTitle("Error")
             error_dialog.exec_()
 
         try:
-            
             # load annos
             annos = [Annotation(os.path.join(annos_path,a), a.replace('.pickle','')) for a in os.listdir(annos_path) if 'case' not in a]
             annos = {a.sop:a for a in annos}
             sops  = [a.sop for a in annos.values()]
             print('Loaded Annos')
             
-            # load images 1
-            dcms  = []
-            for ip, p in enumerate(Path(imgs_path1).glob('**/*.dcm')):
+            print('Loading Images')
+            dcms    = []
+            dcms_ff = []
+            for ip, p in enumerate(Path(imgs_path).glob('**/*.dcm')):
                 try:
                     p = str(p)
                     dcm = pydicom.dcmread(p, stop_before_pixels=True)
                     if dcm.SOPInstanceUID in sops:
                         dcm = pydicom.dcmread(p, stop_before_pixels=False)
                         dcms.append(dcm)
-                except:
-                    pass
-            dcms = {dcm.SOPInstanceUID:dcm for dcm in dcms}
-            print('Loaded Images 1')
-
-            # loading images 2
-            sd = 'stanre_rs3dt2d_1111_iiNav_IRprep_Dixon-TRA_Acc3.5_GMDMocoCGSense_W_tf2d14 _retro_iPAT_ sax + RV 7 0_FF'
-            dcms2 = []
-            for ip, p in enumerate(Path(imgs_path2).glob('**/*.dcm')):
-                try:
-                    p = str(p)
-                    dcm = pydicom.dcmread(p, stop_before_pixels=True)
-                    if dcm.SeriesDescription == sd:
+                    if '_W_FF' in dcm.SeriesDescription and 'rs3dt2d' in dcm.SeriesDescription:
                         dcm = pydicom.dcmread(p, stop_before_pixels=False)
-                        dcms2.append(dcm)
+                        dcms_ff.append(dcm)
                 except:
                     pass
-            dcms2 = sorted(dcms2, key=lambda x: float(x.SliceLocation))
+            dcms     = {dcm.SOPInstanceUID:dcm for dcm in dcms}
+            dcms_ff  = sorted(dcms_ff, key=lambda x: float(x.SliceLocation))
             dcms_tmp = dict()
             for sop in dcms.keys():
                 dcm = dcms[sop]
                 slloc = dcm.SliceLocation
-                for dcm2 in dcms2:
+                for dcm2 in dcms_ff:
                     if dcm2.SliceLocation==slloc:
                         dcms_tmp[sop] = dcm2
-            dcms2 = dcms_tmp
-            print('Loaded Images 2')
+            dcms_ff = dcms_tmp
+            print('Loaded Images')
 
 
         except Exception as e:
-            print('Failed Loading Stuff: ', e)
+            print('Failed Loading Images or Annotations: ', e)
+            print(traceback.format_exc())
             error_dialog = QMessageBox()
             error_dialog.setIcon(QMessageBox.Critical)
             error_dialog.setText("*Irons Fingers* Bad House Elf!\n")
             text = "I always knew you were a grand wizard..."
-            text += "\nI failed to load images or annotations. Are they there:\n" + str(e)
+            text += "\nI failed to load images or annotations. Are they there:\n" + str(traceback.format_exc())
             error_dialog.setInformativeText(text)
             error_dialog.setWindowTitle("Error")
             error_dialog.exec_()
 
         try: 
             # Store Tables and Category
-            cat = FF_Category(dcms, dcms2, annos)
-            store_path = os.path.join(out_path, os.path.basename(case_path))
+            cat = FF_Category(dcms, dcms_ff, annos)
+            store_path = os.path.join(out_path, os.path.basename(self.imgs_folder_path.text()))
             cat.store_tables(store_path=store_path)
             cat_store_path = store_path+'_category.pickle'
             pickle.dump(cat, open(cat_store_path, 'wb'), pickle.HIGHEST_PROTOCOL)
@@ -259,6 +233,7 @@ class MyTabWidget(QWidget):
         
         except Exception as e:
             print('Failed Loading Stuff: ', e)
+            print(traceback.format_exc())
             error_dialog = QMessageBox()
             error_dialog.setIcon(QMessageBox.Critical)
             error_dialog.setText("*Bangs Head*\n Bad Dobby! Bad Dobby!")
@@ -353,14 +328,18 @@ class FF_Category:
         return DataFrame(rows, columns=cols)
     
     def store_tables(self, store_path):
-        df   = self.get_cr_table()
-        path = store_path+'_clinical_result.csv'
-        pandas.DataFrame.to_csv(df, path, sep=';', decimal=',')
-        print('Clinical Results stored to: ', path)
-        df   = self.get_area_table()
-        path = store_path+'_areas.csv'
-        pandas.DataFrame.to_csv(df, path, sep=';', decimal=',')
-        print('Areas stored to: ', path)
+        try:
+            df   = self.get_cr_table()
+            path = store_path+'_clinical_result.csv'
+            pandas.DataFrame.to_csv(df, path, sep=';', decimal=',')
+            print('Clinical Results stored to: ', path)
+            df   = self.get_area_table()
+            path = store_path+'_areas.csv'
+            pandas.DataFrame.to_csv(df, path, sep=';', decimal=',')
+            print('Areas stored to: ', path)
+        except Exception as e:
+            print('Storing Tables failed: ', e)
+            print(traceback.format_exc())
 
 
 class FFMapVisualization(Figure):
@@ -394,14 +373,10 @@ class FFMapVisualization(Figure):
             self.suptitle('Slice: ' + str(d))
             anno.plot_contour_face(axes[0], 'lv_myo')
             anno.plot_contour_face(axes[0], 'rv_pamu', 'b')
-            anno.plot_contour_face(axes[1], 'lv_epi')
+            anno.plot_contour_face(axes[1], 'lv_myo')
             #anno.plot_contour_face(axes[1], 'rv_pamu', 'b')
             ff_pixel_polygon = cat.get_ff_in_myo(d)
             utils.plot_outlines(axes[2], ff_pixel_polygon, 'r')
-        #pixel_area = ph*pw
-        #pixel_area = 1
-        #print(pixel_area*(anno.get_contour('lv_myo').area - anno.get_contour('rv_pamu').area))
-        #print(pixel_area*(ff_pixel_polygon.area))
         self.tight_layout()
         self.canvas.draw()
         self.canvas.flush_events()
