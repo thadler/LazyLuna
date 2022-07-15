@@ -94,7 +94,7 @@ class Annotation:
     # LAX CINE functions #
     ######################
     def length_LV(self):
-        if not self.has_point('lv_lax_extent'): return 0
+        if not self.has_point('lv_lax_extent'): return np.nan
         extent = self.get_point('lv_lax_extent')
         pw, ph = self.get_pixel_size()
         lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
@@ -103,7 +103,7 @@ class Annotation:
         return dist
     
     def length_LA(self):
-        if not self.has_point('laxLaExtentPoints'): return 0
+        if not self.has_point('laxLaExtentPoints'): return np.nan
         extent = self.get_point('laxLaExtentPoints')
         pw, ph = self.get_pixel_size()
         lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
@@ -112,7 +112,7 @@ class Annotation:
         return dist
     
     def length_RA(self):
-        if not self.has_point('laxRaExtentPoints'): return 0
+        if not self.has_point('laxRaExtentPoints'): return np.nan
         extent = self.get_point('laxRaExtentPoints')
         pw, ph = self.get_pixel_size()
         lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
@@ -622,7 +622,7 @@ class LAX_CINE_analyzer:
     def get_case_contour_comparison_pandas_dataframe(self, fixed_phase_first_reader=False, debug=False):
         if not self.contour_comparison_pandas_dataframe is None: return self.contour_comparison_pandas_dataframe
         # case, reader1, reader2, sop1, sop2, category, d, nr_slices, depth_perc, p1, p2, cont_name, dsc, hd, mldiff, apic/midv/bas/outside1, apic/midv/bas/outside2, has_cont1, has_cont2
-        print('In get_case_contour_comparison_pandas_dataframe')
+        #print('In get_case_contour_comparison_pandas_dataframe')
         if debug: st = time()
         rows                  = []
         view                  = self.view
@@ -633,22 +633,27 @@ class LAX_CINE_analyzer:
         for cont_name in self.view.contour_names:
             categories1, categories2 = view.get_categories(case1, cont_name), view.get_categories(case2, cont_name)
             for cat1, cat2 in zip(categories1, categories2):
-                print(cat1, cat2, cat1.phase, cat2.phase)
-                if np.isnan(cat1.phase) or np.isnan(cat2.phase): continue
+                #print(cat1, cat2, cat1.phase, cat2.phase)
+                #if np.isnan(cat1.phase) or np.isnan(cat2.phase): continue
                 p1, p2 = (cat1.phase, cat2.phase) if not fixed_phase_first_reader else (cat1.phase, cat1.phase)
                 nr_sl  = cat1.nr_slices
                 for d in range(cat1.nr_slices):
                     d_perc       = 1.0 * d / nr_sl
-                    sop1, sop2   = cat1.depthandtime2sop[d,p1], cat2.depthandtime2sop[d,p2]
-                    anno1, anno2 = self.cc.case1.load_anno(sop1), self.cc.case2.load_anno(sop2)
-                    cont1, cont2 = anno1.get_contour(cont_name), anno2.get_contour(cont_name)
-                    dcm    = self.cc.case1.load_dcm(sop1)
-                    dsc    = dsc_m   .get_val(cont1, cont2, dcm)
-                    hd     = hd_m    .get_val(cont1, cont2, dcm)
-                    mldiff = mldiff_m.get_val(cont1, cont2, dcm)
-                    has_cont1, has_cont2     = anno1.has_contour(cont_name), anno2.has_contour(cont_name)
-                    row = [case_name, reader1, reader2, sop1, sop2, cat1.name, d, nr_sl, d_perc, p1, p2, cont_name, dsc, hd, mldiff, np.abs(mldiff), has_cont1, has_cont2]
-                    rows.append(row)
+                    try:
+                        sop1, sop2   = cat1.depthandtime2sop[d,p1], cat2.depthandtime2sop[d,p2]
+                        anno1, anno2 = self.cc.case1.load_anno(sop1), self.cc.case2.load_anno(sop2)
+                        cont1, cont2 = anno1.get_contour(cont_name), anno2.get_contour(cont_name)
+                        dcm    = self.cc.case1.load_dcm(sop1)
+                        dsc    = dsc_m   .get_val(cont1, cont2, dcm)
+                        hd     = hd_m    .get_val(cont1, cont2, dcm)
+                        mldiff = mldiff_m.get_val(cont1, cont2, dcm)
+                        has_cont1, has_cont2     = anno1.has_contour(cont_name), anno2.has_contour(cont_name)
+                        row = [case_name, reader1, reader2, sop1, sop2, cat1.name, d, nr_sl, d_perc, p1, p2, cont_name, dsc, hd, mldiff, np.abs(mldiff), has_cont1, has_cont2]
+                        rows.append(row)
+                    except Exception as e:
+                        row = [case_name, reader1, reader2, np.nan, np.nan, cat1.name, d, nr_sl, d_perc, p1, p2, cont_name, np.nan, np.nan, np.nan, np.nan, 'False', 'False']
+                        rows.append(row)
+                    
         columns=['case', 'reader1', 'reader2', 'sop1', 'sop2', 'category', 'slice', 'max_slices', 'depth_perc', 'phase1', 'phase2', 'contour name', 'DSC', 'HD', 'ml diff', 'abs ml diff', 'has_contour1', 'has_contour2']
         df = pandas.DataFrame(rows, columns=columns)
         if debug: print('pandas table took: ', time()-st)

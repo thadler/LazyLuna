@@ -13,6 +13,18 @@ from LazyLuna.ClinicalResults import *
 from LazyLuna.Tables  import *
 from LazyLuna.Figures import *
 
+import traceback
+
+# decorator function for exception handling
+def store_information_exception_handler(f):
+    def inner_function(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            print(f.__name__ + ' failed to store view information. Error traceback:')
+            print(traceback.format_exc())
+    return inner_function
+
 
 class View:
     def __init__(self):
@@ -101,6 +113,7 @@ class SAX_CINE_View(View):
         print('ending customize: ', case.case_name)
         return case
     
+    @store_information_exception_handler
     def store_information(self, ccs, path):
         try:
             cr_table = CC_ClinicalResultsTable()
@@ -187,16 +200,22 @@ class SAX_CS_View(SAX_CINE_View):
         return case
 
     
+
 class LAX_CINE_View(View):
     def __init__(self):
         self.colormap            = 'gray'
         self.available_colormaps = ['gray']
         self.load_categories()
+        """
         self.contour_names        = ['lv_lax_endo', 'lv_lax_myo', 'rv_lax_endo', 'la', 'ra']
         self.contour2categorytype = {None : self.all,
-                                     'lv_lax_endo': self.lv_cats,  'lv_lax_epi' : self.myo_cats,
-                                     'lv_lax_myo' : self.myo_cats, 'rv_lax_endo': self.rv_cats,
-                                     'la'         : self.la_cats,  'ra'         : self.ra_cats}
+                         'lv_lax_endo': self.lv_cats,  'lv_lax_epi' : self.myo_cats,
+                         'lv_lax_myo' : self.myo_cats, 'rv_lax_endo': self.rv_cats,
+                         'la'         : self.la_cats,  'ra'         : self.ra_cats}
+        """
+        self.contour_names        = ['la', 'ra']
+        self.contour2categorytype = {None : self.all, 
+                                     'la': self.la_cats, 'ra': self.ra_cats}
         
         # register tabs here:
         """
@@ -214,16 +233,19 @@ class LAX_CINE_View(View):
         self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
         
     def load_categories(self):
+        """
         self.all = [LAX_4CV_LVES_Category, LAX_4CV_LVED_Category, LAX_4CV_RVES_Category, 
                     LAX_4CV_RVED_Category, LAX_4CV_LAES_Category, LAX_4CV_LAED_Category, 
                     LAX_4CV_RAES_Category, LAX_4CV_RAED_Category, LAX_2CV_LVES_Category, 
                     LAX_2CV_LVED_Category, LAX_2CV_LAES_Category, LAX_2CV_LAED_Category]
-        self.lv_cats  = [LAX_4CV_LVES_Category, LAX_4CV_LVED_Category, LAX_2CV_LVES_Category, LAX_2CV_LVED_Category]
-        self.myo_cats = [LAX_4CV_LVED_Category, LAX_2CV_LVED_Category]
-        self.rv_cats  = [LAX_4CV_RVES_Category, LAX_4CV_RVED_Category]
+        """
+        self.lv_cats  = []#[LAX_4CV_LVES_Category, LAX_4CV_LVED_Category, LAX_2CV_LVES_Category, LAX_2CV_LVED_Category]
+        self.myo_cats = []#[LAX_4CV_LVED_Category, LAX_2CV_LVED_Category]
+        self.rv_cats  = []#[LAX_4CV_RVES_Category, LAX_4CV_RVED_Category]
         self.la_cats  = [LAX_2CV_LAES_Category, LAX_2CV_LAED_Category,
                          LAX_4CV_LAES_Category, LAX_4CV_LAED_Category]
         self.ra_cats  = [LAX_4CV_RAES_Category, LAX_4CV_RAED_Category]
+        self.all      = self.lv_cats + self.myo_cats + self.rv_cats + self.la_cats + self.ra_cats
         
     def get_categories(self, case, contour_name=None):
         types = [c for c in self.contour2categorytype[contour_name]]
@@ -240,11 +262,16 @@ class LAX_CINE_View(View):
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
+        """
         case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
                                 LAX_4CV_RVES_Category, LAX_4CV_RVED_Category,
                                 LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
                                 LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
                                 LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
+                                LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
+        """
+        case.attach_categories([LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
+                                LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
                                 LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
         case.other_categories['LAX CINE'] = case.categories
         case.categories = []
@@ -266,21 +293,34 @@ class LAX_CINE_View(View):
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
             case.other_categories = dict()
+            """
             case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
                                     LAX_4CV_RVES_Category, LAX_4CV_RVED_Category,
                                     LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
                                     LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
                                     LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
                                     LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
+            """
+            case.attach_categories([LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
+                                    LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
+                                    LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
             case.other_categories['LAX CINE'] = case.categories
         else:
             if 'LAX CINE' in case.other_categories.keys(): case.categories = case.other_categories['LAX CINE']
-            else: case.attach_categories([LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
-                                          LAX_4CV_RVES_Category, LAX_4CV_RVED_Category,
-                                          LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
-                                          LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
-                                          LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
-                                          LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
+            else: 
+                """
+                case.attach_categories(
+                [LAX_4CV_LVES_Category, LAX_4CV_LVED_Category,
+                 LAX_4CV_RVES_Category, LAX_4CV_RVED_Category,
+                 LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
+                 LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
+                 LAX_2CV_LVES_Category, LAX_2CV_LVED_Category,
+                 LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
+                 """
+                case.attach_categories(
+                [LAX_4CV_LAES_Category, LAX_4CV_LAED_Category,
+                 LAX_4CV_RAES_Category, LAX_4CV_RAED_Category,
+                 LAX_2CV_LAES_Category, LAX_2CV_LAED_Category])
         if debug: print('Case categories are: ', case.categories)
         # attach CRs
         """
@@ -311,12 +351,49 @@ class LAX_CINE_View(View):
                                       LAX_4CV_LAESV,      LAX_4CV_LAEDV,
                                       LAX_2CV_LAESAREA,   LAX_2CV_LAEDAREA,
                                       LAX_2CV_LAESV,      LAX_2CV_LAEDV,
-                                      LAX_BIPLANAR_LAESV, LAX_BIPLANAR_LAEDV])
+                                      LAX_BIPLANAR_LAESV, LAX_BIPLANAR_LAEDV,
+                                      LAX_4CV_LAESPHASE,  LAX_4CV_LAEDPHASE,
+                                      LAX_2CV_LAESPHASE,  LAX_2CV_LAEDPHASE,
+                                      LAX_4CV_RAESPHASE,  LAX_4CV_RAEDPHASE])
         # set new type
         case.type = 'LAX CINE'
         if debug: print('Customization in LAX CINE view took: ', time()-st)
         return case
+    
+    @store_information_exception_handler
+    def store_information(self, ccs, path):
+        try:
+            cr_table = CC_ClinicalResultsTable()
+            cr_table.calculate(ccs)
+            cr_table.store(os.path.join(path, 'clinical_results.csv'))
+        except Exception as e:
+            print(e)
+        try:
+            print('Starting LAX BA')
+            cr_overview_figure = LAX_BlandAltman()
+            cr_overview_figure.visualize(self, ccs)
+            cr_overview_figure.store(path)
+            print('Ending LAX BA')
+        except Exception as e:
+            print(traceback.print_exc())
+        try:
+            print('At LAX Metrics Table')
+            metrics_table = LAX_CCs_MetricsTable()
+            metrics_table.calculate(ccs, self)
+            print('END  LAX Metrics Table')
+            metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
+        except Exception as e:
+            print(e)
+        try:
+            failed_segmentation_folder_path = os.path.join(path, 'Failed_Segmentations')
+            if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
+            failed_annotation_comparison = Failed_Annotation_Comparison_Yielder()
+            failed_annotation_comparison.set_values(self, ccs)
+            failed_annotation_comparison.store(failed_segmentation_folder_path)
+        except Exception as e:
+            print(e)
 
+            
 class SAX_T1_View(View):
     def __init__(self):
         self.colormap            = 'gray'

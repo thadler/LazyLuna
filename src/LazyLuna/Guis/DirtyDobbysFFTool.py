@@ -113,7 +113,7 @@ class MyTabWidget(QWidget):
             if dialog.exec_() == QDialog.Accepted:
                 path = dialog.selectedFiles()[0]
                 self.imgs_folder_path.setText(path)
-                self.set_chooser()
+                self.set_relevant_paths()
         except Exception as e:
             print('Setting Images path failed: ', e)
             print(traceback.format_exc())
@@ -142,7 +142,7 @@ class MyTabWidget(QWidget):
             self.imgs_path, self.annos_path = [p for p in paths if path1 in p[0]][0]
             print('FOLDERS: ', self.imgs_path, self.annos_path)
         except Exception as e:
-            print('Setting Chooser failed: ', e)
+            print('Setting relevant paths failed: ', e)
             print(traceback.format_exc())
             
     def set_output_folder(self):

@@ -545,7 +545,61 @@ class LAX_4CV_EDPericardialFatArea(Clinical_Result):
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
 
+# Phases
+class LAX_4CV_LAESPHASE(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
 
+    def set_CR_information(self):
+        self.name = 'LAESP_4CV'
+        self.unit = '[#]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAES_Category)][0]
+
+    @CR_exception_handler
+    def get_val(self, string=False):
+        return str(self.cat.phase) if string else self.cat.phase
+
+    def get_val_diff(self, other, string=False):
+        p1, p2, nrp = self.get_val(), other.get_val(), self.cat.nr_phases
+        cr_diff = min(abs(p1-p2), (min(p1,p2) - max(p1,p2)) % nrp) # module ring difference
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+    
+# Phases
+class LAX_4CV_LAEDPHASE(LAX_4CV_LAESPHASE):
+    def set_CR_information(self):
+        self.name = 'LAEDP_4CV'
+        self.unit = '[#]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAED_Category)][0]
+        
+# Phases
+class LAX_4CV_RAESPHASE(LAX_4CV_LAESPHASE):
+    def set_CR_information(self):
+        self.name = 'RAESP_4CV'
+        self.unit = '[#]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAES_Category)][0]
+        
+# Phases
+class LAX_4CV_RAEDPHASE(LAX_4CV_LAESPHASE):
+    def set_CR_information(self):
+        self.name = 'RAEDP_4CV'
+        self.unit = '[#]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAED_Category)][0]
+        
+# Phases
+class LAX_2CV_LAESPHASE(LAX_4CV_LAESPHASE):
+    def set_CR_information(self):
+        self.name = 'LAESP_2CV'
+        self.unit = '[#]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAES_Category)][0]
+        
+# Phases
+class LAX_2CV_LAEDPHASE(LAX_4CV_LAESPHASE):
+    def set_CR_information(self):
+        self.name = 'LAEDP_2CV'
+        self.unit = '[#]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAED_Category)][0]
 
 
 ########
@@ -967,7 +1021,7 @@ class LAX_4CV_RAESV(Clinical_Result):
     def get_val(self, string=False):
         area = self.cat.get_area('ra', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
-        cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_RA() / 1000
         return "{:.2f}".format(cr) if string else cr
 
     def get_val_diff(self, other, string=False):
@@ -988,7 +1042,7 @@ class LAX_4CV_RAEDV(Clinical_Result):
     def get_val(self, string=False):
         area = self.cat.get_area('ra', self.cat.phase)
         anno = self.cat.get_anno(0, self.cat.phase)
-        cr   = 8/(3*np.pi) * (area**2)/anno.length_LA() / 1000
+        cr   = 8/(3*np.pi) * (area**2)/anno.length_RA() / 1000
         return "{:.2f}".format(cr) if string else cr
 
     def get_val_diff(self, other, string=False):

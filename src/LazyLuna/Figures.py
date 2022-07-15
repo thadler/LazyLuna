@@ -435,7 +435,10 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
                             cont2  = cat2.get_anno(sl_nr, p2).get_contour(contname)
                             dice   = dsc.get_val(cont1, cont2, dcm)
                             mldiff = np.abs(mld.get_val(cont1, cont2, dcm))
-                            if dice<60 and mldiff>1.2:
+                            hdm    = hd.get_val(cont1, cont2, dcm)
+                            if dice<70 and mldiff>1.2:
+                                yield cc, sl_nr, cat1, contname
+                            if contname in ['la','ra'] and (hdm>3.5 or dice<60):
                                 yield cc, sl_nr, cat1, contname
             count += 1
                 
@@ -553,6 +556,7 @@ class PairedBoxplot(Visualization):
         for cc in case_comparisons:
             cr1 = [cr.get_val() for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr.get_val() for cr in cc.case2.crs if cr.name==cr_name][0]
+            if np.isnan(cr1) or np.isnan(cr2): continue
             rows.extend([[readername1, cr1], [readername2, cr2]])
         df = DataFrame(rows, columns=['Reader', cr_name])
         print(df)
@@ -1320,3 +1324,132 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
                 size                = 10,
                 verticalalignment   = 'center',
                 )
+        
+        
+
+class LAX_BlandAltman(Visualization):
+    def visualize(self, view, ccs):
+        cases1   = [cc.case1 for cc in ccs]
+        cases2   = [cc.case2 for cc in ccs]
+        rows, columns   = 4, 2
+        #fig, axes = plt.subplots(rows, columns, figsize=(columns*11.0,rows*5.0))
+        self.set_size_inches(w=columns*11.0, h=(rows*6.0))
+        axes = self.subplots(rows, columns)
+        custom_palette  = sns.color_palette("Blues")
+        custom_palette2 = sns.color_palette("Purples")
+        swarm_palette   = sns.color_palette(["#061C36", "#061C36"])
+
+        cr_cols = ['case_name']+[cr.name+'_avg' for cr in ccs[0].case1.
+                                 crs]+[cr.name+'_diff' for cr in ccs[0].case1.crs]
+        cr_rows = []
+        for cc in ccs:
+            row = [cc.case1.case_name]
+            for cr1, cr2 in zip(cc.case1.crs, cc.case2.crs):
+                row.append((cr1.get_val() + cr2.get_val())/ 2.0)
+            for cr1, cr2 in zip(cc.case1.crs, cc.case2.crs):
+                row.append(cr1.get_val_diff(cr2))
+            cr_rows.append(row)
+        cr_table = DataFrame(cr_rows, columns=cr_cols)
+
+        #display(cr_table)
+        x_name, y_name = '4CV_RAESAREA_avg', '4CV_RAESAREA_diff'
+        sns.scatterplot(ax=axes[0][0], x=x_name, y=y_name,
+                        data=cr_table, markers='o', palette=swarm_palette, 
+                        size=np.abs(cr_table[y_name]), s=10, legend=False)
+        mean = cr_table[y_name].mean()
+        std = cr_table[y_name].std()
+        axes[0][0].axhline(mean, ls="-", c=".2")
+        axes[0][0].axhline(mean+1.96*std, ls=":", c=".2")
+        axes[0][0].axhline(mean-1.96*std, ls=":", c=".2")
+
+        x_name, y_name = '4CV_RAEDAREA_avg', '4CV_RAEDAREA_diff'
+        sns.scatterplot(ax=axes[0][1], x=x_name, y=y_name,
+                        data=cr_table, markers='o', palette=swarm_palette, 
+                        size=np.abs(cr_table[y_name]), s=10, legend=False)
+        mean = cr_table[y_name].mean()
+        std = cr_table[y_name].std()
+        axes[0][1].axhline(mean, ls="-", c=".2")
+        axes[0][1].axhline(mean+1.96*std, ls=":", c=".2")
+        axes[0][1].axhline(mean-1.96*std, ls=":", c=".2")
+
+        x_name, y_name = '4CV_LAESAREA_avg', '4CV_LAESAREA_diff'
+        sns.scatterplot(ax=axes[1][0], x=x_name, y=y_name,
+                        data=cr_table, markers='o', palette=swarm_palette, 
+                        size=np.abs(cr_table[y_name]), s=10, legend=False)
+        mean = cr_table[y_name].mean()
+        std = cr_table[y_name].std()
+        axes[1][0].axhline(mean, ls="-", c=".2")
+        axes[1][0].axhline(mean+1.96*std, ls=":", c=".2")
+        axes[1][0].axhline(mean-1.96*std, ls=":", c=".2")
+
+        x_name, y_name = '4CV_LAEDAREA_avg', '4CV_LAEDAREA_diff'
+        sns.scatterplot(ax=axes[1][1], x=x_name, y=y_name,
+                        data=cr_table, markers='o', palette=swarm_palette, 
+                        size=np.abs(cr_table[y_name]), s=10, legend=False)
+        mean = cr_table[y_name].mean()
+        std = cr_table[y_name].std()
+        axes[1][1].axhline(mean, ls="-", c=".2")
+        axes[1][1].axhline(mean+1.96*std, ls=":", c=".2")
+        axes[1][1].axhline(mean-1.96*std, ls=":", c=".2")
+
+        x_name, y_name = '2CV_LAESAREA_avg', '2CV_LAESAREA_diff'
+        sns.scatterplot(ax=axes[2][0], x=x_name, y=y_name,
+                        data=cr_table, markers='o', palette=swarm_palette, 
+                        size=np.abs(cr_table[y_name]), s=10, legend=False)
+        mean = cr_table[y_name].mean()
+        std = cr_table[y_name].std()
+        axes[2][0].axhline(mean, ls="-", c=".2")
+        axes[2][0].axhline(mean+1.96*std, ls=":", c=".2")
+        axes[2][0].axhline(mean-1.96*std, ls=":", c=".2")
+
+        x_name, y_name = '2CV_LAEDAREA_avg', '2CV_LAEDAREA_diff'
+        sns.scatterplot(ax=axes[2][1], x=x_name, y=y_name,
+                        data=cr_table, markers='o', palette=swarm_palette, 
+                        size=np.abs(cr_table[y_name]), s=10, legend=False)
+        mean = cr_table[y_name].mean()
+        std = cr_table[y_name].std()
+        axes[2][1].axhline(mean, ls="-", c=".2")
+        axes[2][1].axhline(mean+1.96*std, ls=":", c=".2")
+        axes[2][1].axhline(mean-1.96*std, ls=":", c=".2")
+
+        m_table = LAX_CCs_MetricsTable()
+        m_table.calculate(ccs, view)
+        #display(m_table.df)
+
+        ra_vals = m_table.df['ra LAX 4CV RAES DSC'].to_list() + m_table.df['ra LAX 4CV RAED DSC'].to_list()
+        la4vals = m_table.df['la LAX 4CV LAES DSC'].to_list() + m_table.df['la LAX 4CV LAED DSC'].to_list()
+        la2vals = m_table.df['la LAX 2CV LAES DSC'].to_list() + m_table.df['la LAX 2CV LAED DSC'].to_list()
+
+        dicebp = sns.boxplot(ax=axes[3][0], data=[ra_vals,la4vals,la2vals], width=0.4)
+        sns.swarmplot(ax=axes[3][0], data=[ra_vals,la4vals,la2vals], 
+                      palette=swarm_palette, dodge=True)
+        axes[3][0].set_xticklabels(['RA 4CV', 'LA 4CV', 'LA 2CV'])
+        axes[3][0].set_ylabel('DSC [%]')
+
+        for i, boxplot in enumerate(dicebp.artists):
+            if i==0: boxplot.set_facecolor(custom_palette [i])
+            else:    boxplot.set_facecolor(custom_palette2[i])
+
+        ra_vals = m_table.df['ra LAX 4CV RAES HD'].to_list() + m_table.df['ra LAX 4CV RAED HD'].to_list()
+        la4vals = m_table.df['la LAX 4CV LAES HD'].to_list() + m_table.df['la LAX 4CV LAED HD'].to_list()
+        la2vals = m_table.df['la LAX 2CV LAES HD'].to_list() + m_table.df['la LAX 2CV LAED HD'].to_list()
+
+        hd_bp = sns.boxplot(ax=axes[3][1], data=[ra_vals,la4vals,la2vals], width=0.4)
+        sns.swarmplot(ax=axes[3][1], data=[ra_vals,la4vals,la2vals], 
+                      palette=swarm_palette, dodge=True)
+        axes[3][1].set_xticklabels(['RA 4CV', 'LA 4CV', 'LA 2CV'])
+        axes[3][1].set_ylabel('Hausdorff Distance [mm]')
+
+        for i, boxplot in enumerate(hd_bp.artists):
+            if i==0: boxplot.set_facecolor(custom_palette [i])
+            else:    boxplot.set_facecolor(custom_palette2[i])
+
+        sns.despine()
+        self.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.25)
+        #fig.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.25)
+    
+    
+    def store(self, storepath, figurename='clinical_results_bland_altman.png'):
+        self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
+    
+

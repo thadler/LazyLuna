@@ -170,9 +170,12 @@ class CC_ClinicalResultsAveragesTable(Table):
         rows = []
         for cr_name in cr_dict1.keys():
             row = [cr_name]
-            row.append('{:.1f}'.format(np.mean(cr_dict1[cr_name])))
-            row.append('{:.1f}'.format(np.mean(cr_dict2[cr_name])))
-            row.append('{:.1f}'.format(np.mean(cr_dict3[cr_name])))
+            row.append('{:.1f}'.format(np.nanmean(cr_dict1[cr_name])) + ' (' +
+                      '{:.1f}'.format(np.nanstd(cr_dict1[cr_name])) + ')')
+            row.append('{:.1f}'.format(np.nanmean(cr_dict2[cr_name])) + ' (' +
+                      '{:.1f}'.format(np.nanstd(cr_dict2[cr_name])) + ')')
+            row.append('{:.1f}'.format(np.nanmean(cr_dict3[cr_name])) + ' (' +
+                      '{:.1f}'.format(np.nanstd(cr_dict3[cr_name])) + ')')
             rows.append(row)
         self.df = pandas.DataFrame(rows, columns=columns)
         
@@ -219,7 +222,7 @@ class LAX_CC_Metrics_Table(Table):
         self.metric_vals = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader)
         self.metric_vals = self.metric_vals[['category', 'slice', 'contour name', 'ml diff', 'abs ml diff', 'DSC', 'HD', 'has_contour1', 'has_contour2']]
         self.metric_vals.sort_values(by='slice', axis=0, ascending=True, inplace=True, ignore_index=True)
-        print('Here:/n', self.metric_vals)
+        #print('Here:/n', self.metric_vals)
         
     def present_contour_df(self, contour_name, pretty=True):
         self.df = self.metric_vals[self.metric_vals['contour name']==contour_name]
@@ -229,7 +232,7 @@ class LAX_CC_Metrics_Table(Table):
         unique_cats = self.df['category'].unique()
         df = DataFrame()
         for cat_i, cat in enumerate(unique_cats):
-            print(cat_i)
+            #print(cat_i)
             curr = self.df[self.df['category']==cat]
             curr = curr.rename(columns={k:cat+' '+k for k in curr.columns if k not in ['slice', 'category']})
             curr.reset_index(drop=True, inplace=True)
@@ -505,9 +508,32 @@ class CC_AngleAvgT1ValuesTable(Table):
                 row += ['{:.1f}'.format(np.mean(myo_vals1[k])-np.mean(myo_vals2[k]))]
             
             rows.append(row)
-        
         self.df = pandas.DataFrame(rows, columns=columns)
         
+class LAX_CCs_MetricsTable(Table):
+    def calculate(self, case_comparisons, view):
+        cases = []
+        for cc in case_comparisons:
+            cc_table = LAX_CC_Metrics_Table()
+            cc_table.calculate(cc)
+            tables = []
+            for c_i, contname in enumerate(view.contour_names):
+                cc_table.present_contour_df(contname, pretty=False)
+                cc_table.df = cc_table.df.rename(columns={k:contname+' '+k for k in cc_table.df.columns if 'slice' not in k})
+                if c_i!=0: cc_table.df.drop(labels='slice', axis=1, inplace=True)
+                tables.append(cc_table.df)
+            table = pandas.concat(tables, axis=1)
+            table['Case']    = cc.case1.case_name
+            table['Reader1'] = cc.case1.reader_name
+            table['Reader2'] = cc.case2.reader_name
+            print('Columns: ', table.columns)
+            cols = list(table.columns)[-3:] + list(table.columns)[:-3]
+            table = table[cols]
+            cases.append(table)
+        self.df = pandas.concat(cases, axis=0, ignore_index=True)
+        
+
+
 
 
 class CC_StatsOverviewTable(Table):
