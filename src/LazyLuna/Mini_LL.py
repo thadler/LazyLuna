@@ -106,18 +106,18 @@ class Annotation:
         if not self.has_point('laxLaExtentPoints'): return np.nan
         extent = self.get_point('laxLaExtentPoints')
         pw, ph = self.get_pixel_size()
-        lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
-        mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
-        dist = mitral.distance(apex)
+        la_ext1, la_ext2, ceil = scale(extent, xfact=pw, yfact=ph)
+        mitral = MultiPoint([la_ext1, la_ext2]).centroid
+        dist = mitral.distance(ceil)
         return dist
     
     def length_RA(self):
         if not self.has_point('laxRaExtentPoints'): return np.nan
         extent = self.get_point('laxRaExtentPoints')
         pw, ph = self.get_pixel_size()
-        lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
-        mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
-        dist = mitral.distance(apex)
+        ra_ext1, ra_ext2, ceil = scale(extent, xfact=pw, yfact=ph)
+        mitral = MultiPoint([ra_ext1, ra_ext2]).centroid
+        dist = mitral.distance(ceil)
         return dist
     
     def get_pixel_values(self, cont_name, img):

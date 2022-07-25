@@ -171,6 +171,7 @@ class Window(QtWidgets.QMainWindow):
         cases = []
         views = [v[1]() for v in inspect.getmembers(Views, inspect.isclass) if issubclass(v[1], Views.View) if v[0]!='View']
         for i, (imgp, annop) in enumerate(imgsanno_paths):
+            if imgp != single_imgs_path: continue
             print(i, imgp)
             self.ui.case_conversion_text_edit.append('Image and Annotation paths:/n'+imgp+'/n'+annop)
             if not os.path.exists(annop): 
