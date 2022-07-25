@@ -15,16 +15,6 @@ from LazyLuna.Figures import *
 
 import traceback
 
-# decorator function for exception handling
-def store_information_exception_handler(f):
-    def inner_function(*args, **kwargs):
-        try:
-            return f(*args, **kwargs)
-        except Exception as e:
-            print(f.__name__ + ' failed to store view information. Error traceback:')
-            print(traceback.format_exc())
-    return inner_function
-
 
 class View:
     def __init__(self):
@@ -113,26 +103,25 @@ class SAX_CINE_View(View):
         print('ending customize: ', case.case_name)
         return case
     
-    @store_information_exception_handler
     def store_information(self, ccs, path):
         try:
             cr_table = CC_ClinicalResultsTable()
             cr_table.calculate(ccs)
             cr_table.store(os.path.join(path, 'clinical_results.csv'))
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
         try:
             cr_overview_figure = SAX_BlandAltman()
             cr_overview_figure.visualize(ccs)
             cr_overview_figure.store(path)
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
         try:
             metrics_table = CCs_MetricsTable()
             metrics_table.calculate(ccs, self)
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
         try:
             failed_segmentation_folder_path = os.path.join(path, 'Failed_Segmentations')
             if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
@@ -140,7 +129,7 @@ class SAX_CINE_View(View):
             failed_annotation_comparison.set_values(self, ccs)
             failed_annotation_comparison.store(failed_segmentation_folder_path)
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
         try:
             table = SAX_Cine_CCs_pretty_averageCRs_averageMetrics_Table()
             table.calculate(ccs, self)
@@ -149,7 +138,7 @@ class SAX_CINE_View(View):
             table.present_crs()
             table.store(os.path.join(path, 'crvs_and_metrics.csv'))
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
 
 
 
@@ -360,30 +349,31 @@ class LAX_CINE_View(View):
         if debug: print('Customization in LAX CINE view took: ', time()-st)
         return case
     
-    @store_information_exception_handler
     def store_information(self, ccs, path):
         try:
             cr_table = CC_ClinicalResultsTable()
             cr_table.calculate(ccs)
             cr_table.store(os.path.join(path, 'clinical_results.csv'))
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
         try:
-            print('Starting LAX BA')
             cr_overview_figure = LAX_BlandAltman()
             cr_overview_figure.visualize(self, ccs)
             cr_overview_figure.store(path)
-            print('Ending LAX BA')
         except Exception as e:
             print(traceback.print_exc())
         try:
-            print('At LAX Metrics Table')
+            cr_overview_figure = LAX_Volumes_BlandAltman()
+            cr_overview_figure.visualize(self, ccs)
+            cr_overview_figure.store(path)
+        except Exception as e:
+            print(traceback.print_exc())
+        try:
             metrics_table = LAX_CCs_MetricsTable()
             metrics_table.calculate(ccs, self)
-            print('END  LAX Metrics Table')
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
         try:
             failed_segmentation_folder_path = os.path.join(path, 'Failed_Segmentations')
             if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
@@ -391,7 +381,7 @@ class LAX_CINE_View(View):
             failed_annotation_comparison.set_values(self, ccs)
             failed_annotation_comparison.store(failed_segmentation_folder_path)
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
 
             
 class SAX_T1_View(View):
@@ -484,13 +474,13 @@ class SAX_T1_View(View):
             cr_table.calculate(ccs)
             cr_table.store(os.path.join(path, 'clinical_results.csv'))
         except Exception as e:
-            print('CR Table store exeption: ', e)
+            print('CR Table store exeption: ', traceback.print_exc())
         try:
             metrics_table = T1_CCs_MetricsTable()
             metrics_table.calculate(ccs, self)
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
-            print('Metrics Table store exeption: ', e)
+            print('Metrics Table store exeption: ', traceback.print_exc())
         try:
             failed_segmentation_folder_path = os.path.join(path, 'Failed_Segmentations')
             if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
@@ -498,7 +488,7 @@ class SAX_T1_View(View):
             failed_annotation_comparison.set_values(self, ccs)
             failed_annotation_comparison.store(failed_segmentation_folder_path)
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
         
     
 
@@ -577,13 +567,13 @@ class SAX_T2_View(View):
             cr_table.calculate(ccs)
             cr_table.store(os.path.join(path, 'clinical_results.csv'))
         except Exception as e:
-            print('CR Table store exeption: ', e)
+            print('CR Table store exeption: ', traceback.print_exc())
         try:
             metrics_table = T2_CCs_MetricsTable()
             metrics_table.calculate(ccs, self)
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
-            print('Metrics Table store exeption: ', e)
+            print('Metrics Table store exeption: ', traceback.print_exc())
         try:
             failed_segmentation_folder_path = os.path.join(path, 'Failed_Segmentations')
             if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
@@ -591,7 +581,7 @@ class SAX_T2_View(View):
             failed_annotation_comparison.set_values(self, ccs)
             failed_annotation_comparison.store(failed_segmentation_folder_path)
         except Exception as e:
-            print(e)
+            print(traceback.print_exc())
         
     
 
