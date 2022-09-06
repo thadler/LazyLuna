@@ -117,6 +117,12 @@ class SAX_CINE_View(View):
         except Exception as e:
             print(traceback.print_exc())
         try:
+            ci_figure = SAXCINE_Confidence_Intervals_Tolerance_Ranges()
+            ci_figure.visualize(ccs, True)
+            ci_figure.store(path)
+        except Exception as e:
+            print(traceback.print_exc())
+        try:
             metrics_table = CCs_MetricsTable()
             metrics_table.calculate(ccs, self)
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))

@@ -22,6 +22,7 @@ class Clinical_Result:
         self.case = case
         self.name = ''
         self.unit = '[]'
+        self.tol_range = 0
     @CR_exception_handler
     def get_val(self, string=False):             pass
     def get_val_diff(self, other, string=False): pass
@@ -30,6 +31,7 @@ class LVSAX_ESV(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 7.3
 
     def set_CR_information(self):
         self.name = 'LVESV'
@@ -50,6 +52,7 @@ class LVSAX_EDV(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 10.8
 
     def set_CR_information(self):
         self.name = 'LVEDV'
@@ -69,6 +72,7 @@ class RVSAX_ESV(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 9.7
 
     def set_CR_information(self):
         self.name = 'RVESV'
@@ -88,6 +92,7 @@ class RVSAX_EDV(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 14.6
 
     def set_CR_information(self):
         self.name = 'RVEDV'
@@ -175,6 +180,7 @@ class LVSAX_MYO(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 13.3
 
     def set_CR_information(self):
         self.name = 'LVM'
@@ -213,6 +219,7 @@ class RVSAX_SV(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 13.2
 
     def set_CR_information(self):
         self.name = 'RVSV'
@@ -234,6 +241,7 @@ class RVSAX_EF(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 5.5
 
     def set_CR_information(self):
         self.name = 'RVEF'
@@ -255,6 +263,7 @@ class LVSAX_SV(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 4.5
 
     def set_CR_information(self):
         self.name = 'LVSV'
@@ -276,6 +285,7 @@ class LVSAX_EF(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
+        self.tol_range = 5.3
 
     def set_CR_information(self):
         self.name = 'LVEF'
