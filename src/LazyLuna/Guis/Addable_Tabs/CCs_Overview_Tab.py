@@ -1,7 +1,7 @@
-from PyQt5.QtWidgets import QMainWindow, QGridLayout, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout, QTextEdit, QTableView, QTableWidgetItem, QComboBox, QHeaderView, QLabel, QLineEdit, QFileDialog, QHBoxLayout, QDialog, QRadioButton, QButtonGroup, QInputDialog
+from PyQt5.QtWidgets import QMainWindow, QGridLayout, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout, QTextEdit, QTableView, QTableWidgetItem, QComboBox, QHeaderView, QLabel, QLineEdit, QFileDialog, QHBoxLayout, QDialog, QRadioButton, QButtonGroup, QInputDialog, QMessageBox
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.Qt import Qt
-from PyQt5 import QtCore
+from PyQt5.QtCore import QObject, QThread, pyqtSignal
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -24,6 +24,19 @@ from LazyLuna.Figures import *
 from LazyLuna         import Views
 
 
+class StoreInfoWorker(QObject):
+    finished = pyqtSignal()
+    progress = pyqtSignal(int)
+    def __init__(self, view, case_comparisons, view_folder_path):
+        super().__init__()
+        self.view = view
+        self.case_comparisons = case_comparisons
+        self.view_folder_path = view_folder_path
+    def run(self):
+        self.view.store_information(self.case_comparisons, self.view_folder_path)
+        self.finished.emit()
+
+
 class CCs_Overview_Tab(QWidget):
     def __init__(self):
         super().__init__()
@@ -40,6 +53,8 @@ class CCs_Overview_Tab(QWidget):
         #########################################
         print('In overview tab: Nr CCs: ', len(case_comparisons))
         self.all_case_comparisons = case_comparisons
+        self.threads = []
+        self.workers = []
 
         ###########
         ## Row 1 ##
@@ -122,20 +137,35 @@ class CCs_Overview_Tab(QWidget):
             if not os.path.exists(view_folder_path): os.mkdir(view_folder_path)
         except Exception as e:
             print(traceback.format_exc())
-        
         try:
             self.gui.cc_table.store(os.path.join(export_folder_path, 'table.csv'))
             self.overview_table.store(os.path.join(view_folder_path, 'overview_table.csv'))
         except Exception as e:
             print(traceback.format_exc())
-            
-        view.store_information(self.case_comparisons, view_folder_path)
-            
-        
-        
+        try:
+            self.threads.append(QThread())
+            self.workers.append(StoreInfoWorker(view, self.case_comparisons, view_folder_path))
+            thread, worker = self.threads[-1], self.workers[-1]
+            worker.moveToThread(thread)
+            thread.started.connect(worker.run)
+            worker.finished.connect(thread.quit)
+            worker.finished.connect(worker.deleteLater)
+            thread.finished.connect(thread.deleteLater)
+            thread.start()
+        except Exception as e:
+            print(traceback.format_exc())
         
     def create_stats_tab(self):
         try:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("You're opening a statistical tab for "+str(len(self.case_comparisons))+" cases.\n!!! Calculations may take up to a minute !!!")
+            msg.setInformativeText("Are you sure you want to procede?")
+            msg.setWindowTitle("Statistical Tab Reminder")
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            retval = msg.exec_()
+            # Return value for NO button
+            if retval==65536: return
             tab_name  = self.combobox_stats_tab  .currentText()
             view_name = self.combobox_select_view.currentText()
             if tab_name=='Choose a Tab' or view_name=='Choose a View': return

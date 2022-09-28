@@ -945,7 +945,8 @@ class Qualitative_Correlationplot(Visualization):
                 cont2  = cat2.get_anno(slice_nr, cat2.phase).get_contour(cont_type)
                 axes = ax_comps[self.curr_fig]
                 for ax_i, ax in enumerate(axes):
-                    ax.patches=[]
+                    ax.clear()
+                    ax.axis('off')
                     if ax_i!=2: ax.imshow(img1, cmap='gray', extent=extent)
                     else:       ax.imshow(img2, cmap='gray', extent=extent)
                 axes[0].set_ylabel(case_name, rotation=90, labelpad=0.1)
