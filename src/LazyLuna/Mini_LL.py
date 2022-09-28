@@ -42,9 +42,9 @@ class Annotation:
         if not self.has_point(point_name): return
         utils.plot_points(ax, self.get_point(point_name), c=c, marker=marker, s=s)
 
-    def plot_cont_comparison(self, ax, other_anno, cont_name, alpha=0.4):
+    def plot_cont_comparison(self, ax, other_anno, cont_name, colors=['g','r','b'], alpha=0.4):
         cont1, cont2 = self.get_contour(cont_name), other_anno.get_contour(cont_name)
-        utils.plot_geo_face_comparison(ax, cont1, cont2, alpha=alpha)
+        utils.plot_geo_face_comparison(ax, cont1, cont2, colors=colors, alpha=alpha)
 
     def available_contour_names(self):
         return [c for c in self.anno.keys() if self.has_contour(c)]
