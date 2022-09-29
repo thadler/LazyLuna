@@ -143,12 +143,12 @@ class CC_SAX_DiceTable(Table):
             analyzer = Mini_LL.SAX_CINE_analyzer(cc)
             df = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader=False)
             all_dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0] in contour_names]
-            rows.append([c1.case_name, False, 'all', np.mean(all_dices)])
-            rows.append([c1.case_name, True, 'all',  np.mean([d for d in all_dices if 0<d<100])])
+            rows.append([c1.case_name, False, 'all', np.nanmean(all_dices)])
+            rows.append([c1.case_name, True, 'all',  np.nanmean([d for d in all_dices if 0<d<100])])
             for cname in contour_names:
                 dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0]==cname]
-                rows.append([c1.case_name, False, cname, np.mean(dices)])
-                rows.append([c1.case_name, True, cname, np.mean([d for d in dices if 0<d<100])])
+                rows.append([c1.case_name, False, cname, np.nanmean(dices)])
+                rows.append([c1.case_name, True, cname, np.nanmean([d for d in dices if 0<d<100])])
         self.df = DataFrame(rows, columns=columns)
 
         
@@ -156,7 +156,7 @@ class CC_ClinicalResultsAveragesTable(Table):
     def calculate(self, case_comparisons):
         rows = []
         case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
-        columns=['Clinical Result', case1.reader_name, case2.reader_name, 'Diff('+case1.reader_name+', '+case2.reader_name+')']
+        columns=['Clinical Result (mean±std)', case1.reader_name, case2.reader_name, 'Diff('+case1.reader_name+', '+case2.reader_name+')']
         
         cr_dict1 = {cr.name+' '+cr.unit:[] for cr in case1.crs}
         cr_dict2 = {cr.name+' '+cr.unit:[] for cr in case1.crs}
@@ -385,19 +385,19 @@ class SAX_Cine_CCs_pretty_averageCRs_averageMetrics_Table(Table):
                 all_dices = []
                 for ki in range(len(dice_ks)): all_dices.extend([d for d in subtable[subtable[position_ks[ki]]==position][dice_ks[ki]]])
                 #print('all dices: ', all_dices)
-                row1.append(np.mean(all_dices))
-                row2.append(np.mean([d for d in all_dices if 0<d<100]))
+                row1.append(np.nanmean(all_dices))
+                row2.append(np.nanmean([d for d in all_dices if 0<d<100]))
                 hd_ks = [k for k in subtable.columns if 'HD' in k]
                 hds   = []
                 for ki in range(len(hd_ks)): hds.extend([d for d in subtable[subtable[position_ks[ki]]==position][hd_ks[ki]]])
                 #print('hds: ', hds)
-                row3.append(np.mean(hds))
+                row3.append(np.nanmean(hds))
                 # abs ml diff
                 mld_ks = [k for k in subtable.columns if 'abs ml diff' in k]
                 mlds   = []
                 for ki in range(len(mld_ks)): mlds.extend([d for d in subtable[subtable[position_ks[ki]]==position][mld_ks[ki]]])
                 #print('mlds: ', mlds)
-                row4.append(np.mean(mlds))
+                row4.append(np.nanmean(mlds))
             rows.extend([row1, row2, row3, row4])
         self.metrics_table = pandas.DataFrame(rows, columns=['Position', 'Metric', 'LV Endocardial Contour', 'LV Myocardial Contour', 'RV Endocardial Contour'])
         #display(self.metrics_table)
@@ -575,10 +575,10 @@ class CC_StatsOverviewTable(Table):
         weights = np.array([self.get_weight(cc) for cc in ccs])
         heights = np.array([self.get_height(cc) for cc in ccs])
         
-        rows = [[len(ccs), '{:.1f}'.format(np.mean(ages))+' ('+'{:.1f}'.format(np.std(ages))+')', 
+        rows = [[len(ccs), '{:.1f}'.format(np.nanmean(ages))+' ('+'{:.1f}'.format(np.nanstd(ages))+')', 
                 str(np.sum(genders=='M'))+'/'+str(np.sum(genders=='F')), 
-                '{:.1f}'.format(np.mean(weights))+' ('+'{:.1f}'.format(np.std(weights))+')', 
-                '{:.1f}'.format(np.mean(heights))+' ('+'{:.1f}'.format(np.std(heights))+')']]
+                '{:.1f}'.format(np.nanmean(weights))+' ('+'{:.1f}'.format(np.nanstd(weights))+')', 
+                '{:.1f}'.format(np.nanmean(heights))+' ('+'{:.1f}'.format(np.nanstd(heights))+')']]
         
         information_summary_df  = DataFrame(rows, columns=columns)
         self.df = information_summary_df

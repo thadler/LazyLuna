@@ -1,7 +1,7 @@
 from PyQt5.QtWidgets import QMainWindow, QGridLayout, QApplication, QPushButton, QWidget, QAction, QTabWidget, QVBoxLayout, QTextEdit, QTableView, QTableWidgetItem, QComboBox, QHeaderView, QLabel, QLineEdit, QFileDialog, QHBoxLayout, QDialog, QRadioButton, QButtonGroup, QInputDialog
 from PyQt5.QtGui import QIcon, QColor
 from PyQt5.Qt import Qt
-from PyQt5 import QtCore
+from PyQt5.QtCore import QThread, pyqtSignal, pyqtSlot
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -15,7 +15,9 @@ import os
 import inspect
 import traceback
 
-import pandas
+import copy
+
+import pandas as pd
 
 from LazyLuna.Mini_LL import Case_Comparison
 from LazyLuna.loading_functions import *
@@ -37,11 +39,7 @@ class CCs_ClinicalResults_Tab(QWidget):
 
         self.ccs = ccs
         
-        self.crs_table  = CC_ClinicalResultsAveragesTable()
-        self.crs_table.calculate(ccs)
         self.crs_TableView = QTableView()
-        self.crs_TableView.setModel(self.crs_table.to_pyqt5_table_model())
-        self.crs_TableView.selectionModel().selectionChanged.connect(self.update_figures)
         layout.addWidget(self.crs_TableView, 0,0, 2,1)
         
         self.qq = QQPlot()
@@ -76,14 +74,14 @@ class CCs_ClinicalResults_Tab(QWidget):
         #layout.setRowStretch(0, 3)
         self.setLayout(layout)
         
+        self.CR_threadworker(ccs)
+        
         
     def update_figures(self):
         try:
             idx = self.crs_TableView.selectionModel().selectedIndexes()[0]
             row, col = idx.row(), idx.column()
-            print(col, row)
-            cr_name = self.crs_table.df['Clinical Result'].iloc[row].split(' ')[0]
-            print(cr_name)
+            cr_name = self.crs_table.df['Clinical Result (mean±std)'].iloc[row].split(' ')[0]
 
             self.qq.visualize(self.ccs, cr_name)
             #self.bp.visualize(self.ccs, cr_name)
@@ -91,5 +89,33 @@ class CCs_ClinicalResults_Tab(QWidget):
             self.ba.visualize(self.ccs, cr_name)
         except Exception as e:
             print(traceback.format_exc())
+        
+    def CR_threadworker(self, ccs):
+        self.worker = CR_Results_Worker(self, ccs)
+        self.worker.start()
+        self.worker.worksignal.connect(self.update_cr_avgs_table)
+        
+    def update_cr_avgs_table(self, crs_df):
+        self.crs_table = CC_ClinicalResultsAveragesTable()
+        self.crs_table.df = crs_df
+        self.crs_TableView.setModel(self.crs_table.to_pyqt5_table_model())
+        self.crs_TableView.selectionModel().selectionChanged.connect(self.update_figures)
+        self.crs_TableView.resizeColumnsToContents()
         return
         
+        
+class CR_Results_Worker(QThread):
+    worksignal = pyqtSignal(pd.DataFrame)
+
+    def __init__(self, parent=None, ccs=None):
+        super(QThread, self).__init__()
+        self.set_ccs(ccs)
+
+    @pyqtSlot(pd.DataFrame)
+    def run(self):
+        self.table = CC_ClinicalResultsAveragesTable()
+        self.table.calculate(self.ccs)
+        self.worksignal.emit(self.table.df)
+
+    def set_ccs(self, ccs):
+        self.ccs = copy.deepcopy(ccs)

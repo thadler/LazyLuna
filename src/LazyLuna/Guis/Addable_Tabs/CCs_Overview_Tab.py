@@ -126,6 +126,18 @@ class CCs_Overview_Tab(QWidget):
     
     def store_all(self):
         try:
+            # Information Message for User
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Information)
+            msg.setText("You're calculating information for "+str(len(self.case_comparisons))+" cases.\n!!! Calculations may take several minutes !!!\nAnother pop-up will inform you of calculation end.")
+            msg.setInformativeText("Are you sure you want to procede?")
+            msg.setWindowTitle("Storage Time Reminder")
+            msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            retval = msg.exec_()
+            # Return value for NO button
+            if retval==65536: return
+            # Message end
+            
             path = self.export_storage_folder_path.text()
             reader1 = self.gui.reader1
             reader2 = self.gui.reader2
@@ -151,21 +163,32 @@ class CCs_Overview_Tab(QWidget):
             worker.finished.connect(thread.quit)
             worker.finished.connect(worker.deleteLater)
             thread.finished.connect(thread.deleteLater)
+            thread.finished.connect(self.end_storage_message)
             thread.start()
+            #view.store_information(self.case_comparisons, view_folder_path)
         except Exception as e:
             print(traceback.format_exc())
+            
+    def end_storage_message(self):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Finished calculating storable information.")
+        msg.setWindowTitle("Storage Calcuations DONE")
+        retval = msg.exec_()
         
     def create_stats_tab(self):
         try:
+            # Information Message for User
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Information)
-            msg.setText("You're opening a statistical tab for "+str(len(self.case_comparisons))+" cases.\n!!! Calculations may take up to a minute !!!")
+            msg.setText("You're opening a statistical tab for "+str(len(self.case_comparisons))+" cases.\n!!! Calculations may take up to a minute !!!\nLazy Luna might freeze in the meantime.")
             msg.setInformativeText("Are you sure you want to procede?")
             msg.setWindowTitle("Statistical Tab Reminder")
             msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
             retval = msg.exec_()
             # Return value for NO button
             if retval==65536: return
+            # Message End
             tab_name  = self.combobox_stats_tab  .currentText()
             view_name = self.combobox_select_view.currentText()
             if tab_name=='Choose a Tab' or view_name=='Choose a View': return

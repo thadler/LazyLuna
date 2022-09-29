@@ -93,7 +93,8 @@ class SAX_BlandAltman(Visualization):
         ax.set_ylabel('[%]', fontsize=14)
         ax.set_xlabel("", fontsize=14)
         ax.set_ylim(ymin=65, ymax=101)
-        for i, boxplot in enumerate(dicebp.artists):
+        for i, boxplot in enumerate(dicebp.patches):
+            print(boxplot)
             if i%2 == 0: boxplot.set_facecolor(custom_palette[i//2])
             else:        boxplot.set_facecolor(custom_palette2[i//2])
         sns.despine()
@@ -145,6 +146,7 @@ class SAX_Candlelight(Visualization):
             else:        boxplot.set_facecolor(boxplot_palette2[i//2])
         sns.despine()
         self.tight_layout()
+        plt.flush_events()
     
     def store(self, storepath, figurename='clinical_results_candlelights.png'):
         self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
@@ -185,41 +187,6 @@ class SAXCINE_Confidence_Intervals_Tolerance_Ranges(Visualization):
     def store(self, storepath, figurename='confidence_intervals_tolerance_ranges.png'):
         self.savefig(os.path.join(storepath, figurename), dpi=300, facecolor="#FFFFFF")
 
-"""
-from matplotlib.patches import Rectangle
-
-# make figure
-def tol_ranges_saxcine(ccs, with_swarmplot=True):
-    vals = {cr.name:[] for cr in ccs[0].case1.crs}
-    for cc in ccs:
-        c1,  c2  = cc.case1, cc.case2
-        for name in [cr.name for cr in c1.crs]:
-            cr1, cr2 = [cr for cr in c1.crs if cr.name==name][0], [cr for cr in c2.crs if cr.name==name][0]
-            vals[cr1.name].append(cr1.get_val_diff(cr2))
-    
-    fig, axes = plt.subplots(3,3, figsize=(15,15))
-    for i, ax_ in enumerate(axes):
-        for j, ax in enumerate(ax_):
-            cr = ccs[0].case1.crs[i*3+j]
-            name = cr.name
-            ax.set_title(name)
-            ax.axhspan(-cr.tol_range, cr.tol_range, facecolor='0.6', alpha=0.5)
-            alpha = 0.5 if with_swarmplot else 0.0
-            sns.swarmplot(ax=ax, y=vals[name], palette=sns.color_palette("Blues")[4:], dodge=True, size=5, alpha=alpha)
-            ci = 1.96 * np.std(vals[name]) / np.sqrt(len(vals[name]))
-            ax.errorbar([name], [np.mean(vals[name])], yerr=ci, fmt ='o', c='r')
-            maxx = np.max([np.abs(np.min(vals[name])), np.abs(np.max(vals[name])),
-                           np.abs(np.mean(vals[name])-ci), np.abs(np.mean(vals[name])+ci), cr.tol_range])
-            ax.set_ylim(ymin=-maxx-2, ymax=maxx+2)
-            ax.set_ylabel(name + ' ' + cr.unit)
-            ax.set_xlabel(name)
-    
-    fig.tight_layout()
-    plt.show()
-
-print(tol_ranges_saxcine(ccs, True))
-"""
-        
 
 class Annotation_Comparison(Visualization):
     def set_values(self, view, cc, canvas):
@@ -471,7 +438,7 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
         extent=(0, w, h, 0)
         axes[0].imshow(img1,'gray', extent=extent); axes[1].imshow(img1,'gray', extent=extent)
         axes[2].imshow(img2,'gray', extent=extent); axes[3].imshow(img1,'gray', extent=extent)
-        self.suptitle('Case: ' + cc.case1.case_name + ', Contour: ' + contour_name + ', category: ' + cat1.name + ', slice: ' + str(slice_nr))
+        self.suptitle('Case: ' + cc.case1.case_name + ', Contour: ' + contour_name + ', category: ' + cat1.name + ', slice: ' + str(slice_nr), fontsize=30)
         if self.add_annotation:
             anno1.plot_contour_face   (axes[0],        contour_name, alpha=0.4, c='r')
             anno1.plot_cont_comparison(axes[1], anno2, contour_name, alpha=0.4)
@@ -482,7 +449,7 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
         handles = [self.cc.case1.reader_name,
                    self.cc.case1.reader_name+' & '+self.cc.case2.reader_name,
                    self.cc.case2.reader_name]
-        axes[3].legend(patches, handles)
+        axes[3].legend(patches, handles, fontsize=20)
         self.tight_layout()
         if debug: print('Took: ', time()-st)
         
