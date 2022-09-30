@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas
 import pydicom
+import traceback
 
 from PyQt5 import Qt, QtWidgets, QtGui, QtCore, uic
 
