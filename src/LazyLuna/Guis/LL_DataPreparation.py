@@ -11,12 +11,13 @@ from pathlib import Path
 import sys
 import traceback
 
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame
 from PyQt5.QtGui import QIcon, QColor, QPalette
 from PyQt5.QtCore import Qt, QSize
 
 from LazyLuna.Guis.DataPreparation_Tabs.cvi42converter_tab import CVI42Converter_TabWidget
 from LazyLuna.Guis.DataPreparation_Tabs.centralintroductory_tab import CentralIntroductory_TabWidget
+from LazyLuna.Guis.DataPreparation_Tabs.dcmlabeling_tab import DcmLabeling_TabWidget
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -60,22 +61,16 @@ class MainWindow(QMainWindow):
         self.setStatusBar(QStatusBar(self))
 
     def open_introduction_tab(self, s):
-        try: self.removeToolBar(self.tab.toolbar)
-        except Exception as e: print(traceback.format_exc())
         self.tab = CentralIntroductory_TabWidget(self)
         self.setCentralWidget(self.tab)
-        
 
     def open_cvi42converter_tab(self, s):
-        try: self.removeToolBar(self.tab.toolbar)
-        except Exception as e: print(traceback.format_exc())
         self.tab = CVI42Converter_TabWidget(self)
         self.setCentralWidget(self.tab)
         
     def open_labeler_tab(self, s):
-        try: self.removeToolBar(self.tab.toolbar)
-        except Exception as e: print(traceback.format_exc())
-        print("click", s)
+        self.tab = DcmLabeling_TabWidget(self)
+        self.setCentralWidget(self.tab)
 
         
         

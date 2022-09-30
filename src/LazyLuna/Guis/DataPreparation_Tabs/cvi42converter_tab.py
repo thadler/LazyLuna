@@ -43,7 +43,7 @@ class CVI42Converter_TabWidget(QWidget):
         # Toolbar
         self.toolbar = QToolBar("My main toolbar")
         self.toolbar.setIconSize(QSize(32, 32))
-        self.parent.addToolBar(self.toolbar)
+        self.layout.addWidget(self.toolbar)
         self.toolbar.addWidget(QLabel("Select CVI42 Filepaths"))
         self.toolbar.addAction(select_cvi42_files_action)
         self.toolbar.addSeparator()
