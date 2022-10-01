@@ -31,7 +31,6 @@ class SAX_slice_phase_Category:
         # returns dict sop --> (depth, time)
         imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
         
-        # NEW
         sortable = [[k,v.SliceLocation,v.InstanceNumber] for k,v in imgs.items()]
         #sortable = [[k,float(v.SliceLocation),float(v.AcquisitionNumber)] for k,v in imgs.items()]
         slice_nrs = {x:i for i,x in enumerate(sorted(list(set([x[1] for x in sortable]))))}

@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt, QSize
 
 from LazyLuna.Guis.DataPreparation_Tabs.cvi42converter_tab import CVI42Converter_TabWidget
 from LazyLuna.Guis.DataPreparation_Tabs.centralintroductory_tab import CentralIntroductory_TabWidget
-from LazyLuna.Guis.DataPreparation_Tabs.dcmlabeling_tab import DcmLabeling_TabWidget
+from LazyLuna.Guis.DataPreparation_Tabs.dcmlabeling_1_tab import DcmLabeling_1_TabWidget
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -69,7 +69,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.tab)
         
     def open_labeler_tab(self, s):
-        self.tab = DcmLabeling_TabWidget(self)
+        self.tab = DcmLabeling_1_TabWidget(self)
         self.setCentralWidget(self.tab)
 
         

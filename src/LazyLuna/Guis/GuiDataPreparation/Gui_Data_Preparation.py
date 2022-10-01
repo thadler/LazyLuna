@@ -198,11 +198,9 @@ class Window(QtWidgets.QMainWindow):
         except: annos_df     = None
         divide_by_series_uid = self.ui.differentiation_radio_btn.isChecked()
         if annos_df is not None:
-            self.information_df = present_nrimages_nr_annos_table(self.imgs_df, 
-                                          annos_df, by_series=divide_by_series_uid)
+            self.information_df = present_nrimages_nr_annos_table(self.imgs_df, annos_df, by_series=divide_by_series_uid)
         else:
-            self.information_df = present_nrimages_table(self.imgs_df, 
-                                                 by_series=divide_by_series_uid)
+            self.information_df = present_nrimages_table(self.imgs_df, by_series=divide_by_series_uid)
         pandas_model = DataFrameModel(self.information_df, parent=self)
         self.ui.image_information_table_view.setModel(pandas_model)
 
