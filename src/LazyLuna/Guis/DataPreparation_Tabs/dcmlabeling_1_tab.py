@@ -78,13 +78,18 @@ class DcmLabeling_1_TabWidget(QWidget):
         self.layout.addWidget(self.toolbar)
         
         b1 = QToolButton(); b1.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        b1.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b1.setFont(QFont('', 18))
+        b1.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b1.setFont(QFont('', 15))
         b1.setDefaultAction(select_dcm_folder_action)
         self.toolbar.addWidget(b1)
         
-        self.toolbar.addSeparator()
-        self.toolbar.addWidget(QLabel("Select Reader"))
-        self.toolbar.addAction(select_reader_folder_action)
+        b2 = QToolButton(); b2.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        b2.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b2.setFont(QFont('', 15))
+        b2.setDefaultAction(select_reader_folder_action)
+        self.toolbar.addWidget(b2)
+        
+        #self.toolbar.addSeparator()
+        #self.toolbar.addWidget(QLabel("Select Reader"))
+        #self.toolbar.addAction(select_reader_folder_action)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(QLabel("By Series"))
         self.toolbar.addSeparator()
@@ -185,7 +190,7 @@ class DcmLabeling_1_TabWidget(QWidget):
         ##################################################################
         ## Add a window to inform the user and give the option to abort ##
         ##################################################################
-        print('G')
+        self.store_LL_tags()
         
     def suggest_ll_labels(self):
         print('D')
@@ -227,17 +232,9 @@ class DcmLabeling_1_TabWidget(QWidget):
     
     def present_series_in_figure(self):
         print('Presenting in Figure')
-        # In imgs_df
-        # ['case', 'study_uid', 'sop_uid', 'series_descr', 'series_uid', 'LL_tag', 'dcm_path']
-        # get subset of table with correct series description / correct series uid 
-        # get subset of images
-        # sort images by slice (if available)
-        # sort images by phase (if available)
         # Add sorted images to Figure
         # Present first image
         dcms = self.get_dcms()
-        
-        
     
     def set_LL_tags(self, name):
         idxs  = self.tableView.selectionModel().selectedIndexes()
@@ -246,8 +243,18 @@ class DcmLabeling_1_TabWidget(QWidget):
         t  = Table(); t.df = self.information_df
         self.tableView.setModel(t.to_pyqt5_table_model())
         
+    def store_LL_tags(self):
+        self.key2LLtag = self.set_key2LLtag()
+        add_and_store_LL_tags(self.imgs_df, self.key2LLtag)
         
+    def set_key2LLtag(self):
+        key2LLtag = dict()
+        columns = ['series_descr', 'series_uid', 'Change LL_tag'] if self.by_seriesUID else ['series_descr', 'Change LL_tag']
+        rows = self.information_df[columns].to_dict(orient='split')['data']
+        for r in rows: key2LLtag[tuple(r[:-1])] = r[-1]
+        return key2LLtag
 
+        
 class ManualInterventionPopup(QWidget):
     def __init__(self, parent):
         super().__init__()
