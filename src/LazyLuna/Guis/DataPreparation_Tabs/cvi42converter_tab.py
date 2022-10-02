@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog
 from PyQt5.QtGui import QIcon, QColor, QPalette
 from PyQt5.QtCore import Qt, QSize
 
@@ -10,7 +10,7 @@ import traceback
 
 from LazyLuna.Tables import Table
 
-from catch_converter.parse_contours import parse_cvi42ws
+from catchConverter import catchConverter
 
 
 class CVI42Converter_TabWidget(QWidget):
@@ -18,7 +18,6 @@ class CVI42Converter_TabWidget(QWidget):
         super(QWidget, self).__init__(parent)
         self.parent = parent
         self.layout = QVBoxLayout(self)
-        # Initialize tab screen
         self.tabs  = QTabWidget()
         self.tab1  = QWidget()
         self.tabs.resize(self.parent.width, self.parent.height)
@@ -32,20 +31,20 @@ class CVI42Converter_TabWidget(QWidget):
         self.tab1.layout.setSpacing(7)
         
         # Actions
-        select_cvi42_files_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Show CVI42 Files", self)
-        select_cvi42_files_action.setStatusTip("Present Files to be Converted.")
-        select_cvi42_files_action.triggered.connect(self.select_cvi42_files)
+        present_cvi42_files_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Show CVI42 Files", self)
+        present_cvi42_files_action.setStatusTip("Presents a Table with the found CVI42 workspaces.")
+        present_cvi42_files_action.triggered.connect(self.present_cvi42_files)
         
         cvi42converter_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','wand--arrow.png')), "&Convert CVI42 Workspaces", self)
-        cvi42converter_action.setStatusTip("Convert CVI42Workspaces into LL Format.")
+        cvi42converter_action.setStatusTip("Convert CVI42 Workspaces. Updates the table with success information for workspaces.")
         cvi42converter_action.triggered.connect(self.convert_cvi42workspaces)
 
         # Toolbar
         self.toolbar = QToolBar("My main toolbar")
         self.toolbar.setIconSize(QSize(28, 28))
         self.layout.addWidget(self.toolbar)
-        self.toolbar.addWidget(QLabel("Select CVI42 Filepaths"))
-        self.toolbar.addAction(select_cvi42_files_action)
+        self.toolbar.addWidget(QLabel("Present CVI42 Workspaces"))
+        self.toolbar.addAction(present_cvi42_files_action)
         self.toolbar.addSeparator()
         self.toolbar.addWidget(QLabel("Convert CVI42 Workspaces"))
         self.toolbar.addAction(cvi42converter_action)
@@ -66,20 +65,23 @@ class CVI42Converter_TabWidget(QWidget):
         self.tree.setAlternatingRowColors(True)
         self.tree.header().resizeSection(0, 200)
         self.tree.setDragEnabled(True)
-        
+        self.tree.setStatusTip('Find and select folders with CVI42 workspaces (file extension: ".cvi42ws" or ".dcm") to unpack.')
         self.tab1.layout.addWidget(self.tree, 0,0, 1,1)
         
         # Buttons below
-        self.select_cviws_button = QPushButton('Select CVI42 Workspaces')
+        self.select_cviws_button = QPushButton('Present CVI42 Workspaces')
         self.tab1.layout.addWidget(self.select_cviws_button, 2,0)
-        self.select_cviws_button.clicked.connect(self.select_cvi42_files)
+        self.select_cviws_button.setStatusTip('Presents a Table with the found CVI42 workspaces.')
+        self.select_cviws_button.clicked.connect(self.present_cvi42_files)
         
-        self.with_figs = False
+        self.with_figs = True
         self.with_figs_checkbox = QCheckBox("With figures for failed contours?", self)
         self.tab1.layout.addWidget(self.with_figs_checkbox, 3,0)
+        self.with_figs_checkbox.setStatusTip('If selected: presents contours that were difficult to convert during conversion.')
         self.with_figs_checkbox.stateChanged.connect(self.set_with_figs)
         
         self.convert_button = QPushButton('Convert CVI42 Workspaces')
+        self.convert_button.setStatusTip('Convert CVI42 Workspaces. Updates the table with success information for workspaces.')
         self.tab1.layout.addWidget(self.convert_button, 4,0)
         self.convert_button.clicked.connect(self.convert_cvi42workspaces)
         
@@ -106,15 +108,15 @@ class CVI42Converter_TabWidget(QWidget):
     def set_with_figs(self):
         self.with_figs = not self.with_figs
         
-    def select_cvi42_files(self):
+    def present_cvi42_files(self):
         try:
             items = [self.fileSystemModel.filePath(index) for index in self.tree.selectedIndexes()]
             self.folder_paths = list(set(items))
             cvi42_convertibles = []
             for path in self.folder_paths:
                 path = Path(path)
-                for p in path.glob("*.dcm"):     cvi42_convertibles.append(['--', str(p)])
                 for p in path.glob("*.cvi42ws"): cvi42_convertibles.append(['--', str(p)])
+                for p in path.glob("*.dcm"):     cvi42_convertibles.append(['--', str(p)])
             t  = Table()
             t.df = pandas.DataFrame(cvi42_convertibles, columns=['Converted', 'Paths to CVI42 Convertibles'])
             self.tableView.setModel(t.to_pyqt5_table_model())
@@ -123,8 +125,24 @@ class CVI42Converter_TabWidget(QWidget):
     
     def convert_cvi42workspaces(self):
         try:
+            c = catchConverter()
+            cvi42_convertibles = []
+            converted = []
             for path in self.folder_paths:
-                parse_cvi42ws(path, path, process=True, debug=False, noFigs=(not self.with_figs))
+                path = Path(path)
+                for p in path.glob("*.cvi42ws"): cvi42_convertibles.append(str(p))
+                for p in path.glob("*.dcm"):     cvi42_convertibles.append(str(p))
+            for p in cvi42_convertibles:
+                try:
+                    c.read(p); c.process(noFigs=self.with_figs); c.save(os.path.dirname(p))
+                    converted.append(['Yes', p])
+                except Exception as e: 
+                    print(traceback.format_exc())
+                    converted.append(['! FAIL !', p])    
+            t  = Table()
+            t.df = pandas.DataFrame(converted, columns=['Converted', 'Paths to CVI42 Convertibles'])
+            self.tableView.setModel(t.to_pyqt5_table_model())
+            self.tableView.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         except Exception as e: print(traceback.format_exc())
         
 
