@@ -1,7 +1,8 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QAbstractItemView, QComboBox
-from PyQt5.QtGui import QIcon, QColor, QPalette
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QAbstractItemView, QComboBox, QToolButton, QSizePolicy
+from PyQt5.QtGui import QIcon, QColor, QPalette, QFont
 from PyQt5.QtCore import Qt, QSize
 #from PyQt5.Qt.Qt.Qt import ClickFocus
+
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
@@ -42,7 +43,7 @@ class DcmLabeling_1_TabWidget(QWidget):
         self.by_seriesUID = False
         
         # Actions for Toolbar
-        select_dcm_folder_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Select Folder", self)
+        select_dcm_folder_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','folder-open-image.png')), '&Select Folder', self)
         select_dcm_folder_action.setStatusTip("Select Folder with Dicom files.")
         select_dcm_folder_action.triggered.connect(self.select_dcm_folder)
         
@@ -69,13 +70,18 @@ class DcmLabeling_1_TabWidget(QWidget):
         store_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Store Labels", self)
         store_action.setStatusTip("Store LL Labels for all Dicoms.")
         store_action.triggered.connect(self.store_ll_labels)
-
+        
+        
         # First Toolbar for Loading the Table
         self.toolbar = QToolBar("My main toolbar")
         self.toolbar.setIconSize(QSize(28, 28))
         self.layout.addWidget(self.toolbar)
-        self.toolbar.addWidget(QLabel("Select Folder"))
-        self.toolbar.addAction(select_dcm_folder_action)
+        
+        b1 = QToolButton(); b1.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        b1.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b1.setFont(QFont('', 18))
+        b1.setDefaultAction(select_dcm_folder_action)
+        self.toolbar.addWidget(b1)
+        
         self.toolbar.addSeparator()
         self.toolbar.addWidget(QLabel("Select Reader"))
         self.toolbar.addAction(select_reader_folder_action)
@@ -92,6 +98,8 @@ class DcmLabeling_1_TabWidget(QWidget):
         self.toolbar.addWidget(QLabel("Store Labels"))
         self.toolbar.addAction(store_action)
         self.toolbar.addSeparator()
+        
+        
         
         # Second Toolbar for Table Manipulation
         self.toolbar2 = QToolBar("My main toolbar")
