@@ -1635,7 +1635,7 @@ class Image_List_Presenter(Visualization):
         h, w   = img.shape
         extent = (0, w, h, 0)
         ax.imshow(img, 'gray', extent=extent)
-        self.suptitle('Image: ' + str(nr))
+        #self.suptitle('Image: ' + str(nr))
         """
         if self.add_annotation:
             anno1.plot_all_contour_outlines(ax) # looks like overlooked slices when different phases for RV and LV

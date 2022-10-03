@@ -110,16 +110,23 @@ def add_LL_tag(store_path, dcm, tag='Lazy Luna: None'): # Lazy Luna: SAX CS
     except: dcm.private_block(0x000b, tag, create=True)
     dcm.save_as(filename=store_path, write_like_original=False)
 
-def add_and_store_LL_tags(imgs_df, key2LLtag):
+def get_LL_tag(dcm): # Lazy Luna: SAX CS
+    try:    return dcm[0x0b, 0x10].value
+    except: return 'None'
+
+def add_and_store_LL_tags(imgs_df, key2LLtag, overriding_dict=None):
     # key2LLtag: {(sd,ser_uid):'Lazy Luna: tag name'} or
     # key2LLtag: {(sd,):'Lazy Luna: tag name'}
     sdAndSeriesUID = isinstance(list(key2LLtag.keys())[0], tuple) and len(list(key2LLtag.keys())[0])>1
     for ip, p in enumerate(imgs_df['dcm_path'].values):
         dcm = pydicom.dcmread(p, stop_before_pixels=False)
         try:
-            k = (dcm.SeriesDescription,dcm.SeriesInstanceUID) if sdAndSeriesUID else (dcm.SeriesDescription,)
-            if k in key2LLtag.keys(): add_LL_tag(p, dcm, tag=key2LLtag[k])
-            else:                     add_LL_tag(p, dcm, tag='Lazy Luna: None')
+            if overriding_dict is not None and dcm.SOPInstanceUID in overriding_dict.keys():
+                add_LL_tag(p, dcm, tag=overriding_dict[dcm.SOPInstanceUID])
+            else:
+                k = (dcm.SeriesDescription,dcm.SeriesInstanceUID) if sdAndSeriesUID else (dcm.SeriesDescription,)
+                if k in key2LLtag.keys(): add_LL_tag(p, dcm, tag=key2LLtag[k])
+                else:                     add_LL_tag(p, dcm, tag='Lazy Luna: None')
         except:
             print('Failed at case: ', c, '/nDCM', dcm)
             continue

@@ -9,11 +9,10 @@ import pandas
 import traceback
 
 from LazyLuna.Tables import Table
+from LazyLuna.loading_functions import *
 
-from catchConverter import catchConverter
 
-
-class CVI42Converter_TabWidget(QWidget):
+class LL_CaseConverter_TabWidget(QWidget):
     def __init__(self, parent):
         super(QWidget, self).__init__(parent)
         self.parent = parent
@@ -22,7 +21,7 @@ class CVI42Converter_TabWidget(QWidget):
         self.tab1  = QWidget()
         self.tabs.resize(self.parent.width, self.parent.height)
         # Add tabs
-        self.tabs.addTab(self.tab1, "CVI42Converter")
+        self.tabs.addTab(self.tab1, "Case Converter")
         
         ##################
         ## Create TAB 1 ##
@@ -31,13 +30,13 @@ class CVI42Converter_TabWidget(QWidget):
         self.tab1.layout.setSpacing(7)
         
         # Actions
-        present_cvi42_files_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Show CVI42 Files", self)
-        present_cvi42_files_action.setStatusTip("Presents a Table with the found CVI42 workspaces.")
-        present_cvi42_files_action.triggered.connect(self.present_cvi42_files)
+        select_bulk_dicoms_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Select Bulk Dicoms Folder", self)
+        select_bulk_dicoms_action.setStatusTip("This is for bulk conversion. Select the folder in which one or several Dicom cases are contained.")
+        select_bulk_dicoms_action.triggered.connect(self.select_dicoms_folder)
         
-        cvi42converter_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','wand--arrow.png')), "&Convert CVI42 Workspaces", self)
-        cvi42converter_action.setStatusTip("Convert CVI42 Workspaces. Updates the table with success information for workspaces.")
-        cvi42converter_action.triggered.connect(self.convert_cvi42workspaces)
+        select_readers_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Select Reader Folders", self)
+        select_readers_action.setStatusTip("Click all folders with Annotations you want connected to the Dicom Images.")
+        select_readers_action.triggered.connect(self.present_reader_folders)
 
         # Toolbar
         self.toolbar = QToolBar("My main toolbar")
@@ -46,12 +45,18 @@ class CVI42Converter_TabWidget(QWidget):
         fontsize = 13
         b1 = QToolButton(); b1.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         b1.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b1.setFont(QFont('', fontsize))
-        b1.setDefaultAction(present_cvi42_files_action)
+        b1.setDefaultAction(select_bulk_dicoms_action)
         self.toolbar.addWidget(b1)
         b2 = QToolButton(); b2.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         b2.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b2.setFont(QFont('', fontsize))
-        b2.setDefaultAction(cvi42converter_action)
+        b2.setDefaultAction(select_readers_action)
         self.toolbar.addWidget(b2)
+        
+        
+        self.dicoms_folder_label  = QLabel('Dicom  Folder: ')
+        self.dicoms_folder_text   = QLabel('')
+        self.tab1.layout.addWidget(self.dicoms_folder_label,  1, 0, 1,1)
+        self.tab1.layout.addWidget(self.dicoms_folder_text,   1, 1, 1,1)
         
         # File System View
         self.fileSystemModel = QFileSystemModel()
@@ -68,25 +73,9 @@ class CVI42Converter_TabWidget(QWidget):
         self.tree.setAlternatingRowColors(True)
         self.tree.header().resizeSection(0, 200)
         self.tree.setDragEnabled(True)
-        self.tree.setStatusTip('Find and select folders with CVI42 workspaces (file extension: ".cvi42ws" or ".dcm") to unpack.')
-        self.tab1.layout.addWidget(self.tree, 1,0, 1,1)
+        self.tree.setStatusTip('Find and select reader folders you wish to connect to the images.')
+        self.tab1.layout.addWidget(self.tree, 2,0, 1,2)
         
-        # Buttons below
-        self.select_cviws_button = QPushButton('Present CVI42 Workspaces')
-        self.tab1.layout.addWidget(self.select_cviws_button, 3,0)
-        self.select_cviws_button.setStatusTip('Presents a Table with the found CVI42 workspaces.')
-        self.select_cviws_button.clicked.connect(self.present_cvi42_files)
-        
-        self.with_figs = True
-        self.with_figs_checkbox = QCheckBox("With figures for repaired contours?", self)
-        self.tab1.layout.addWidget(self.with_figs_checkbox, 4,0)
-        self.with_figs_checkbox.setStatusTip('If selected: presents contours that are difficult to convert.')
-        self.with_figs_checkbox.stateChanged.connect(self.set_with_figs)
-        
-        self.convert_button = QPushButton('Convert CVI42 Workspaces')
-        self.convert_button.setStatusTip('Convert CVI42 Workspaces. Updates the table with success information for workspaces.')
-        self.tab1.layout.addWidget(self.convert_button, 5,0)
-        self.convert_button.clicked.connect(self.convert_cvi42workspaces)
         
         # Table View on the right
         # set table view
@@ -108,13 +97,28 @@ class CVI42Converter_TabWidget(QWidget):
         self.layout.addWidget(self.tabs)
         
         
-    def set_with_figs(self):
-        self.with_figs = not self.with_figs
-        
-    def present_cvi42_files(self):
+    def select_dicoms_folder(self):
+        try:
+            dialog = QFileDialog(self, '')
+            dialog.setFileMode(QFileDialog.DirectoryOnly)
+            if dialog.exec_() == QDialog.Accepted:
+                self.dicoms_folder_path = dialog.selectedFiles()[0]
+                self.dicoms_folder_text.setText(self.dicoms_folder_path)
+        except Exception as e: print(e)
+            
+    
+    def present_reader_folders(self):
         try:
             items = [self.fileSystemModel.filePath(index) for index in self.tree.selectedIndexes()]
             self.folder_paths = list(set(items))
+            print(self.folder_paths)
+            
+            bp_imgs  = self.dicoms_folder_path
+            
+            for annos_path in self.folder_paths:
+                imgsanno_paths = get_imgs_and_annotation_paths(bp_imgs, annos_path)
+                print(imgsanno_paths)
+            """
             cvi42_convertibles = []
             for path in self.folder_paths:
                 path = Path(path)
@@ -124,28 +128,31 @@ class CVI42Converter_TabWidget(QWidget):
             t.df = pandas.DataFrame(cvi42_convertibles, columns=['Converted', 'Paths to CVI42 Convertibles'])
             self.tableView.setModel(t.to_pyqt5_table_model())
             self.tableView.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+            """
         except Exception as e: print(traceback.format_exc())
-    
-    def convert_cvi42workspaces(self):
-        try:
-            c = catchConverter()
-            cvi42_convertibles = []
-            converted = []
-            for path in self.folder_paths:
-                path = Path(path)
-                for p in path.glob("*.cvi42ws"): cvi42_convertibles.append(str(p))
-                for p in path.glob("*.dcm"):     cvi42_convertibles.append(str(p))
-            for p in cvi42_convertibles:
+            
+            
+    """
+    def bulk_transform_cases(self):
+        bp_imgs  = self.ui.bulk_case_images_folder_path
+        bp_annos = self.case_reader_folder_path
+        bp_cases = self.ui.cases_folder_path
+        imgsanno_paths = get_imgs_and_annotation_paths(bp_imgs, bp_annos)
+        cases = []
+        views = [v[1]() for v in inspect.getmembers(Views, inspect.isclass) if issubclass(v[1], Views.View) if v[0]!='View']
+        print('Views: ', views)
+        for i, (imgp, annop) in enumerate(imgsanno_paths):
+            print(i, imgp)
+            self.ui.case_conversion_text_edit.append('Image and Annotation paths:/n'+imgp+'/n'+annop)
+            if not os.path.exists(annop): 
+                self.ui.case_conversion_text_edit.append('No annotations: '+annop)
+                continue
+            case = Case(imgp, annop, os.path.basename(imgp), os.path.basename(bp_annos))
+            for v in views:
                 try:
-                    c.read(p); c.process(noFigs=self.with_figs); c.save(os.path.dirname(p))
-                    converted.append(['Yes', p])
-                except Exception as e: 
-                    print(traceback.format_exc())
-                    converted.append(['! FAIL !', p])    
-            t  = Table()
-            t.df = pandas.DataFrame(converted, columns=['Converted', 'Paths to CVI42 Convertibles'])
-            self.tableView.setModel(t.to_pyqt5_table_model())
-            self.tableView.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        except Exception as e: print(traceback.format_exc())
-        
-
+                    case = v.initialize_case(case)
+                    self.ui.case_conversion_text_edit.append(str(v.__class__)+' worked for: '+case.case_name)
+                except Exception as e:
+                    self.ui.case_conversion_text_edit.append(str(v.__class__)+' FAILED for: '+case.case_name+',  '+str(e))
+            case.store(bp_cases)
+    """

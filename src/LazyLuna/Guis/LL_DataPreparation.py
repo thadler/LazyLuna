@@ -18,6 +18,8 @@ from PyQt5.QtCore import Qt, QSize
 from LazyLuna.Guis.DataPreparation_Tabs.cvi42converter_tab import CVI42Converter_TabWidget
 from LazyLuna.Guis.DataPreparation_Tabs.centralintroductory_tab import CentralIntroductory_TabWidget
 from LazyLuna.Guis.DataPreparation_Tabs.dcmlabeling_1_tab import DcmLabeling_1_TabWidget
+from LazyLuna.Guis.DataPreparation_Tabs.dcmlabeling_2_tab import DcmLabeling_2_TabWidget
+from LazyLuna.Guis.DataPreparation_Tabs.llcaseconverter_tab import LL_CaseConverter_TabWidget
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -42,9 +44,15 @@ class MainWindow(QMainWindow):
         cvi42converter_action.setStatusTip("Convert CVI42Workspaces into LL Format.")
         cvi42converter_action.triggered.connect(self.open_cvi42converter_tab)
         
-        labeler_action = QAction(QIcon(os.path.join(self.bp, 'Icons','tag--pencil.png')), "&Label Images with LL Types", self)
+        labeler_action = QAction(QIcon(os.path.join(self.bp, 'Icons','tag--pencil.png')), "&Label Images with LL Tags", self)
         labeler_action.setStatusTip("Identify and Label Case Images with LL Tags.")
         labeler_action.triggered.connect(self.open_labeler_tab)
+        
+        caseconverter_action = QAction(QIcon(os.path.join(self.bp, 'Icons','tag--pencil.png')), "&Create LL Cases", self)
+        caseconverter_action.setStatusTip("Connect Images and Annotations to Lazy Luna Cases for Analysis.")
+        caseconverter_action.triggered.connect(self.open_caseconverter_tab)
+        
+        
         
         # MENU BAR
         menu = self.menuBar()
@@ -52,6 +60,7 @@ class MainWindow(QMainWindow):
         file_menu.addAction(introduction_action)
         file_menu.addAction(cvi42converter_action)
         file_menu.addAction(labeler_action)
+        file_menu.addAction(caseconverter_action)
         
         # Central Tab - is replaced with other tabs as selected
         self.tab = CentralIntroductory_TabWidget(self)
@@ -72,7 +81,13 @@ class MainWindow(QMainWindow):
         self.tab = DcmLabeling_1_TabWidget(self)
         self.setCentralWidget(self.tab)
 
-        
+    def add_labeler_2_tab(self, dcms, overriding_dict):
+        t = DcmLabeling_2_TabWidget(self, dcms, overriding_dict)
+        self.tab.tabs.addTab(t, 'Manual Intervention Tab')
+    
+    def open_caseconverter_tab(self, s):
+        self.tab = LL_CaseConverter_TabWidget(self)
+        self.setCentralWidget(self.tab)
         
         
 def main():
