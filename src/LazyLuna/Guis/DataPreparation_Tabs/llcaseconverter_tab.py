@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QToolButton, QSizePolicy
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QToolButton, QSizePolicy, QMessageBox
 from PyQt5.QtGui import QIcon, QColor, QPalette, QFont
 from PyQt5.QtCore import Qt, QSize
 
@@ -162,7 +162,15 @@ class LL_CaseConverter_TabWidget(QWidget):
         ##   - readers no selected  ##
         ##############################
         
-        if not hasattr(self, 'case_folder_path')
+        if not hasattr(self, 'case_folder_path'):
+            # Information Message for User
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Warning)
+            msg.setText("The Database Connection must be set.")
+            msg.setInformativeText("Cannot proceed.")
+            msg.setWindowTitle("Abort Case Conversion Warning")
+            retval = msg.exec_()
+            return
         
         # Information Message for User
         msg = QMessageBox()

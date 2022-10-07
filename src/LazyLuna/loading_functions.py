@@ -131,7 +131,7 @@ def add_and_store_LL_tags(imgs_df, key2LLtag, overriding_dict=None):
             print('Failed at case: ', c, '/nDCM', dcm)
             continue
 
-def get_cases_table(cases, paths, debug=False):
+def get_cases_table(cases, paths, return_dataframe=True, debug=False):
     def get_dcm(case):
         for k in case.all_imgs_sop2filepath.keys():
             try: sop = next(iter(case.all_imgs_sop2filepath[k]))
@@ -170,6 +170,7 @@ def get_cases_table(cases, paths, debug=False):
                        'SAX T1' in c.available_types, 'SAX T2' in c.available_types, 'SAX LGE' in c.available_types, paths[i]] 
                       for i, c in enumerate(cases)],
                      key=lambda p: str(p[0]))
+    if not return_dataframe: return rows
     df      = pandas.DataFrame(rows, columns=columns)
     if debug: print('Took: ', time()-st)
     return df

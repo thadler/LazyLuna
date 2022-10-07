@@ -98,11 +98,10 @@ class MyTabWidget(QWidget):
     def get_paths_from_table(self):
         # if nothing selected, return all paths, else just the selected
         try:
-            idxs = self.caseTableView.selectionModel().selectedIndexes()
-            if len(idxs)==0: return self.get_paths()
+            rows = list(set(idx.row() for idx in self.caseTableView.selectionModel().selectedIndexes()))
+            if len(rows)==0: return self.get_paths()
             paths1, paths2 = [], []
-            for idx in idxs:
-                row, col = idx.row(), idx.column()
+            for row in rows:
                 #print(row)
                 path1 = self.cc_table.df['Path1'].iloc[row]
                 path2 = self.cc_table.df['Path2'].iloc[row]
