@@ -16,22 +16,18 @@ from LazyLuna.Mini_LL import Case
 
 
 class LL_CaseConverter_TabWidget(QWidget):
-    def __init__(self, parent):
+    def __init__(self, parent, case_folder_path, dbpath, db_connection):
         super(QWidget, self).__init__(parent)
         self.parent = parent
-        self.layout = QVBoxLayout(self)
-        self.tabs  = QTabWidget()
-        self.tab1  = QWidget()
-        self.tabs.resize(self.parent.width, self.parent.height)
-        # Add tabs
-        self.tabs.addTab(self.tab1, "Case Converter")
-        
-        ##################
-        ## Create TAB 1 ##
-        ##################
-        self.tab1.layout = QGridLayout(self)
-        self.tab1.layout.setSpacing(7)
-        
+        self.layout = QGridLayout(self)
+        self.layout.setSpacing(7)
+        # initializing some variables
+        self.case_folder_path = case_folder_path
+        self.dbpath           = dbpath
+        self.db_connection    = db_connection
+        self.ui_init()
+    
+    def ui_init(self):
         # Actions
         select_bulk_dicoms_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Select Bulk Dicoms Folder", self)
         select_bulk_dicoms_action.setStatusTip("This is for bulk conversion. Select the folder in which one or several Dicom cases are contained.")
@@ -45,9 +41,6 @@ class LL_CaseConverter_TabWidget(QWidget):
         convert_llcases_action.setStatusTip("Converts Images and Annotations to Lazy Luna Cases.")
         convert_llcases_action.triggered.connect(self.convert_cases)
         
-        case_path_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Select Case Path", self)
-        case_path_action.setStatusTip("Select the folder in which all cases are contained.")
-        case_path_action.triggered.connect(self.select_case_path)
         
         ##################################
         ## ADD FUNCTION FOR SINGLE CASE ##
@@ -56,7 +49,7 @@ class LL_CaseConverter_TabWidget(QWidget):
         # Toolbar
         self.toolbar = QToolBar("My main toolbar")
         self.toolbar.setIconSize(QSize(28, 28))
-        self.tab1.layout.addWidget(self.toolbar, 0,0, 1,10)
+        self.layout.addWidget(self.toolbar, 0,0, 1,10)
         fontsize = 13
         b1 = QToolButton(); b1.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         b1.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b1.setFont(QFont('', fontsize))
@@ -70,16 +63,12 @@ class LL_CaseConverter_TabWidget(QWidget):
         b3.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b3.setFont(QFont('', fontsize))
         b3.setDefaultAction(convert_llcases_action)
         self.toolbar.addWidget(b3)
-        b4 = QToolButton(); b4.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        b4.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b4.setFont(QFont('', fontsize))
-        b4.setDefaultAction(case_path_action)
-        self.toolbar.addWidget(b4)
         
         
         self.dicoms_folder_label  = QLabel('Dicom  Folder: ')
         self.dicoms_folder_text   = QLabel('')
-        self.tab1.layout.addWidget(self.dicoms_folder_label,  1, 0, 1,1)
-        self.tab1.layout.addWidget(self.dicoms_folder_text,   2, 0, 1,1)
+        self.layout.addWidget(self.dicoms_folder_label,  1, 0, 1,1)
+        self.layout.addWidget(self.dicoms_folder_text,   2, 0, 1,1)
         
         # File System View
         self.fileSystemModel = QFileSystemModel()
@@ -97,22 +86,22 @@ class LL_CaseConverter_TabWidget(QWidget):
         self.tree.header().resizeSection(0, 200)
         self.tree.setDragEnabled(True)
         self.tree.setStatusTip('Find and select reader folders you wish to connect to the images.')
-        self.tab1.layout.addWidget(self.tree, 3,0, 1,2)
+        self.layout.addWidget(self.tree, 3,0, 1,2)
         
         
         # Table View on the right
         # set table view
         self.tableView = QTableView()
-        self.tab1.layout.addWidget(self.tableView, 1, 2, 5,8)
+        self.layout.addWidget(self.tableView, 1, 2, 5,8)
         
         
         # set layout
-        self.tab1.setLayout(self.tab1.layout)
+        self.setLayout(self.layout)
         
         ########################
         ## Add Tabs to Widget ##
         ########################
-        self.layout.addWidget(self.tabs)
+        #self.layout.addWidget(self.tabs)
         
         
     def select_dicoms_folder(self):
@@ -141,14 +130,6 @@ class LL_CaseConverter_TabWidget(QWidget):
             for i in range(len(self.tableView.horizontalHeader())):
                 self.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
         except Exception as e: print(traceback.format_exc())
-            
-    def select_case_path(self):
-        try:
-            dialog = QFileDialog(self, '')
-            dialog.setFileMode(QFileDialog.DirectoryOnly)
-            if dialog.exec_() == QDialog.Accepted:
-                self.case_folder_path = dialog.selectedFiles()[0]
-        except Exception as e: print(e)
             
     #####################
     ## Make to QTHREAD ##
@@ -193,9 +174,10 @@ class LL_CaseConverter_TabWidget(QWidget):
                     imganno_paths.extend(ia_paths)
                 except Exception as e: print(e); pass
             conversion_worked = []
+            case_cpath_list_for_db = []
             for i, (_, casename, imgp, readername, annop) in enumerate(imganno_paths):
                 try:
-                    print(i , ' of ', len(imganno_paths), ': ', imgp, annop)
+                    #print(i , ' of ', len(imganno_paths), ': ', imgp, annop)
                     if not os.path.exists(annop): 
                         print('No annotations available: ', annop)
                         conversion_worked.append(['! Failed !', casename, readername, annop])
@@ -207,13 +189,44 @@ class LL_CaseConverter_TabWidget(QWidget):
                             print(str(v.__class__)+' worked for: '+case.case_name)
                         except Exception as e:
                             print(str(v.__class__)+' FAILED for: '+case.case_name+',  '+str(e))
-                    case.store(self.case_folder_path)
+                    cp = case.store(self.case_folder_path)
                     conversion_worked.append(['Yes', casename, readername, annop])
+                    case_cpath_list_for_db.append([case, cp])
                 except Exception as e: 
                     conversion_worked.append(['! Failed !', casename, readername, annop])
                     print(e); pass
-            print(conversion_worked)
             self.imganno_paths = pandas.DataFrame(conversion_worked, columns=['Converted', 'Casename', 'Readername', 'Annotation Path'])
             t = Table(); t.df = self.imganno_paths
             self.tableView.setModel(t.to_pyqt5_table_model())
+            for c, cp in case_cpath_list_for_db:
+                try:
+                    col, row = get_case_info(c, cp)
+                    self.insert_case(c, cp)
+                except Exception as e: print(e); continue
         except Exception as e: print(e); pass
+        
+        
+    def insert_case(self, case, casepath, tabname=None):
+        query =  'INSERT OR REPLACE INTO Cases (casename, readername, age, gender, weight, height, creation_date, study_uid, casepath) VALUES'
+        _, row = get_case_info(case, casepath)
+        query += '("'
+        for val in row: query += val + '", "'
+        query = query[:-3] + ');'
+        self.execute_query(query)
+        query =  'INSERT OR REPLACE  INTO Case_to_Tab (study_uid, readername, tab) VALUES'
+        query += '("' + row[-2] + '", "' + row[1] + '", "ALL");'
+        self.execute_query(query)
+        if tabname is None: return
+        query =  'INSERT INTO Tabnames (tab) VALUES'
+        query += '("' + tabname + '");'
+        self.execute_query(query)
+        query =  'INSERT OR REPLACE  INTO Case_to_Tab (study_uid, readername, tab) VALUES'
+        query += '("' + row[-2] + '", "' + row[1] + '", "' + tabname + '");'
+        self.execute_query(query)
+
+    def execute_query(self, query):
+        cursor = self.db_connection.cursor()
+        try: cursor.execute(query); print("Query executed successfully")
+        except Error as e: print(f"The error '{e}' occurred")
+        try: self.db_connection.commit()
+        except Error as e: print(f"The error '{e}' occurred")

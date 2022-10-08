@@ -1,6 +1,6 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QToolButton, QSizePolicy
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QToolButton, QSizePolicy, QInputDialog, QMessageBox
 from PyQt5.QtGui import QIcon, QColor, QPalette, QFont
-from PyQt5.QtCore import Qt, QSize
+from PyQt5.QtCore import Qt, QSize, QDir
 
 import sqlite3
 from sqlite3 import Error
@@ -71,7 +71,6 @@ class LL_Database_TabWidget(QWidget):
         b3.setDefaultAction(create_new_cases_action)
         self.toolbar.addWidget(b3)
         
-        
         self.db_path_label  = QLabel('Database Path: ')
         self.db_path_text   = QLabel('')
         self.tab1.layout.addWidget(self.db_path_label, 1, 0, 1,1)
@@ -91,23 +90,16 @@ class LL_Database_TabWidget(QWidget):
         ########################
         self.layout.addWidget(self.tabs)
         
-        
-    def select_dicoms_folder(self):
-        try:
-            dialog = QFileDialog(self, '')
-            dialog.setFileMode(QFileDialog.DirectoryOnly)
-            if dialog.exec_() == QDialog.Accepted:
-                self.dicoms_folder_path = dialog.selectedFiles()[0]
-                self.dicoms_folder_text.setText(self.dicoms_folder_path)
-        except Exception as e: print(e)
             
     def connect_to_or_create_database(self):
         try:
             dialog = QFileDialog(self, '')
             dialog.setFileMode(QFileDialog.DirectoryOnly)
             if dialog.exec_() == QDialog.Accepted:
-                self.dbpath = dialog.selectedFiles()[0]
-                self.dbpath = os.path.join(self.dbpath, 'LL_Database.db')
+                path = dialog.selectedFiles()[0]
+                self.dbpath = os.path.join(path, 'LL_Database.db')
+                self.case_folder_path = os.path.join(path, 'LL_Cases')
+                if not os.path.exists(self.case_folder_path): os.mkdir(self.case_folder_path)
             self.db_connection = sqlite3.connect(self.dbpath)
             # if not exists, instantiate database!
             self.execute_query('CREATE TABLE IF NOT EXISTS Cases (casename TEXT, readername TEXT, age INT, gender TEXT, weight FLOAT, height FLOAT, creation_date TEXT, study_uid TEXT, casepath TEXT, UNIQUE(readername, study_uid) ON CONFLICT REPLACE)')
@@ -120,10 +112,21 @@ class LL_Database_TabWidget(QWidget):
         except Exception as e: print(e)
     
     def add_new_tab(self):
-        pass
+        if not self.has_dbconnection(): return
+        tabname, ok = QInputDialog().getText(self, "New Tabname", "Tabname:", QLineEdit.Normal, 'Enter Text')
+        if not (ok and tabname):             return
+        print(self.tabname_repitition((tabname,)))
+        if self.tabname_repitition(tabname): return
+        self.execute_query('INSERT INTO Tabnames (tab) VALUES ("' + tabname + '");')
+        # CONTINUE HERE: ADD THE TAB TO THE TABS
+        #rows = self.db_connection.cursor().execute("SELECT * FROM Tabnames").fetchall()
+        
+        
     
     def open_case_converter(self):
-        pass
+        if not self.has_dbconnection(): return
+        self.parent.add_caseconverter_tab(self.case_folder_path, self.dbpath, self.db_connection)
+        
     
     def present_all_table(self):
         rows = self.db_connection.cursor().execute("SELECT * FROM Cases").fetchall()
@@ -140,3 +143,24 @@ class LL_Database_TabWidget(QWidget):
             self.db_connection.commit()
         except Error as e: print(f"The error '{e}' occurred")
         
+    def has_dbconnection(self):
+        # Information Message for User
+        print('In has db: ', hasattr(self, 'db_connection'))
+        if hasattr(self, 'db_connection'): return True
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Missing DB Connection.")
+        msg.setInformativeText("Select a database path first.")
+        retval = msg.exec_()
+        return False
+    
+    def tabname_repitition(self, tabname):
+        # Information Message for User
+        rows = self.db_connection.cursor().execute("SELECT * FROM Tabnames").fetchall()
+        if tabname not in rows: return False
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Tabname already exists.")
+        msg.setInformativeText("No repeated Tabnames")
+        retval = msg.exec_()
+        return True

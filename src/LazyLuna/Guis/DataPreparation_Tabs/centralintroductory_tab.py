@@ -32,7 +32,7 @@ class CentralIntroductory_TabWidget(QWidget):
         self.infoLbl = QLabel()
         self.infoLbl.setTextFormat(Qt.RichText)
         self.infoLbl.setFrameShape(QFrame.StyledPanel)
-        self.infoTxt = '<!DOCTYPE html><html><head><style> ol.c{  list-style-type: upper-roman;  margin: 20;  padding: 20;}</style></head><body>\
+        self.infoTxt = '<!DOCTYPE html><html><head><style> ol.c{  list-style-type: upper-roman;  margin: 20;  padding: 20;}</style></head><body><center>\
         <p style="font-size:30pt" >Lazy Luna - Data Preparation includes:</p> \
         <ol class="c"> \
         <li><p style="font-size:20pt"> CVI42 Converter          </p></li> \
@@ -40,7 +40,7 @@ class CentralIntroductory_TabWidget(QWidget):
         <li><p style="font-size:20pt"> Lazy Luna Cases Database </p></li> \
         </ol> \
         <p style="font-size:20pt" >These tools can be opened by selecting them from the menu item "Select Tools".</p>\
-        </body></html>'
+        </center></body></html>'
         self.infoLbl.setText(self.infoTxt)
         self.infoLbl.setStatusTip('The menu item "Select Tools" is on the top. Select a tool there!')
         self.infoLbl.setMaximumHeight(1000)

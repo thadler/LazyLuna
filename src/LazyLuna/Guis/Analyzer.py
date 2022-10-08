@@ -170,7 +170,7 @@ class MyTabWidget(QWidget):
             if not os.path.exists(case_folder_path): return
             paths   = [str(p) for p in Path(case_folder_path).glob('**/*.pickle')]
             cases   = [pickle.load(open(p,'rb')) for p in paths]
-            self.cases_df = get_cases_table(cases, paths, False)
+            self.cases_df = get_cases_table(cases, paths, True, False)
             readers = sorted(self.cases_df['Reader'].unique())
             self.combobox_select_segmenter .clear()
             self.combobox_select_segmenter2.clear()

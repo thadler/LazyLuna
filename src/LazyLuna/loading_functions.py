@@ -230,3 +230,40 @@ def get_imgs_and_annotation_paths(bp_imgs, bp_annos):
     return imgpaths_annopaths_tuples
 
 
+def get_case_info(case, path):
+    def get_dcm(case):
+        for k in case.all_imgs_sop2filepath.keys():
+            try: 
+                sop = next(iter(case.all_imgs_sop2filepath[k]))
+                return pydicom.dcmread(case.all_imgs_sop2filepath[k][sop])
+            except: continue
+    def get_age(case):
+        try:    age = get_dcm(case).PatientAge.repace('Y','')
+        except: age = 'None'
+        return  age
+    def get_gender(case):
+        try:    gender = get_dcm(case).PatientSex
+        except: gender = 'None'
+        return  gender
+    def get_weight(case):
+        try:    weight = str(get_dcm(case).PatientWeight)
+        except: weight = 'None'
+        return  weight
+    def get_height(case):
+        try:    h = str(get_dcm(case).PatientSize)
+        except: h = 'None'
+        return  h
+    def get_creation_date(case):
+        try:    cd = get_dcm(case).InstanceCreationDate
+        except: cd = 'None'
+        return  cd
+    def get_studyuid(case):
+        try:    uid = get_dcm(case).StudyInstanceUID
+        except: uid = 'None'
+        return  uid
+    columns = ['Case Name', 'Reader', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 
+               'Creation Date', 'StudyUID', 'Path']
+    c       = case
+    rows    = [c.case_name, c.reader_name, get_age(c), get_gender(c), get_weight(c), get_height(c), 
+               get_creation_date(c), get_studyuid(c), path]
+    return columns, rows
