@@ -100,10 +100,22 @@ class DcmLabeling_1_TabWidget(QWidget):
         b4.setDefaultAction(store_action)
         self.toolbar.addWidget(b4)
         
+        
+        self.tab1.layout.addWidget(QHLine(), 1, 0, 1, 10)
+        self.dicom_folder_label  = QLabel('Dicom  Folder: ')
+        self.dicom_folder_text   = QLabel('')
+        self.reader_folder_label = QLabel('Reader Folder: ')
+        self.reader_folder_text  = QLabel('')
+        self.tab1.layout.addWidget(self.dicom_folder_label,  2, 0, 1,1)
+        self.tab1.layout.addWidget(self.dicom_folder_text,   2, 1, 1,1)
+        self.tab1.layout.addWidget(self.reader_folder_label, 2, 2, 1,1)
+        self.tab1.layout.addWidget(self.reader_folder_text,  2, 3, 1,1)
+        self.tab1.layout.addWidget(QHLine(), 3, 0, 1, 10)
+        
         # Second Toolbar for Table Manipulation
         self.toolbar2 = QToolBar("My main toolbar")
         self.toolbar2.setIconSize(QSize(28, 28))
-        self.tab1.layout.addWidget(self.toolbar2, 1,0, 1,5)
+        self.tab1.layout.addWidget(self.toolbar2, 4,0, 1,5)
         b5 = QToolButton(); b5.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         b5.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b5.setFont(QFont('', fontsize))
         b5.setDefaultAction(suggest_labels_action)
@@ -118,27 +130,16 @@ class DcmLabeling_1_TabWidget(QWidget):
         self.toolbar2.addWidget(b7)
         
         
-        # User Info on Image and Reader Folder
-        self.dicom_folder_label  = QLabel('Dicom  Folder: ')
-        self.dicom_folder_text   = QLabel('')
-        self.reader_folder_label = QLabel('Reader Folder: ')
-        self.reader_folder_text  = QLabel('')
-        self.tab1.layout.addWidget(self.dicom_folder_label,  2, 0, 1,1)
-        self.tab1.layout.addWidget(self.dicom_folder_text,   2, 1, 1,1)
-        self.tab1.layout.addWidget(self.reader_folder_label, 2, 2, 1,1)
-        self.tab1.layout.addWidget(self.reader_folder_text,  2, 3, 1,1)
-        
         # Table View on the Left
         self.tableView = QTableView(self)
         self.tableView.setSelectionBehavior(QTableView.SelectRows)
         self.tableView.setEditTriggers(QTableView.NoEditTriggers)
-        self.tableView.clicked.connect(self.present_series_in_figure)
         self.tableView.doubleClicked.connect(self.select_ll_labels)
-        self.tab1.layout.addWidget(self.tableView, 3, 0, 1,5)
+        self.tab1.layout.addWidget(self.tableView, 5, 0, 1,10)
         
         # set layout
         self.tab1.setLayout(self.tab1.layout)
-        self.tab1.layout.setColumnStretch(4,20)
+        #self.tab1.layout.setColumnStretch(5,20)
         
         ########################
         ## Add Tabs to Widget ##
@@ -282,12 +283,6 @@ class DcmLabeling_1_TabWidget(QWidget):
         except: pass
         return dcms
     
-    def present_series_in_figure(self):
-        print('Presenting in Figure')
-        # Add sorted images to Figure
-        # Present first image
-        dcms = self.get_dcms()
-    
     def set_LL_tags(self, name):
         try:
             idxs  = self.tableView.selectionModel().selectedIndexes()
@@ -379,3 +374,9 @@ class SeriesFigurePopup(QWidget):
         self.fig_toolbar = NavigationToolbar(self.canvas, self.parent)
         self.layout.addWidget(self.canvas)
         
+        
+class QHLine(QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)

@@ -163,6 +163,7 @@ class MyTabWidget(QWidget):
         self.cc_table = CC_OverviewTable()
         self.cc_table.calculate(self.cases_df, self.reader1, self.reader2)
         self.caseTableView.setModel(self.cc_table.to_pyqt5_table_model())
+        self.caseTableView.setSelectionBehavior(QTableView.SelectRows)
         
     def get_segmenters(self):
         try:

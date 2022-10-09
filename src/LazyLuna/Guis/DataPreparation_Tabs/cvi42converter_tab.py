@@ -141,7 +141,7 @@ class CVI42Converter_TabWidget(QWidget):
                     converted.append(['Yes', p])
                 except Exception as e: 
                     print(traceback.format_exc())
-                    converted.append(['! FAIL !', p])    
+                    converted.append(['! FAILED !', p])    
             t  = Table()
             t.df = pandas.DataFrame(converted, columns=['Converted', 'Paths to CVI42 Convertibles'])
             self.tableView.setModel(t.to_pyqt5_table_model())

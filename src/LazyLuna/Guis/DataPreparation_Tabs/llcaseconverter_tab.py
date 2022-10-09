@@ -33,19 +33,18 @@ class LL_CaseConverter_TabWidget(QWidget):
         select_bulk_dicoms_action.setStatusTip("This is for bulk conversion. Select the folder in which one or several Dicom cases are contained.")
         select_bulk_dicoms_action.triggered.connect(self.select_dicoms_folder)
         
-        select_readers_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Select Reader Folders", self)
-        select_readers_action.setStatusTip("Click all folders with Annotations you want connected to the Dicom Images.")
+        select_readers_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Present Reader Folders", self)
+        select_readers_action.setStatusTip("In folder-tree on the left, click all folders with Annotations you want connected to the Dicom Images.")
         select_readers_action.triggered.connect(self.present_reader_folders)
         
         convert_llcases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Convert to LL Cases", self)
         convert_llcases_action.setStatusTip("Converts Images and Annotations to Lazy Luna Cases.")
         convert_llcases_action.triggered.connect(self.convert_cases)
         
+        import_cases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Import Cases to DB", self)
+        import_cases_action.setStatusTip("Import Cases to the DB.")
+        import_cases_action.triggered.connect(self.import_cases)
         
-        ##################################
-        ## ADD FUNCTION FOR SINGLE CASE ##
-        ##################################
-
         # Toolbar
         self.toolbar = QToolBar("My main toolbar")
         self.toolbar.setIconSize(QSize(28, 28))
@@ -63,6 +62,10 @@ class LL_CaseConverter_TabWidget(QWidget):
         b3.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b3.setFont(QFont('', fontsize))
         b3.setDefaultAction(convert_llcases_action)
         self.toolbar.addWidget(b3)
+        b4 = QToolButton(); b4.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        b4.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b4.setFont(QFont('', fontsize))
+        b4.setDefaultAction(import_cases_action)
+        self.toolbar.addWidget(b4)
         
         
         self.dicoms_folder_label  = QLabel('Dicom  Folder: ')
@@ -117,6 +120,7 @@ class LL_CaseConverter_TabWidget(QWidget):
     def present_reader_folders(self):
         try:
             self.reader_paths = list(set([self.fileSystemModel.filePath(index) for index in self.tree.selectedIndexes()]))
+            if not self.has_selected_reader_folders(): return
             imganno_paths = []
             for reader_path in self.reader_paths:
                 try: 
@@ -135,30 +139,15 @@ class LL_CaseConverter_TabWidget(QWidget):
     ## Make to QTHREAD ##
     #####################
     def convert_cases(self):
-        
-        ##############################
-        ## warning window for:      ##
-        ##   - case path not set    ##
-        ##   - dicom path not set   ##
-        ##   - readers no selected  ##
-        ##############################
-        
-        if not hasattr(self, 'case_folder_path'):
-            # Information Message for User
-            msg = QMessageBox()
-            msg.setIcon(QMessageBox.Warning)
-            msg.setText("The Database Connection must be set.")
-            msg.setInformativeText("Cannot proceed.")
-            msg.setWindowTitle("Abort Case Conversion Warning")
-            retval = msg.exec_()
-            return
+        if not self.has_dicom_folder(): return
+        if not self.has_selected_reader_folders(): return
         
         # Information Message for User
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
-        msg.setText("Fill with Information on casefolderpath and stuff.")
-        msg.setInformativeText("Are you sure you want to succeed?")
-        msg.setWindowTitle("Storage Warning")
+        msg.setText("You are about to start a sequence of case conversions.")
+        msg.setInformativeText("This can take some time. Are you sure you want to procede?")
+        msg.setWindowTitle("Grab a coffee - Warning")
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         retval = msg.exec_()
         if retval==65536: return # Return value for NO button
@@ -203,8 +192,21 @@ class LL_CaseConverter_TabWidget(QWidget):
                     col, row = get_case_info(c, cp)
                     self.insert_case(c, cp)
                 except Exception as e: print(e); continue
+            self.parent.tab.update_tableview_tabs()
         except Exception as e: print(e); pass
         
+    def import_cases(self):
+        try:
+            import_cases_path = None
+            dialog = QFileDialog(self, '')
+            dialog.setFileMode(QFileDialog.DirectoryOnly)
+            if dialog.exec_() == QDialog.Accepted:
+                import_cases_path = dialog.selectedFiles()[0]
+            if import_cases_path is None: return
+            paths = [str(p) for p in Path(import_cases_path).glob('**/*.pickle')]
+            for p in paths: c = pickle.load(open(p,'rb')); self.insert_case(c, p)
+            self.parent.tab.update_tableview_tabs()
+        except Exception as e: print(e); pass
         
     def insert_case(self, case, casepath, tabname=None):
         query =  'INSERT OR REPLACE INTO Cases (casename, readername, age, gender, weight, height, creation_date, study_uid, casepath) VALUES'
@@ -230,3 +232,22 @@ class LL_CaseConverter_TabWidget(QWidget):
         except Error as e: print(f"The error '{e}' occurred")
         try: self.db_connection.commit()
         except Error as e: print(f"The error '{e}' occurred")
+            
+    def has_selected_reader_folders(self):
+        if len(list(set([self.fileSystemModel.filePath(index) for index in self.tree.selectedIndexes()])))!=0: return True
+        msg = QMessageBox() # Information Message for User
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("You must select some reader folders containing annotations first.")
+        msg.setInformativeText("This can be performed by opening the folder tree on the left and selecting folders that contain annotations pertaining to the cases")
+        retval = msg.exec_()
+        return False
+    
+    def has_dicom_folder(self):
+        if hasattr(self, 'dicoms_folder_path'): return True
+        msg = QMessageBox() # Information Message for User
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("You must select a folder with patient folders containing dicom files first.")
+        msg.setInformativeText("Use the above button to select such a folder.")
+        retval = msg.exec_()
+        return False
+        
