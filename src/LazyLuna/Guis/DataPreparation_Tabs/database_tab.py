@@ -40,23 +40,23 @@ class LL_Database_TabWidget(QWidget):
         connect_action.setStatusTip("Connect to Lazy Luna's Database or create a new one by selecting a folder.")
         connect_action.triggered.connect(self.connect_to_or_create_database)
 
-        add_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Add Tab to DB", self)
+        add_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--plus.png')), "&Add Tab to DB", self)
         add_tab_action.setStatusTip("This adds a tab below (like HCM or CS). A select subset of cases can be added to this tab for easier navigation.")
         add_tab_action.triggered.connect(self.add_new_tab)
         
-        remove_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Remove Tab from DB", self)
+        remove_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--minus.png')), "&Remove Tab from DB", self)
         remove_tab_action.setStatusTip("Select a Tabname and remove it from the database.")
         remove_tab_action.triggered.connect(self.remove_tab)
         
-        add_cases_to_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Add Cases to Tab", self)
+        add_cases_to_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','script-export.png')), "&Add Cases to Tab", self)
         add_cases_to_tab_action.setStatusTip("Take selected cases from selected tab and add them to another.")
         add_cases_to_tab_action.triggered.connect(self.add_cases_to_tab)
         
-        remove_cases_from_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Remove Cases from Tab", self)
+        remove_cases_from_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','script--minus.png')), "&Remove Cases from Tab", self)
         remove_cases_from_tab_action.setStatusTip("Remove the Cases from Current Tab.")
         remove_cases_from_tab_action.triggered.connect(self.remove_cases_from_tab)
         
-        import_new_cases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Import Cases to DB", self)
+        import_new_cases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','database-import.png')), "&Import Cases to DB", self)
         import_new_cases_action.setStatusTip("Opens another tab to import Lazy Luna Cases or convert Images and Annotations to Lazy Luna Cases which are added to the DB.")
         import_new_cases_action.triggered.connect(self.open_case_converter)
         
@@ -109,12 +109,13 @@ class LL_Database_TabWidget(QWidget):
         self.toolbar2.addWidget(b6)
         
         self.tableview_tabs = QTabWidget()
+        self.tableview_tabs.setStatusTip("Table of cases belonging to tabs. Here the assortments of cases to tabs can be viewed.")
         self.tab1.layout.addWidget(self.tableview_tabs, 5,0, 1,3)
         
         # add searchbar
         self.searchbar = QLineEdit()
-        self.searchbar.setFixedWidth(180); self.searchbar.setFixedHeight(20)
-        self.searchbar.setStatusTip("Use the Searchbar to search for individual cases or subsets of cases.")
+        self.searchbar.setFixedWidth(200); self.searchbar.setFixedHeight(20)
+        self.searchbar.setStatusTip("Use the searchbar to search for individual cases or subsets of cases.")
         self.tab1.layout.addWidget(self.searchbar, 6,0, 1,1)
         
         # set layout

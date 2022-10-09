@@ -49,11 +49,7 @@ class MainWindow(QMainWindow):
         labeler_action.setStatusTip("Identify and Label Case Images with LL Tags.")
         labeler_action.triggered.connect(self.open_labeler_tab)
         
-        #caseconverter_action = QAction(QIcon(os.path.join(self.bp, 'Icons','tag--pencil.png')), "&Create LL Cases", self)
-        #caseconverter_action.setStatusTip("Connect Images and Annotations to Lazy Luna Cases for Analysis.")
-        #caseconverter_action.triggered.connect(self.open_caseconverter_tab)
-        
-        database_action = QAction(QIcon(os.path.join(self.bp, 'Icons','tag--pencil.png')), "&Show Database", self)
+        database_action = QAction(QIcon(os.path.join(self.bp, 'Icons','database--plus.png')), "&Show Database", self)
         database_action.setStatusTip("Work with the Lazy Luna database.")
         database_action.triggered.connect(self.open_database_tab)
         
@@ -64,7 +60,6 @@ class MainWindow(QMainWindow):
         file_menu.addAction(introduction_action)
         file_menu.addAction(cvi42converter_action)
         file_menu.addAction(labeler_action)
-        #file_menu.addAction(caseconverter_action)
         file_menu.addAction(database_action)
         
         # Central Tab - is replaced with other tabs as selected
