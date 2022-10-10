@@ -1,6 +1,6 @@
 from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QToolButton, QSizePolicy, QInputDialog, QMessageBox, QComboBox
 from PyQt5.QtGui import QIcon, QColor, QPalette, QFont
-from PyQt5.QtCore import Qt, QSize, QDir
+from PyQt5.QtCore import Qt, QSize, QDir, QSortFilterProxyModel
 
 import sqlite3
 from sqlite3 import Error
@@ -59,11 +59,6 @@ class LL_Database_TabWidget(QWidget):
         import_new_cases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','database-import.png')), "&Import Cases to DB", self)
         import_new_cases_action.setStatusTip("Opens another tab to import Lazy Luna Cases or convert Images and Annotations to Lazy Luna Cases which are added to the DB.")
         import_new_cases_action.triggered.connect(self.open_case_converter)
-        
-        
-        ##################################
-        ## ADD FUNCTION FOR SINGLE CASE ##
-        ##################################
 
         # Toolbar
         self.toolbar = QToolBar("My main toolbar")
@@ -182,8 +177,8 @@ class LL_Database_TabWidget(QWidget):
         if not self.has_dbconnection(): return
         tabname = self.tableview_tabs.tabText(self.tableview_tabs.currentIndex())
         rows = [i.row() for i in self.tableview_tabs.currentWidget().selectionModel().selectedRows()]
-        df = self.tabname_to_table[tabname].df
-        insertion_keys = [df[['StudyUID', 'Reader']].iloc[row].tolist() for row in rows]
+        proxy = self.tabname_to_proxy[tabname]
+        insertion_keys = [[proxy.index(row,7).data(), proxy.index(row,1).data()] for row in rows]
         try: self.popup1 = AddCasesToTabPopup(self, insertion_keys); self.popup1.show()
         except Exception as e: print(e); pass
         self.update_tableview_tabs()
@@ -219,6 +214,7 @@ class LL_Database_TabWidget(QWidget):
         tabnames = [name[0] for name in self.db_connection.cursor().execute('SELECT * FROM Tabnames').fetchall()]
         self.tabname_to_tableview = dict()
         self.tabname_to_table     = dict()
+        self.tabname_to_proxy     = dict()
         try: 
             for i in range(len(self.tableview_tabs)): self.tableview_tabs.removeTab(0)
         except Exception as e: print(e); pass
@@ -229,6 +225,7 @@ class LL_Database_TabWidget(QWidget):
             self.tableview_tabs.addTab(self.tabname_to_tableview[tabname], tabname)
             self.present_table_view(tabname)
         
+        
     def present_table_view(self, tabname):
         q = 'SELECT casename, Cases.readername, age, gender, weight, height, creation_date, Cases.study_uid, casepath FROM Cases INNER JOIN Case_to_Tab ON (Cases.study_uid=Case_to_Tab.study_uid AND Cases.readername=Case_to_Tab.readername AND Case_to_Tab.tab="' + tabname + '");'
         rows = self.db_connection.cursor().execute(q).fetchall()
@@ -237,6 +234,12 @@ class LL_Database_TabWidget(QWidget):
         self.tabname_to_tableview[tabname].setModel(t.to_pyqt5_table_model())
         self.tabname_to_table[tabname] = t
         self.tabname_to_tableview[tabname].resizeColumnsToContents()
+        proxy_model = QSortFilterProxyModel() 
+        proxy_model.setFilterKeyColumn(-1) # Search all columns.
+        proxy_model.setSourceModel(t.to_pyqt5_table_model())
+        self.tabname_to_proxy[tabname] = proxy_model
+        self.tabname_to_tableview[tabname].setModel(self.tabname_to_proxy[tabname])
+        self.searchbar.textChanged.connect(self.tabname_to_proxy[tabname].setFilterFixedString)
     
     def execute_query(self, query):
         try: self.db_connection.cursor().execute(query); self.db_connection.commit()
@@ -262,7 +265,6 @@ class LL_Database_TabWidget(QWidget):
         msg.setInformativeText("Repeated Tabnames are forbidden. Action prohibited.")
         retval = msg.exec_()
         return True
-    
 
 
 class RemoveTabPopup(QWidget):
