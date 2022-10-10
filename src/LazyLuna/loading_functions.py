@@ -163,11 +163,12 @@ def get_cases_table(cases, paths, return_dataframe=True, debug=False):
         return h
     if debug: st = time()
     columns = ['Case Name', 'Reader', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 
-               'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE', 'Path']
+               'LAX CINE', 'SAX T1 PRE', 'SAX T1 POST', 'SAX T2', 'SAX LGE', 'Path']
     #print([c.available_types for c in cases])
     rows    = sorted([[c.case_name, c.reader_name, get_age(c), get_gender(c), get_weight(c), get_height(c), 
                        'SAX CINE' in c.available_types, 'SAX CS' in c.available_types, 'LAX CINE' in c.available_types, 
-                       'SAX T1' in c.available_types, 'SAX T2' in c.available_types, 'SAX LGE' in c.available_types, paths[i]] 
+                       'SAX T1 PRE' in c.available_types, 'SAX T1 POST' in c.available_types, 'SAX T2' in c.available_types, 
+                       'SAX LGE' in c.available_types, paths[i]] 
                       for i, c in enumerate(cases)],
                      key=lambda p: str(p[0]))
     if not return_dataframe: return rows
@@ -193,7 +194,7 @@ def read_annos_into_sop2filepaths(path, debug=False):
 def read_dcm_images_into_sop2filepaths(path, debug=False):
     if debug: st = time()
     sop2filepath = dict()
-    for n in ['SAX CINE', 'SAX CS', 'SAX T1', 'SAX T2', 'LAX 2CV', 'LAX 3CV', 'LAX 4CV', 'SAX LGE', 'None']:
+    for n in ['SAX CINE', 'SAX CS', 'SAX T1 PRE', 'SAX T1 POST', 'SAX T2', 'LAX 2CV', 'LAX 3CV', 'LAX 4CV', 'SAX LGE', 'None']:
         sop2filepath[n] = dict()
     for p in Path(path).glob('**/*.dcm'):
         try:

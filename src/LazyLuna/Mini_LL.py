@@ -665,8 +665,8 @@ class LAX_CINE_analyzer:
 class SAX_T1_analyzer:
     def __init__(self, cc):
         self.cc = cc
-        from LazyLuna.Views import SAX_T1_View
-        self.view = SAX_T1_View()
+        from LazyLuna.Views import SAX_T1_PRE_View
+        self.view = SAX_T1_PRE_View()
         self.contour_comparison_pandas_dataframe = None
     
     def get_case_contour_comparison_pandas_dataframe(self, fixed_phase_first_reader=False, debug=False):

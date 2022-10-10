@@ -390,10 +390,11 @@ class LAX_CINE_View(View):
             print(traceback.print_exc())
 
             
-class SAX_T1_View(View):
+class SAX_T1_PRE_View(View):
     def __init__(self):
         self.colormap            = 'gray'
         self.available_colormaps = ['gray']
+        self.ll_tag = 'SAX T1 PRE'
         self.load_categories()
         self.contour_names = ['lv_endo', 'lv_myo']
         self.point_names   = ['sacardialRefPoint']
@@ -430,7 +431,8 @@ class SAX_T1_View(View):
     def initialize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
-        case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T1']
+        print('WHATS THERE???: ', case.all_imgs_sop2filepath.keys())
+        case.imgs_sop2filepath = case.all_imgs_sop2filepath[self.ll_tag]
         # attach annotation type
         case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
@@ -438,13 +440,13 @@ class SAX_T1_View(View):
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
         case.attach_categories([SAX_T1_Category])
         cat = case.categories[0]
-        case.other_categories['SAX T1'] = case.categories
+        case.other_categories[self.ll_tag] = case.categories
         case.categories = []
         if debug: print('Case categories are: ', case.categories)
         # set new type
-        case.type = 'SAX T1'
-        case.available_types.add('SAX T1')
-        if debug: print('Customization in SAX T1 view took: ', time()-st)
+        case.type = self.ll_tag
+        case.available_types.add(self.ll_tag)
+        if debug: print('Customization in SAX T1 PRE view took: ', time()-st)
         return case
     
     def customize_case(self, case, debug=False):
@@ -452,7 +454,7 @@ class SAX_T1_View(View):
             print('starting customize t1: ', case.case_name)
             st=time()
         # switch images
-        case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T1']
+        case.imgs_sop2filepath = case.all_imgs_sop2filepath[self.ll_tag]
         # attach annotation type
         case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
@@ -460,17 +462,17 @@ class SAX_T1_View(View):
         if not hasattr(case, 'categories'):
             case.other_categories = dict()
             case.attach_categories([SAX_T1_Category])
-            case.other_categories['SAX T1'] = case.categories
+            case.other_categories[self.ll_tag] = case.categories
         else:
-            if 'SAX T1' in case.other_categories.keys(): case.categories = case.other_categories['SAX T1']
+            if self.ll_tag in case.other_categories.keys(): case.categories = case.other_categories[self.ll_tag]
             else: case.attach_categories([SAX_T1_Category])
         if debug: print('Case categories are: ', case.categories)
         # attach CRs
         case.attach_clinical_results([SAXMap_GLOBALT1, NR_SLICES])
         # set new type
-        case.type = 'SAX T1'
+        case.type = self.ll_tag
         if debug: 
-            print('Customization in SAX T1 view took: ', time()-st)
+            print('Customization in SAX T1 PRE view took: ', time()-st)
             print('ending customize: ', case.case_name)
         return case
     
@@ -495,8 +497,12 @@ class SAX_T1_View(View):
             failed_annotation_comparison.store(failed_segmentation_folder_path)
         except Exception as e:
             print(traceback.print_exc())
-        
-    
+            
+class SAX_T1_POST_View(SAX_T1_PRE_View):
+    def __init__(self):
+        super().__init__()
+        self.ll_tag = 'SAX T1 POST'
+
 
 class SAX_T2_View(View):
     def __init__(self):

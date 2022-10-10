@@ -114,7 +114,7 @@ class LL_CaseConverter_TabWidget(QWidget):
             if dialog.exec_() == QDialog.Accepted:
                 self.dicoms_folder_path = dialog.selectedFiles()[0]
                 self.dicoms_folder_text.setText(self.dicoms_folder_path)
-        except Exception as e: print(e)
+        except Exception as e: print(traceback.format_exc())
             
     
     def present_reader_folders(self):
@@ -127,7 +127,7 @@ class LL_CaseConverter_TabWidget(QWidget):
                     ia_paths = get_imgs_and_annotation_paths(self.dicoms_folder_path, reader_path)
                     ia_paths = [['--', os.path.basename(ia[0]), os.path.basename(reader_path), ia[1]] for ia in ia_paths]
                     imganno_paths.extend(ia_paths)
-                except Exception as e: print(e); pass
+                except Exception as e: print(traceback.format_exc()); pass
             self.imganno_paths = pandas.DataFrame(imganno_paths, columns=['Converted', 'Casename', 'Readername', 'Annotation Path'])
             t = Table(); t.df = self.imganno_paths
             self.tableView.setModel(t.to_pyqt5_table_model())
@@ -135,9 +135,9 @@ class LL_CaseConverter_TabWidget(QWidget):
                 self.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
         except Exception as e: print(traceback.format_exc())
             
-    #####################
-    ## Make to QTHREAD ##
-    #####################
+    ###########################
+    ## TODO: Make to QTHREAD ##
+    ###########################
     def convert_cases(self):
         if not self.has_dicom_folder(): return
         if not self.has_selected_reader_folders(): return
@@ -161,7 +161,7 @@ class LL_CaseConverter_TabWidget(QWidget):
                     ia_paths = get_imgs_and_annotation_paths(self.dicoms_folder_path, reader_path)
                     ia_paths = [['--', os.path.basename(ia[0]), ia[0], os.path.basename(reader_path), ia[1]] for ia in ia_paths]
                     imganno_paths.extend(ia_paths)
-                except Exception as e: print(e); pass
+                except Exception as e: print(traceback.format_exc()); pass
             conversion_worked = []
             case_cpath_list_for_db = []
             for i, (_, casename, imgp, readername, annop) in enumerate(imganno_paths):
@@ -177,13 +177,13 @@ class LL_CaseConverter_TabWidget(QWidget):
                             case = v.initialize_case(case)
                             print(str(v.__class__)+' worked for: '+case.case_name)
                         except Exception as e:
-                            print(str(v.__class__)+' FAILED for: '+case.case_name+',  '+str(e))
+                            print(str(v.__class__)+' FAILED for: '+case.case_name+',  '+str(e))#str(traceback.format_exc()))
                     cp = case.store(self.case_folder_path)
                     conversion_worked.append(['Yes', casename, readername, annop])
                     case_cpath_list_for_db.append([case, cp])
                 except Exception as e: 
                     conversion_worked.append(['! Failed !', casename, readername, annop])
-                    print(e); pass
+                    print(traceback.format_exc()); pass
             self.imganno_paths = pandas.DataFrame(conversion_worked, columns=['Converted', 'Casename', 'Readername', 'Annotation Path'])
             t = Table(); t.df = self.imganno_paths
             self.tableView.setModel(t.to_pyqt5_table_model())
@@ -191,9 +191,9 @@ class LL_CaseConverter_TabWidget(QWidget):
                 try:
                     col, row = get_case_info(c, cp)
                     self.insert_case(c, cp)
-                except Exception as e: print(e); continue
+                except Exception as e: print(traceback.format_exc()); continue
             self.parent.tab.update_tableview_tabs()
-        except Exception as e: print(e); pass
+        except Exception as e: print(traceback.format_exc()); pass
         
     def import_cases(self):
         try:
@@ -206,7 +206,7 @@ class LL_CaseConverter_TabWidget(QWidget):
             paths = [str(p) for p in Path(import_cases_path).glob('**/*.pickle')]
             for p in paths: c = pickle.load(open(p,'rb')); self.insert_case(c, p)
             self.parent.tab.update_tableview_tabs()
-        except Exception as e: print(e); pass
+        except Exception as e: print(traceback.format_exc()); pass
         
     def insert_case(self, case, casepath, tabname=None):
         query =  'INSERT OR REPLACE INTO Cases (casename, readername, age, gender, weight, height, creation_date, study_uid, casepath) VALUES'

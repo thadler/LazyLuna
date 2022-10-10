@@ -18,7 +18,7 @@ import traceback
 import pandas
 
 from LazyLuna.Mini_LL import Case_Comparison
-from LazyLuna.Views   import SAX_CINE_View, SAX_CS_View, LAX_CINE_View, SAX_T1_View, SAX_T2_View, SAX_LGE_View
+from LazyLuna.Views   import *
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables  import *
 from LazyLuna.Figures import *
@@ -49,7 +49,7 @@ class CC_Metrics_Tab(QWidget):
 
         if type(view) in [SAX_CINE_View, SAX_CS_View, SAX_LGE_View]:
             self.metrics_table  = CC_Metrics_Table()
-        elif type(view) in [SAX_T1_View]:
+        elif type(view) in [SAX_T1_PRE_View, SAX_T1_POST_View]:
             self.metrics_table  = T1_CC_Metrics_Table()
         elif type(view) in [SAX_T2_View]:
             self.metrics_table  = T2_CC_Metrics_Table()
