@@ -37,12 +37,12 @@ class DcmLabeling_2_TabWidget(QWidget):
     def ui_init(self):
         
         # Actions for Toolbar
-        manual_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','folder-open-image.png')), '&Manual Intervention', self)
-        manual_action.setStatusTip("Manual Selection of Labels.")
+        manual_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--plus.png')), "&Manual Label Selection", self)
+        manual_action.setStatusTip("Manually select labels for Dicoms.")
         manual_action.triggered.connect(self.manual_intervention)
         
         # Actions for Toolbar
-        store_and_return_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','folder-open-image.png')), '&Store and Return', self)
+        store_and_return_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','disk-return.png')), '&Save and Return', self)
         store_and_return_action.setStatusTip("Store Labels and Return to Former Tab.")
         store_and_return_action.triggered.connect(self.store_and_return)
         

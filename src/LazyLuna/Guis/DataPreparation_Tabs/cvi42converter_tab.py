@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QToolButton, QSizePolicy
+from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QApplication, QLabel, QToolBar, QAction, QStatusBar, qApp, QStyle, QCheckBox, QGridLayout, QPushButton, QLineEdit, QFrame, QFileSystemModel, QTreeView, QDirModel, QTableView, QHeaderView, QFileDialog, QDialog, QToolButton, QSizePolicy, QMessageBox
 from PyQt5.QtGui import QIcon, QColor, QPalette, QFont
 from PyQt5.QtCore import Qt, QSize
 
@@ -31,11 +31,11 @@ class CVI42Converter_TabWidget(QWidget):
         self.tab1.layout.setSpacing(7)
         
         # Actions
-        present_cvi42_files_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Show CVI42 Files", self)
+        present_cvi42_files_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','eye.png')), "&Show CVI42WS Table", self)
         present_cvi42_files_action.setStatusTip("Presents a Table with the found CVI42 workspaces.")
         present_cvi42_files_action.triggered.connect(self.present_cvi42_files)
         
-        cvi42converter_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','wand--arrow.png')), "&Convert CVI42 Workspaces", self)
+        cvi42converter_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','wand--arrow.png')), "&Convert CVI42WS", self)
         cvi42converter_action.setStatusTip("Convert CVI42 Workspaces. Updates the table with success information for workspaces.")
         cvi42converter_action.triggered.connect(self.convert_cvi42workspaces)
 
@@ -113,6 +113,7 @@ class CVI42Converter_TabWidget(QWidget):
         
     def present_cvi42_files(self):
         try:
+            if not self.has_selected_reader_folders(): return
             items = [self.fileSystemModel.filePath(index) for index in self.tree.selectedIndexes()]
             self.folder_paths = list(set(items))
             cvi42_convertibles = []
@@ -128,6 +129,8 @@ class CVI42Converter_TabWidget(QWidget):
     
     def convert_cvi42workspaces(self):
         try:
+            if not self.has_selected_reader_folders(): return
+            self.present_cvi42_files()
             c = catchConverter()
             cvi42_convertibles = []
             converted = []
@@ -149,3 +152,11 @@ class CVI42Converter_TabWidget(QWidget):
         except Exception as e: print(traceback.format_exc())
         
 
+    def has_selected_reader_folders(self):
+        if len(list(set([self.fileSystemModel.filePath(index) for index in self.tree.selectedIndexes()])))!=0: return True
+        msg = QMessageBox() # Information Message for User
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("Select reader folders with cvi42 workspaces first.")
+        msg.setInformativeText("Open the folder tree on the left and select folders that contain cvi42 workspaces.")
+        retval = msg.exec_()
+        return False

@@ -43,31 +43,31 @@ class DcmLabeling_1_TabWidget(QWidget):
         self.overriding_dict = dict()
         
         # Actions for Toolbar
-        select_dcm_folder_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','folder-open-image.png')), '&Select Folder', self)
+        select_dcm_folder_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','blue-folder-open-slide.png')), '&Select DCM Folder', self)
         select_dcm_folder_action.setStatusTip("Select Folder with Dicom files.")
         select_dcm_folder_action.triggered.connect(self.select_dcm_folder)
         
-        load_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Load Table", self)
+        load_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','blue-folder-open-table.png')), "&Load Table", self)
         load_action.setStatusTip("Load Table.")
         load_action.triggered.connect(self.load_table)
         
-        select_reader_folder_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Select Reader", self)
+        select_reader_folder_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','users.png')), "&Select Reader", self)
         select_reader_folder_action.setStatusTip("Select Folder with Annotation files.")
         select_reader_folder_action.triggered.connect(self.select_reader_folder)
         
-        suggest_labels_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Suggest Labels", self)
+        suggest_labels_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','wand--pencil.png')), "&Suggest Labels", self)
         suggest_labels_action.setStatusTip("Suggest LL Labels for Dicom series.")
         suggest_labels_action.triggered.connect(self.suggest_ll_labels)
         
-        manual_select_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Manual Label Selection", self)
+        manual_select_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--plus.png')), "&Manual Label Selection", self)
         manual_select_action.setStatusTip("Manually select LL Labels for Dicom series.")
         manual_select_action.triggered.connect(self.select_ll_labels)
         
-        remove_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Remove Label Selection", self)
+        remove_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--minus.png')), "&Remove Label Selection", self)
         remove_action.setStatusTip("Remove selected LL Labels for Dicom series.")
         remove_action.triggered.connect(self.remove_ll_labels)
         
-        store_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Store Labels", self)
+        store_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','disk-return.png')), "&Store Labels", self)
         store_action.setStatusTip("Store LL Labels for all Dicoms.")
         store_action.triggered.connect(self.store_ll_labels)
         
@@ -170,6 +170,7 @@ class DcmLabeling_1_TabWidget(QWidget):
         
     def load_table(self):
         try:
+            if not self.is_dicom_folder_path_set(): return
             self.imgs_df   = dicom_images_to_table(self.dicom_folder_path)
             study_uid      = get_study_uid(self.dicom_folder_path)
             try:
@@ -189,6 +190,7 @@ class DcmLabeling_1_TabWidget(QWidget):
     
     def store_ll_labels(self):
         # Information Message for User
+        if not self.is_table_loaded(): return
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setText("LL Tag storage can take a minute.")
@@ -213,6 +215,7 @@ class DcmLabeling_1_TabWidget(QWidget):
         
     def suggest_ll_labels(self):
         try:
+            if not self.is_table_loaded(): return
             table = self.information_df
             sax_cine_sds = []
             for row in range(table.shape[0]):
@@ -245,15 +248,18 @@ class DcmLabeling_1_TabWidget(QWidget):
                         table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX CINE'
             t  = Table(); t.df = table
             self.tableView.setModel(t.to_pyqt5_table_model())
+            self.color_rows()
         except Exception as e: print('Failed suggesting labels: ', e)
         
     def select_ll_labels(self, item):
         try:
+            if not self.is_table_loaded(): return
             self.popup1 = ManualInterventionPopup(self)
             self.popup1.show()
         except Exception as e: pass
         
     def remove_ll_labels(self):
+        if not self.is_table_loaded(): return
         try: self.set_LL_tags('Lazy Luna: None')
         except Exception as e: pass
         
@@ -299,6 +305,39 @@ class DcmLabeling_1_TabWidget(QWidget):
         for r in rows: key2LLtag[tuple(r[:-1])] = r[-1]
         return key2LLtag
     
+    def is_dicom_folder_path_set(self):
+        if hasattr(self, 'dicom_folder_path'): return True
+        msg = QMessageBox() # Information Message for User
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("You must select a folder containing dicom files first.")
+        msg.setInformativeText("Use the above button to select such a folder.")
+        retval = msg.exec_()
+        return False
+    
+    def is_table_loaded(self):
+        if hasattr(self, 'information_df'): return True
+        msg = QMessageBox() # Information Message for User
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("You must select and load a folder containing dicom files first.")
+        msg.setInformativeText("Use the above button to select such a folder.")
+        retval = msg.exec_()
+        return False
+    
+    def color_rows(self):
+        df = self.information_df #  .at[row,'nr_annos']
+        if 'nr_annos' not in df:
+            print('nr_annos not in df')
+            return
+        rows = []
+        print('SHAPE: ', df.shape[0])
+        for row in range(df.shape[0]):
+            if int(df.iloc[[row]]['nr_annos'])>0:
+                rows.append(row)
+        print(rows)
+        # color all rows with annotations
+        for row in rows:
+            for j in range(df.shape[1]):
+                self.tableView.item(row, j).setBackground(QColor('green'))
 
         
 class ManualInterventionPopup(QWidget):

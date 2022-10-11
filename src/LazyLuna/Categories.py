@@ -9,6 +9,7 @@ from time import time
 import traceback
 
 from LazyLuna.Mini_LL import Annotation
+from LazyLuna import utils
 
 
 class SAX_slice_phase_Category:

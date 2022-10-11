@@ -29,19 +29,19 @@ class LL_CaseConverter_TabWidget(QWidget):
     
     def ui_init(self):
         # Actions
-        select_bulk_dicoms_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Select Bulk Dicoms Folder", self)
+        select_bulk_dicoms_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','folder-open-image.png')), "&Select Bulk Dicoms Folder", self)
         select_bulk_dicoms_action.setStatusTip("This is for bulk conversion. Select the folder in which one or several Dicom cases are contained.")
         select_bulk_dicoms_action.triggered.connect(self.select_dicoms_folder)
         
-        select_readers_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Present Reader Folders", self)
+        select_readers_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','eye.png')), "&Present Reader Folders", self)
         select_readers_action.setStatusTip("In folder-tree on the left, click all folders with Annotations you want connected to the Dicom Images.")
         select_readers_action.triggered.connect(self.present_reader_folders)
         
-        convert_llcases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Convert to LL Cases", self)
+        convert_llcases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','wand--arrow.png')), "&Convert to LL Cases", self)
         convert_llcases_action.setStatusTip("Converts Images and Annotations to Lazy Luna Cases.")
         convert_llcases_action.triggered.connect(self.convert_cases)
         
-        import_cases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','notebook.png')), "&Import Cases to DB", self)
+        import_cases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','database-import.png')), "&Import Cases to DB", self)
         import_cases_action.setStatusTip("Import Cases to the DB.")
         import_cases_action.triggered.connect(self.import_cases)
         
@@ -62,6 +62,10 @@ class LL_CaseConverter_TabWidget(QWidget):
         b3.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b3.setFont(QFont('', fontsize))
         b3.setDefaultAction(convert_llcases_action)
         self.toolbar.addWidget(b3)
+        spacer = QWidget();
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding);
+        # toolBar is a pointer to an existing toolbar
+        self.toolbar.addWidget(spacer);
         b4 = QToolButton(); b4.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         b4.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b4.setFont(QFont('', fontsize))
         b4.setDefaultAction(import_cases_action)
@@ -237,8 +241,8 @@ class LL_CaseConverter_TabWidget(QWidget):
         if len(list(set([self.fileSystemModel.filePath(index) for index in self.tree.selectedIndexes()])))!=0: return True
         msg = QMessageBox() # Information Message for User
         msg.setIcon(QMessageBox.Information)
-        msg.setText("You must select some reader folders containing annotations first.")
-        msg.setInformativeText("This can be performed by opening the folder tree on the left and selecting folders that contain annotations pertaining to the cases")
+        msg.setText("Select reader folders with annotations first.")
+        msg.setInformativeText("Open the folder tree on the left and select folders that contain annotations of the cases.")
         retval = msg.exec_()
         return False
     

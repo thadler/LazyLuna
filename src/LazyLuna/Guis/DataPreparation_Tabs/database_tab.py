@@ -36,23 +36,23 @@ class LL_Database_TabWidget(QWidget):
         self.tab1.layout.setSpacing(7)
         
         # Actions
-        connect_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','database--plus.png')), "&Connect to DB", self)
+        connect_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','database.png')), "&Connect to DB", self)
         connect_action.setStatusTip("Connect to Lazy Luna's Database or create a new one by selecting a folder.")
         connect_action.triggered.connect(self.connect_to_or_create_database)
 
-        add_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--plus.png')), "&Add Tab to DB", self)
+        add_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','database--plus.png')), "&Add Tab to DB", self)
         add_tab_action.setStatusTip("This adds a tab below (like HCM or CS). A select subset of cases can be added to this tab for easier navigation.")
         add_tab_action.triggered.connect(self.add_new_tab)
         
-        remove_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--minus.png')), "&Remove Tab from DB", self)
+        remove_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','database--minus.png')), "&Remove Tab from DB", self)
         remove_tab_action.setStatusTip("Select a Tabname and remove it from the database.")
         remove_tab_action.triggered.connect(self.remove_tab)
         
-        add_cases_to_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','script-export.png')), "&Add Cases to Tab", self)
+        add_cases_to_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--plus.png')), "&Add Cases to Tab", self)
         add_cases_to_tab_action.setStatusTip("Take selected cases from selected tab and add them to another.")
         add_cases_to_tab_action.triggered.connect(self.add_cases_to_tab)
         
-        remove_cases_from_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','script--minus.png')), "&Remove Cases from Tab", self)
+        remove_cases_from_tab_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','tag--minus.png')), "&Remove Cases from Tab", self)
         remove_cases_from_tab_action.setStatusTip("Remove the Cases from Current Tab.")
         remove_cases_from_tab_action.triggered.connect(self.remove_cases_from_tab)
         
