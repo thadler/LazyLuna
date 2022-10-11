@@ -192,7 +192,7 @@ class DcmLabeling_1_TabWidget(QWidget):
         msg = QMessageBox()
         msg.setIcon(QMessageBox.Information)
         msg.setText("LL Tag storage can take a minute.")
-        msg.setInformativeText("Are you sure you want to succeed?")
+        msg.setInformativeText("Are you sure you want to procede?")
         msg.setWindowTitle("Storage Warning")
         msg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
         retval = msg.exec_()

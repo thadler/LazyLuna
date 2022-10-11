@@ -59,19 +59,6 @@ class Table:
         
     def to_pyqt5_table_model(self):
         return DataFrameModel(self.df)
-        
-        
-# Present cases that can be compared to each other
-class CC_OverviewTable(Table):
-    def calculate(self, cases_df, reader_name1, reader_name2):
-        reader1 = cases_df[cases_df['Reader']==reader_name1].copy()
-        reader2 = cases_df[cases_df['Reader']==reader_name2].copy()
-        #'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE'
-        cc_df   = reader1.merge(reader2, how='inner', on=['Case Name', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)',
-                                                         'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE'])
-        cc_df.rename({'Reader_x': 'Reader1', 'Reader_y': 'Reader2', 'Path_x': 'Path1', 'Path_y': 'Path2'}, inplace=True, axis=1)
-        cc_df   = cc_df.reindex(columns=['Case Name', 'Reader1', 'Reader2', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE', 'Path1', 'Path2'])
-        self.df = cc_df
     
 
 class CC_ClinicalResultsTable(Table):
@@ -131,9 +118,11 @@ class CC_OverviewTable(Table):
                                                           'SAX T2', 'SAX LGE'])
         cc_df.rename({'Reader_x': 'Reader1', 'Reader_y': 'Reader2', 'Path_x': 'Path1', 'Path_y': 'Path2'}, inplace=True, axis=1)
         cc_df   = cc_df.reindex(columns=['Case Name', 'Reader1', 'Reader2', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1 PRE', 'SAX T1 POST', 'SAX T2', 'SAX LGE', 'Path1', 'Path2'])
+        print('CC OVERVIEW TABLE')
+        print(cc_df.shape)
         self.df = cc_df
-
-    
+        
+        
 class CC_SAX_DiceTable(Table):
     def calculate(self, case_comparisons, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
@@ -194,9 +183,9 @@ class CC_Metrics_Table(Table):
         if pretty:
             self.df[['ml diff', 'abs ml diff', 'HD']] = self.df[['ml diff', 'abs ml diff', 'HD']].round(1)
             self.df[['DSC']] = self.df[['DSC']].astype(int)
-        print(self.df)
+        #print(self.df)
         unique_cats = self.df['category'].unique()
-        print('Unique categories; ', unique_cats)
+        #print('Unique categories; ', unique_cats)
         df = DataFrame()
         for cat_i, cat in enumerate(unique_cats):
             curr = self.df[self.df['category']==cat]
@@ -229,7 +218,8 @@ class LAX_CC_Metrics_Table(Table):
         self.df = self.metric_vals[self.metric_vals['contour name']==contour_name]
         if pretty:
             self.df[['ml diff', 'abs ml diff', 'HD']] = self.df[['ml diff', 'abs ml diff', 'HD']].round(1)
-            self.df[['DSC']] = self.df[['DSC']].astype(int)
+            #self.df[['DSC']] = self.df[['DSC']].astype('Int64')
+            self.df[['DSC']] = self.df[['DSC']].apply(int)
         unique_cats = self.df['category'].unique()
         df = DataFrame()
         for cat_i, cat in enumerate(unique_cats):
@@ -583,53 +573,3 @@ class CC_StatsOverviewTable(Table):
         
         information_summary_df  = DataFrame(rows, columns=columns)
         self.df = information_summary_df
-        
-    
-    
-        
-"""
-def get_cases_table(cases, paths, debug=False):
-    def get_dcm(case):
-        for k in case.all_imgs_sop2filepath.keys():
-            try: sop = next(iter(case.all_imgs_sop2filepath[k]))
-            except: continue
-            return pydicom.dcmread(case.all_imgs_sop2filepath[k][sop])
-    def get_age(case):
-        try:
-            age = get_dcm(case).data_element('PatientAge').value
-            age = float(age[:-1]) if age!='' else np.nan
-        except: age=np.nan
-        return age
-    def get_gender(case):
-        try:
-            gender = get_dcm(case).data_element('PatientSex').value
-            gender = gender if gender in ['M','F'] else np.nan
-        except: gender=np.nan
-        return gender
-    def get_weight(case):
-        try:
-            weight = get_dcm(case).data_element('PatientWeight').value
-            weight = float(weight) if weight is not None else np.nan
-        except: weight=np.nan
-        return weight
-    def get_height(case):
-        try:
-            h = get_dcm(case).data_element('PatientSize').value
-            h = np.nan if h is None else float(h)/100 if float(h)>3 else float(h)
-        except: h=np.nan
-        return h
-    if debug: st = time()
-    columns = ['Case Name', 'Reader', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 
-               'LAX CINE', 'SAX T1', 'SAX T2', 'SAX LGE', 'Path']
-    #print([c.available_types for c in cases])
-    rows    = sorted([[c.case_name, c.reader_name, get_age(c), get_gender(c), get_weight(c), get_height(c), 
-                       'SAX CINE' in c.available_types, 'SAX CS' in c.available_types, 'LAX CINE' in c.available_types, 
-                       'SAX T1' in c.available_types, 'SAX T2' in c.available_types, 'SAX LGE' in c.available_types, paths[i]] 
-                      for i, c in enumerate(cases)],
-                     key=lambda p: str(p[0]))
-    df      = pandas.DataFrame(rows, columns=columns)
-    if debug: print('Took: ', time()-st)
-    return df
-"""
-    
-    

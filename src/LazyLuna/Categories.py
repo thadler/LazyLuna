@@ -21,6 +21,7 @@ class SAX_slice_phase_Category:
         self.name = 'none'
         self.phase = np.nan
 
+    # try a sort function as in dcmlabeling_1_tab
     def get_sop2depthandtime(self, sop2filepath, debug=False):
         if debug: st = time()
         if hasattr(self.case, 'categories'):
@@ -29,7 +30,7 @@ class SAX_slice_phase_Category:
                     if debug: print('calculating sop2sorting takes: ', time()-st)
                     return c.sop2depthandtime
         # returns dict sop --> (depth, time)
-        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
+        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()} # stop_before_pixels=TRUE?
         
         sortable = [[k,v.SliceLocation,v.InstanceNumber] for k,v in imgs.items()]
         #sortable = [[k,float(v.SliceLocation),float(v.AcquisitionNumber)] for k,v in imgs.items()]
@@ -262,7 +263,7 @@ class LAX_4CV_LVES_Category(LAX_Category):
         self.name  = 'LAX 4CV LVES'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 4CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
@@ -278,7 +279,7 @@ class LAX_4CV_LVED_Category(LAX_Category):
         self.name  = 'LAX 4CV LVED'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 4CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
@@ -293,7 +294,7 @@ class LAX_4CV_RVES_Category(LAX_Category):
         self.name  = 'LAX 4CV RVES'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 4CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('rv_lax_endo')
@@ -309,7 +310,7 @@ class LAX_4CV_RVED_Category(LAX_Category):
         self.name  = 'LAX 4CV RVED'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 4CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('rv_lax_endo')
@@ -324,7 +325,7 @@ class LAX_4CV_LAES_Category(LAX_Category):
         self.name  = 'LAX 4CV LAES'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 4CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('la')
@@ -340,7 +341,7 @@ class LAX_4CV_LAED_Category(LAX_Category):
         self.name  = 'LAX 4CV LAED'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 4CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('la')
@@ -355,7 +356,7 @@ class LAX_4CV_RAES_Category(LAX_Category):
         self.name  = 'LAX 4CV RAES'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 4CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('ra')
@@ -371,7 +372,7 @@ class LAX_4CV_RAED_Category(LAX_Category):
         self.name  = 'LAX 4CV RAED'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 4CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 4CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('ra')
@@ -386,7 +387,7 @@ class LAX_2CV_LVES_Category(LAX_Category):
         self.name  = 'LAX 2CV LVES'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 2CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 2CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
@@ -402,7 +403,7 @@ class LAX_2CV_LVED_Category(LAX_Category):
         self.name  = 'LAX 2CV LVED'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 2CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 2CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('lv_lax_endo')
@@ -418,7 +419,7 @@ class LAX_2CV_LAES_Category(LAX_Category):
         self.name  = 'LAX 2CV LAES'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 2CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 2CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('la')
@@ -434,7 +435,7 @@ class LAX_2CV_LAED_Category(LAX_Category):
         self.name  = 'LAX 2CV LAED'
         self.phase = self.get_phase()
     
-    def relevant_images(self, dcm): return 'LAX 2CV' in dcm[0x0b, 0x10].value
+    def relevant_images(self, dcm): return 'LAX CINE 2CV' in dcm[0x0b, 0x10].value
     
     def get_phase(self):
         lvendo_vol_curve = self.get_area_curve('la')

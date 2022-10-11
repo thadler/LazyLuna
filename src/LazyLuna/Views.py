@@ -250,8 +250,11 @@ class LAX_CINE_View(View):
     def initialize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
-        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'],
-                                  **case.all_imgs_sop2filepath['LAX 4CV']}
+        print('ALL image keys: ', case.all_imgs_sop2filepath.keys())
+        for k in case.all_imgs_sop2filepath.keys():
+            print(k, len(case.all_imgs_sop2filepath[k]))
+        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX CINE 2CV'],
+                                  **case.all_imgs_sop2filepath['LAX CINE 4CV']}
         # attach annotation type
         case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
@@ -280,8 +283,8 @@ class LAX_CINE_View(View):
     def customize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
-        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX 2CV'], 
-                                  **case.all_imgs_sop2filepath['LAX 4CV']}
+        case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX CINE 2CV'], 
+                                  **case.all_imgs_sop2filepath['LAX CINE 4CV']}
         # attach annotation type
         case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
