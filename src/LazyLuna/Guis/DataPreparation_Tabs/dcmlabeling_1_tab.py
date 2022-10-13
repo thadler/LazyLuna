@@ -186,6 +186,7 @@ class DcmLabeling_1_TabWidget(QWidget):
             self.tableView.setModel(t.to_pyqt5_table_model())
             for i in range(len(self.tableView.horizontalHeader())):
                 self.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
+            self.overriding_dict = dict()
         except Exception as e: print(e)
     
     def store_ll_labels(self):

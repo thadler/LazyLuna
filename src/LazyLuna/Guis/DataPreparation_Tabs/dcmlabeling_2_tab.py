@@ -175,12 +175,13 @@ class ManualInterventionPopup(QWidget):
         try:
             name = self.choose_tag.currentText()
             if name=='Select Tag': return
-            row = self.parent.tableView.selectionModel().selectedIndexes()[0].row()
-            sop = self.parent.dcm_table['SOP Instance UID'].iloc[row]
-            suffix = self.optional_suffix.text()
-            tag = 'Lazy Luna: ' + name + suffix
-            self.parent.overriding_dict[sop] = tag
-            self.parent.dcm_table['Change LL_tag'].iloc[row] = tag
+            rows = [r.row() for r in self.parent.tableView.selectionModel().selectedRows()]
+            for row in rows:
+                sop = self.parent.dcm_table['SOP Instance UID'].iloc[row]
+                suffix = self.optional_suffix.text()
+                tag = 'Lazy Luna: ' + name + suffix
+                self.parent.overriding_dict[sop] = tag
+                self.parent.dcm_table['Change LL_tag'].iloc[row] = tag
             t  = Table(); t.df = self.parent.dcm_table
             self.parent.tableView.setModel(t.to_pyqt5_table_model())
             self.close()
@@ -189,10 +190,11 @@ class ManualInterventionPopup(QWidget):
     def remove_LL_tags(self):
         try:
             tag = 'Lazy Luna: None'
-            row = self.parent.tableView.selectionModel().selectedIndexes()[0].row()
-            sop = self.parent.dcm_table['SOP Instance UID'].iloc[row]
-            self.parent.overriding_dict[sop] = tag
-            self.parent.dcm_table['Change LL_tag'].iloc[row] = tag
+            rows = [r.row() for r in self.parent.tableView.selectionModel().selectedRows()]
+            for row in rows:
+                sop = self.parent.dcm_table['SOP Instance UID'].iloc[row]
+                self.parent.overriding_dict[sop] = tag
+                self.parent.dcm_table['Change LL_tag'].iloc[row] = tag
             t  = Table(); t.df = self.parent.dcm_table
             self.parent.tableView.setModel(t.to_pyqt5_table_model())
             self.close()

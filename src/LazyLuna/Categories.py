@@ -31,7 +31,7 @@ class SAX_slice_phase_Category:
                     if debug: print('calculating sop2sorting takes: ', time()-st)
                     return c.sop2depthandtime
         # returns dict sop --> (depth, time)
-        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()} # stop_before_pixels=TRUE?
+        imgs = {k:pydicom.dcmread(sop2filepath[k], stop_before_pixels=True) for k in sop2filepath.keys()} # stop_before_pixels=TRUE?
         
         sortable = [[k,v.SliceLocation,v.InstanceNumber] for k,v in imgs.items()]
         #sortable = [[k,float(v.SliceLocation),float(v.AcquisitionNumber)] for k,v in imgs.items()]
@@ -203,7 +203,7 @@ class LAX_Category:
         
     def get_sop2depthandtime(self, sop2filepath, debug=False):
         if debug: st = time()
-        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
+        imgs = {k:pydicom.dcmread(sop2filepath[k], stop_before_pixels=True) for k in sop2filepath.keys()}
         imgs = {k:dcm for k,dcm in imgs.items() if self.relevant_images(dcm)}
         sop2depthandtime = {}
         for dcm_sop, dcm in imgs.items():
@@ -465,7 +465,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
     def get_sop2depthandtime(self, sop2filepath, debug=False):
         if debug: st = time()
         # returns dict sop --> (depth, time)
-        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
+        imgs = {k:pydicom.dcmread(sop2filepath[k], stop_before_pixels=True) for k in sop2filepath.keys()}
         sortable_slice_location = [float(v.SliceLocation) for sopinstanceuid, v in imgs.items()]
         sl_len = len(set([elem for elem in sortable_slice_location]))
         sorted_slice_location = np.array(sorted(sortable_slice_location))
@@ -697,7 +697,7 @@ class SAX_LGE_Category(SAX_slice_phase_Category):
     def get_sop2depthandtime(self, sop2filepath, debug=False):
         if debug: st = time()
         # returns dict sop --> (depth, time)
-        imgs = {k:pydicom.dcmread(sop2filepath[k]) for k in sop2filepath.keys()}
+        imgs = {k:pydicom.dcmread(sop2filepath[k], stop_before_pixels=True) for k in sop2filepath.keys()}
         sortable_slice_location = [float(v.SliceLocation) for sopinstanceuid, v in imgs.items()]
         sl_len = len(set([elem for elem in sortable_slice_location]))
         sorted_slice_location = np.array(sorted(sortable_slice_location))
