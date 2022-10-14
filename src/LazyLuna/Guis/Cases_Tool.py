@@ -15,8 +15,9 @@ from PyQt5.QtWidgets import QMainWindow, QWidget, QTabWidget, QVBoxLayout, QAppl
 from PyQt5.QtGui import QIcon, QColor, QPalette
 from PyQt5.QtCore import Qt, QSize
 
-from LazyLuna.Guis.KreiseZiehen42.centralintroductory_tab import CentralIntroductory_TabWidget
-from LazyLuna.Guis.KreiseZiehen42.Datenbank_Tab import LL_Database_TabWidget
+from LazyLuna.Guis.CasesTool_Tabs.centralintroductory_tab import CentralIntroductory_TabWidget
+from LazyLuna.Guis.CasesTool_Tabs.Datenbank_Tab import LL_Database_TabWidget
+from LazyLuna.Guis.CasesTool_Tabs.CasesOverview_Tab import CasesOverview_TabWidget
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -63,6 +64,10 @@ class MainWindow(QMainWindow):
     def open_cases_tab(self, s):
         self.tab = LL_Database_TabWidget(self)
         self.setCentralWidget(self.tab)
+        
+    def add_cases_overview_tab(self, cases, case_paths):
+        t = CasesOverview_TabWidget(self, cases, case_paths)
+        self.tab.tabs.addTab(t, 'Overview of Selected Cases')
         
         
         

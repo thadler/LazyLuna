@@ -100,7 +100,6 @@ class DcmLabeling_1_TabWidget(QWidget):
         b4.setDefaultAction(store_action)
         self.toolbar.addWidget(b4)
         
-        
         self.tab1.layout.addWidget(QHLine(), 1, 0, 1, 10)
         self.dicom_folder_label  = QLabel('Dicom  Folder: ')
         self.dicom_folder_text   = QLabel('')
@@ -230,8 +229,7 @@ class DcmLabeling_1_TabWidget(QWidget):
                     if sd.startswith('T2') and 'MOCO_T2' in sd:
                         table.at[row,'Change LL_tag'] = 'Lazy Luna: SAX T2'
                     if not self.by_seriesUID:
-                        # check number of annotations # check orientation != 2 (removes axial images)
-                        # check larger > 7*25
+                        # check number of annotations # check orientation != 2 (removes axial images) # check larger > 7*25
                         try:
                             if int(table.at[row,'nr_annos'])==0:   continue
                             if int(table.at[row,'nr_imgs' ])<7*25: continue
@@ -324,22 +322,6 @@ class DcmLabeling_1_TabWidget(QWidget):
         retval = msg.exec_()
         return False
     
-    def color_rows(self):
-        df = self.information_df #  .at[row,'nr_annos']
-        if 'nr_annos' not in df:
-            print('nr_annos not in df')
-            return
-        rows = []
-        print('SHAPE: ', df.shape[0])
-        for row in range(df.shape[0]):
-            if int(df.iloc[[row]]['nr_annos'])>0:
-                rows.append(row)
-        print(rows)
-        # color all rows with annotations
-        for row in rows:
-            for j in range(df.shape[1]):
-                self.tableView.item(row, j).setBackground(QColor('green'))
-
         
 class ManualInterventionPopup(QWidget):
     def __init__(self, parent):
