@@ -6,12 +6,15 @@ import os
 from pathlib import Path
 import sys
 import copy
+import inspect
+import traceback
 
 import pandas
 import numpy as np
 
 from LazyLuna.loading_functions import get_case_info
 from LazyLuna.Tables import Table
+from LazyLuna import Views
 
         
 class CasesOverview_TabWidget(QWidget):
@@ -46,7 +49,7 @@ class CasesOverview_TabWidget(QWidget):
         fontsize = 13
         
         self.view_combo=QComboBox()
-        self.view_combo.insertItems(1, ["Select View"])
+        self.view_combo.insertItems(1, ["Select View"]+self.get_view_names())
         self.view_combo.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding);
         self.toolbar.addWidget(self.view_combo)
         self.view_combo.activated.connect(self.select_view)
@@ -92,26 +95,50 @@ class CasesOverview_TabWidget(QWidget):
         
         
         
+    def get_view(self, vname):
+        view = [c[1] for c in inspect.getmembers(Views, inspect.isclass) if issubclass(c[1], Views.View) if c[0]==vname][0]
+        return view()
+        
     def select_view(self):
-        pass
+        try:
+            view_name = self.view_combo.currentText()
+            v = self.get_view(view_name)
+            self.selected_view_text.setText(view_name)
+            new_cases = [copy.deepcopy(c) for c in self.all_cases]
+            self.cases = []
+            for c in new_cases:
+                try: self.cases.append(v.customize_case(c))
+                except Exception as e: print('Failed customize at: ', c.case_name)
+            self.calculate_table()
+            
+        except Exception as e:
+            print(traceback.format_exc())
         
     def stats_tab_selection(self):
-        pass
+        # currently simply add the clinical results tab # later add a user intervention with Tab selection
+        try:
+            view_name = self.view_combo.currentText()
+            print(view_name)
+            view = self.get_view(view_name)
+            self.parent.add_clinical_results_tab(view, view_name, self.cases, self.case_paths)
+        except Exception as e: print(traceback.format_exc())
+        
+        
     
     def singletab_selection(self):
         pass
     
-    def make_cine_view(self):
-        pass
     
     def calculate_table(self):
-        rows = []
-        for c, cp in zip(self.cases, self.case_paths):
-            cols, row = get_case_info(c,cp)
-            rows.append(row)
-        t  = Table()
-        t.df = pandas.DataFrame(rows, columns=cols)
-        self.tableView.setModel(t.to_pyqt5_table_model())
+        try:
+            rows = []
+            for c, cp in zip(self.cases, self.case_paths):
+                cols, row = get_case_info(c,cp)
+                rows.append(row)
+            t  = Table()
+            t.df = pandas.DataFrame(rows, columns=cols)
+            self.tableView.setModel(t.to_pyqt5_table_model())
+        except Exception as e: print(traceback.format_exc())
     
     def calculate_table_overview(self):
         rows = []
@@ -131,6 +158,10 @@ class CasesOverview_TabWidget(QWidget):
                  np.around(np.nanmean([r[2] for r in rows]), 2), np.around(np.nanmean([r[3] for r in rows]), 2)]]
         t  = Table(); t.df = pandas.DataFrame(avgs, columns=cols[2:-3])
         self.tableView_overview.setModel(t.to_pyqt5_table_model())
+        
+    def get_view_names(self):
+        v_names = [c[0] for c in inspect.getmembers(Views, inspect.isclass) if issubclass(c[1], Views.View) if c[0]!='View']
+        return v_names
     
 
 class QHLine(QFrame):

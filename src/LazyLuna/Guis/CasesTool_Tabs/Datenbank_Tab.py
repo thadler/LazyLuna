@@ -68,7 +68,6 @@ class LL_Database_TabWidget(QWidget):
         self.tab1.layout.addWidget(QHLine(), 3, 0, 1, 3)
         
         
-        
         self.tableview_tabs = QTabWidget()
         self.tableview_tabs.setStatusTip("Table of cases belonging to tabs. Here the assortments of cases to tabs can be viewed.")
         self.tableview_tabs.currentChanged.connect(self.set_tabname)
