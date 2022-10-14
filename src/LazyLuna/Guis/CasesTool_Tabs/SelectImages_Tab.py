@@ -49,8 +49,12 @@ class SelectImages_TabWidget(QWidget):
         load_action.setStatusTip("Load Table.")
         load_action.triggered.connect(self.load_table)
         
+        open_segmenter_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','blue-folder-open-table.png')), "&Open Segmentation Tab", self)
+        open_segmenter_action.setStatusTip("Open Segmentation Tab.")
+        open_segmenter_action.triggered.connect(self.open_segmenting_tab)
         
-        # First Toolbar for Loading the Table
+        
+        # Toolbar for Loading the Table
         self.toolbar = QToolBar("My main toolbar")
         self.toolbar.setIconSize(QSize(28, 28))
         self.tab1.layout.addWidget(self.toolbar, 0,0, 1,5)
@@ -63,6 +67,19 @@ class SelectImages_TabWidget(QWidget):
         b3.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b3.setFont(QFont('', fontsize))
         b3.setDefaultAction(load_action)
         self.toolbar.addWidget(b3)
+        b4 = QToolButton(); b4.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        b4.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b4.setFont(QFont('', fontsize))
+        b4.setDefaultAction(open_segmenter_action)
+        self.toolbar.addWidget(b4)
+        
+        
+        # Selected Case?
+        self.tab1.layout.addWidget(QHLine(), 1, 0, 1, 10)
+        self.dicom_folder_label  = QLabel('Dicom  Folder: ')
+        self.dicom_folder_text   = QLabel('')
+        self.tab1.layout.addWidget(self.dicom_folder_label,  2, 0, 1,1)
+        self.tab1.layout.addWidget(self.dicom_folder_text,   2, 1, 1,1)
+        self.tab1.layout.addWidget(QHLine(), 3, 0, 1, 10)
         
         
         # Table View on the Left
@@ -81,6 +98,13 @@ class SelectImages_TabWidget(QWidget):
         self.layout.addWidget(self.tabs)
         
         
+        
+    def open_segmenting_tab(self):
+        dcms = self.get_dcms()
+        print(self.dicom_folder_path, dcms)
+        self.parent.add_segmentation_tab(self.dicom_folder_path, dcms)
+        pass
+        
     def select_dcm_folder(self):
         try:
             dialog = QFileDialog(self, '')
@@ -96,14 +120,7 @@ class SelectImages_TabWidget(QWidget):
             if not self.is_dicom_folder_path_set(): return
             self.imgs_df   = dicom_images_to_table(self.dicom_folder_path)
             study_uid      = get_study_uid(self.dicom_folder_path)
-            try:
-                annos_path       = os.path.join(self.reader_folder_path, study_uid)
-                annos_df         = annos_to_table(annos_path)
-            except: annos_df     = None
-            if annos_df is not None:
-                self.information_df = present_nrimages_nr_annos_table(self.imgs_df, annos_df, by_series=self.by_seriesUID)
-            else:
-                self.information_df = present_nrimages_table(self.imgs_df, by_series=self.by_seriesUID)
+            self.information_df = present_nrimages_table(self.imgs_df, by_series=self.by_seriesUID)
             t  = Table()
             t.df = self.information_df
             self.tableView.setModel(t.to_pyqt5_table_model())
@@ -122,19 +139,6 @@ class SelectImages_TabWidget(QWidget):
         image_paths = self.imgs_df[self.imgs_df[key].isin(values)]['dcm_path'].values
         #print('image_paths: '); print(image_paths)
         dcms = [pydicom.dcmread(p) for p in image_paths]
-        # attempt at sorting
-        try:
-            sortable = sorted([[dcm, dcm.SliceLocation] for dcm in dcms], key=lambda x: x[1])
-            dcms = [a[0] for a in sortable]
-        except: pass
-        try:
-            sortable = sorted([[dcm, dcm.InstanceNumber] for dcm in dcms], key=lambda x: x[1])
-            dcms = [a[0] for a in sortable]
-        except: pass
-        try:
-            sortable = sorted([[dcm, dcm.SliceLocation, dcm.InstanceNumber] for dcm in dcms], key=lambda x: (x[1],x[2]))
-            dcms = [a[0] for a in sortable]
-        except: pass
         return dcms
     
     def is_dicom_folder_path_set(self):
@@ -155,4 +159,11 @@ class SelectImages_TabWidget(QWidget):
         retval = msg.exec_()
         return False
     
+        
+
+class QHLine(QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
         

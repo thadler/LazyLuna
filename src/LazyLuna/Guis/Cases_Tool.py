@@ -13,6 +13,7 @@ from LazyLuna.Guis.CasesTool_Tabs.CasesOverview_Tab import CasesOverview_TabWidg
 from LazyLuna.Guis.CasesTool_Tabs.ClinicalResultsTable_Tab import ClinicalResultsTable_TabWidget
 from LazyLuna.Guis.CasesTool_Tabs.SingleCase_Tab import SingleCase_TabWidget
 from LazyLuna.Guis.CasesTool_Tabs.SelectImages_Tab import SelectImages_TabWidget
+from LazyLuna.Guis.CasesTool_Tabs.Segmentation_Tab import Segmentation_TabWidget
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -80,6 +81,10 @@ class MainWindow(QMainWindow):
     def open_segmentation_tab(self, s):
         self.tab = SelectImages_TabWidget(self)
         self.setCentralWidget(self.tab)
+        
+    def add_segmentation_tab(self, dicom_folder_path, dcms):
+        t = Segmentation_TabWidget(self, dicom_folder_path, dcms)
+        self.tab.tabs.addTab(t, 'Segmentation Tab')
         
         
 def main():
