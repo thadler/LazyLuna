@@ -30,18 +30,19 @@ class Segmentation_TabWidget(QWidget):
         # Setting some variables
         self.dicomfolder_path = dicomfolder_path
         self.dcms = dcms
+        self.current_cont_type = 'other'
         
         
-        rv_endo_action = QAction(QIcon('eye.png'), "&Set RV", self)
+        rv_endo_action = QAction(QIcon('eye.png'), "&Set RV ENDO", self)
         rv_endo_action.setStatusTip("RV Contours")
         rv_endo_action.triggered.connect(self.set_rv_endo)
         
-        lv_endo_action = QAction(QIcon('eye.png'), "&Set LV", self)
-        lv_endo_action.setStatusTip("LV Contours")
+        lv_endo_action = QAction(QIcon('eye.png'), "&Set LV ENDO", self)
+        lv_endo_action.setStatusTip("LV Endo Contours")
         lv_endo_action.triggered.connect(self.set_lv_endo)
         
-        lv_epi_action = QAction(QIcon('eye.png'), "&Set MYO", self)
-        lv_epi_action.setStatusTip("MYO Contours")
+        lv_epi_action = QAction(QIcon('eye.png'), "&Set LV EPI", self)
+        lv_epi_action.setStatusTip("LV Epi Contours")
         lv_epi_action.triggered.connect(self.set_lv_epi)
         
         ##############
@@ -73,17 +74,42 @@ class Segmentation_TabWidget(QWidget):
         
         
         self.image_viewer = CustomPlotWidget()
-        #self.image_viewer.invertY(True)   # vertical axis counts top to bottom
-        #self.image_viewer.showGrid(x=True, y=True)
-        self.image_viewer.setAspectLocked()
-        self.image_viewer.getPlotItem().hideAxis('bottom')
-        self.image_viewer.getPlotItem().hideAxis('left')
-        #cat = case.categories[0]
-        self.layout.addWidget(self.image_viewer,  4, 0, 10, 5)
         
         org = Organizer(dcms)
         imgs = [[org.get_img(d,p) for p in range(org.nr_phases)] for d in range(org.nr_slices)]
         self.image_viewer.set_images(imgs)
+        
+        self.image_viewer.setAspectLocked()
+        self.image_viewer.getPlotItem().hideAxis('bottom')
+        self.image_viewer.getPlotItem().hideAxis('left')
+        self.image_viewer.invertY(True)   # vertical axis counts top to bottom
+        self.label = pg.TextItem(text="X: {} \nY: {}".format(0, 0))
+        self.image_viewer.addItem(self.label)
+        self.image_viewer.scene().sigMouseMoved.connect(self.mouse_moved)
+        self.image_viewer.scene().sigMouseClicked.connect(self.mouse_clicked)
+        self.image_viewer.scene().sigMouseClicked.connect(self.mouse_clicked)
+        self.layout.addWidget(self.image_viewer,  4, 0, 10, 5)
+        
+        
+        
+    def mouse_moved(self, evt):
+        vb = self.image_viewer.plotItem.vb
+        if self.image_viewer.sceneBoundingRect().contains(evt):
+            mouse_point = vb.mapSceneToView(evt)
+            self.label.setHtml(f"<p style='color:white'>X： {mouse_point.x()} <br> Y: {mouse_point.y()}</p>")
+
+    def mouse_clicked(self, evt):
+        vb = self.image_viewer.plotItem.vb
+        scene_coords = evt.scenePos()
+        if self.image_viewer.sceneBoundingRect().contains(scene_coords):
+            mouse_point = vb.mapSceneToView(scene_coords)
+            self.image_viewer.curr_cont.append([mouse_point.x(),mouse_point.y()])
+            self.image_viewer.plot_all(self.current_cont_type)
+        if evt.double():
+            self.image_viewer.curr_cont.append(self.image_viewer.curr_cont[0])
+            self.image_viewer.anno[self.current_cont_type].append(self.image_viewer.curr_cont)
+            self.image_viewer.plot_all(self.current_cont_type)
+            self.image_viewer.curr_cont = []
         
         
     def calculate_table(self):
@@ -95,20 +121,9 @@ class Segmentation_TabWidget(QWidget):
         self.tableView.setModel(self.t.to_pyqt5_table_model())
         
         
-    def set_rv_endo(self):
-        self.current_cont_type = 'rv_endo'
-        print(self.current_cont_type)
-        return
-    
-    def set_lv_endo(self):
-        self.current_cont_type = 'lv_endo'
-        print(self.current_cont_type)
-        return
-    
-    def set_lv_epi(self):
-        self.current_cont_type = 'lv_epi'
-        print(self.current_cont_type)
-        return
+    def set_rv_endo(self): self.current_cont_type = 'rv_endo'
+    def set_lv_endo(self): self.current_cont_type = 'lv_endo'
+    def set_lv_epi(self):  self.current_cont_type = 'lv_epi'
     
 
 class QHLine(QFrame):
@@ -127,6 +142,8 @@ class CustomPlotWidget(pg.PlotWidget):
         self.images = imgs
         self.d, self.p = 0, 0
         self.nr_slices, self.nr_phases = len(imgs), len(imgs[0])
+        self.annotations = [[None for i in range(self.nr_phases)] for j in range(self.nr_slices)]
+        self.set_annotation()
         self.show()
         
     def keyPressEvent(self, event):
@@ -136,14 +153,39 @@ class CustomPlotWidget(pg.PlotWidget):
         if event == right: self.p = (self.p+1)%self.nr_phases
         if event == up:    self.d = (self.d-1)%self.nr_slices
         if event == down:  self.d = (self.d+1)%self.nr_slices
+        self.curr_cont = []
+        self.set_annotation()
         self.show()
+        self.plot_all('other')
         
     def show(self):
-        self.clear()  # add ImageItem to PlotItem
+        self.clear()
         img = self.images[self.d][self.p]
         img = pg.ImageItem(img, levels=(np.min(img),np.max(img)))
-        self.addItem(img)  # add ImageItem to PlotItem
+        self.addItem(img) 
         
+    def set_annotation(self):
+        d, p = self.d, self.p
+        self.anno = self.annotations[d][p]
+        self.curr_cont = []
+        if self.anno is None:
+            self.annotations[d][p] = {'rv_endo': [],'lv_endo': [],'lv_epi': [], 'other':[]}
+            self.anno = self.annotations[d][p]
+            
+    def plot_all(self, conttype):
+        for k in self.anno.keys():
+            c = 'r' if k=='rv_endo' else 'y' if k=='lv_endo' else 'g' if k=='lv_epi' else 'w'
+            pen = pg.mkPen(c, width=3, style=Qt.DashLine)
+            for cont in self.anno[k]:
+                xs = [c[0] for c in cont]; ys = [c[1] for c in cont]
+                self.plot(xs, ys, symbol='o', pen=pen)
+        k = conttype
+        c = 'r' if k=='rv_endo' else 'y' if k=='lv_endo' else 'g' if k=='lv_epi' else 'w'
+        pen = pg.mkPen(c, width=3, style=Qt.DashLine)
+        xs = [c[0] for c in self.curr_cont]; ys = [c[1] for c in self.curr_cont]
+        self.plot(xs, ys, symbol='o', pen=pen)
+    
+            
         
 class Organizer:
     def __init__(self, dcms):
@@ -193,8 +235,7 @@ class Organizer:
     def identify_missing_slices(self):
         self.missing_slices = []
         for d in range(self.nr_slices-1): # if only one slice range is empty
-            dcm1 = self.get_dcm(d,   0)
-            dcm2 = self.get_dcm(d+1, 0)
+            dcm1, dcm2 = self.get_dcm(d,   0), self.get_dcm(d+1, 0)
             curr_spacing = round(np.abs(dcm1.SliceLocation - dcm2.SliceLocation), 2)
             if round(curr_spacing / self.spacing_between_slices) != 1:
                 for m in range(int(round(curr_spacing / self.spacing_between_slices))-1):
@@ -208,7 +249,6 @@ class Organizer:
     def get_dcm(self, slice_nr, phase_nr):
         sop = self.depthandtime2sop[(slice_nr, phase_nr)]
         return self.imgs[sop]
-        #return self.case.load_dcm(sop)
 
     def get_img(self, slice_nr, phase_nr, value_normalize=True, window_normalize=True):
         sop = self.depthandtime2sop[(slice_nr, phase_nr)]
