@@ -5,10 +5,10 @@ Lazy Luna is software for CMR analysis, which provides a backend for coders and 
 Lazy Luna offers a number of base classes for multilevel reader comparison. Multilevel refers to comparisons on the image level (such as contour comparisons), on the patient level (such as differences between assessed clinical parameters) and the reader level (pertaining to statistical trends of reader differences).
 
 #### Requirements
-Markup : * Bullet list
-              * Nested bullet
-                  * Sub-nested bullet etc
-          * Bullet list item 2
+* Bullet list
+    * Nested bullet
+        * Sub-nested bullet etc
+        * Bullet list item 2
 
 
 #### Class Structure
