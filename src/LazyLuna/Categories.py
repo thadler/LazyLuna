@@ -738,7 +738,7 @@ class SAX_LGE_Category(SAX_slice_phase_Category):
             try: self.slice_thickness = dcm1.SliceThickness
             except Exception as e: print('Exception in SAX_LGE_Category, ', e)
         self.spacing_between_slices = min(spacingbs)
-        print('Spacings: ', spacingbs)
+        if debug: print('Spacings: ', spacingbs)
         self.missing_slices = []
         for d in range(nr_slices-1):
             dcm1 = self.case.load_dcm(self.depthandtime2sop[(d,   0)])
