@@ -2,11 +2,11 @@
 Lazy Luna is software for Cardiovascular Magnetic Resonance Imaging (CMR) analysis, which provides a backend for coders and a GUI tool for multilevel reader comparison.
 
 #### Table of Contents  
-[Description](#Description)  
-[Requirements](#Requirements)  
-[Project Overview](#Project-Overview)  
-[First Use](#First-Use)  
-[License](#License)
+* [Description](#Description)  
+* [Requirements](#Requirements)  
+* [Project Overview](#Project-Overview)  
+* [First Use](#First-Use)  
+* [License](#License)
 
 
 ## Description
