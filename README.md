@@ -12,7 +12,7 @@ Sequence or use-case specific classes can be inherited from these base classes i
 #### Graphical User Interface
 Lazy Luna offers a GUI for reader and case comparison. This allows for loading selected cases from two readers, assessing their differences statistically and tracing them to contour origins.
 
-<p align="center"> <img src="docs/Figure_tracing.png" width="700" title="Lazy Luna's Difference Tracing!"> </p>
+<p align="center"> <img src="docs/Figure_tracing.png" width="500" title="Lazy Luna's Difference Tracing!"> </p>
 
 
 
