@@ -34,4 +34,5 @@ Lazy Luna offers a GUI for reader and case comparison. This allows for loading s
 
 ## License and Use
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-If the code was helpful to you please cite: https://www.nature.com/articles/s41598-022-10464-w
+
+If the code was helpful to you please cite[my paper](https://www.nature.com/articles/s41598-022-10464-w).
