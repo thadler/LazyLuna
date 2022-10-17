@@ -1,16 +1,20 @@
 # LazyLuna
-Lazy Luna is software for CMR analysis, which provides a backend for coders and a GUI tool for multilevel reader comparison.
+Lazy Luna is software for Cardiovascular Magnetic Resonance Imaging (CMR) analysis, which provides a backend for coders and a GUI tool for multilevel reader comparison.
+
+
+#### Table of Contents  
+[Description](#Description)  
+[Requirements](#Requirements)  
+[Class Structure](#Class Structure)
+[GUI Tool](#Graphical User Interface)
+[License](#License)
+...snip...    
+<a name="headers"/>
+
 
 ## Description
 Lazy Luna offers a number of base classes for multilevel reader comparison. Multilevel refers to comparisons on the image level (such as contour comparisons), on the patient level (such as differences between assessed clinical parameters) and the reader level (pertaining to statistical trends of reader differences).
 
-#### Table of Contents  
-[Blabla](#Description)  
-[Headers](#headers)  
-[Emphasis](#emphasis)  
-...snip...    
-<a name="headers"/>
-## Headers
 
 #### Requirements
 A specific environment for Lazy Luna is recommended. The environment should operate on Python 3.8 or higher with the following libraries installed:
