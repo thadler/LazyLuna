@@ -12,7 +12,7 @@ A specific environment for Lazy Luna is recommended. The environment should oper
 * Rasterio 1.2.10 
 * Pandas 1.2.4
 
-The Graphical user interface operates on PyQt5 or higher
+The Graphical user interface requires:
 * PyQt5 12.11.0
 * Matplotlib 3.3.4
 * Seaborn 0.11.1
@@ -33,4 +33,5 @@ Lazy Luna offers a GUI for reader and case comparison. This allows for loading s
 
 
 ## License and Use
-MIT and please cite: https://www.nature.com/articles/s41598-022-10464-w
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+If the code was helpful to you please cite: https://www.nature.com/articles/s41598-022-10464-w
