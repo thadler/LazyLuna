@@ -45,8 +45,10 @@ As described in the paper, a first user experience with Lazy Luna can be realize
 
 
 1. Install an environment for Lazy Luna
-..1. Install Lazy Luna
-..2. Install LL's requirements
+
+⋅⋅1. Install Lazy Luna
+
+⋅⋅2. Install LL's requirements
 2. Download the EMIDEC Dataset from [here](http://emidec.com/dataset)
 ⋅⋅1. Unzip the dataset into a folder as in figure below
 2. The annotations for the undertrained neural network are automatically downloaded with Lazy Luna's code in the subfolder /docs. 
