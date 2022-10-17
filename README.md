@@ -29,6 +29,9 @@ The Graphical user interface requires:
 * Matplotlib 3.3.4
 * Seaborn 0.11.1
 
+
+## Project Overview
+
 #### Class Structure
 Sequence or use-case specific classes can be inherited from these base classes in order to address specific or novel uses. The classes interact with each other in order to allow for these multilevel comparisons as described in the class diagram below. A detailed explanation can be found here: https://www.nature.com/articles/s41598-022-10464-w
 
