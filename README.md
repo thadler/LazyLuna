@@ -4,6 +4,13 @@ Lazy Luna is software for CMR analysis, which provides a backend for coders and 
 ## Description
 Lazy Luna offers a number of base classes for multilevel reader comparison. Multilevel refers to comparisons on the image level (such as contour comparisons), on the patient level (such as differences between assessed clinical parameters) and the reader level (pertaining to statistical trends of reader differences).
 
+#### Table of Contents  
+[Headers](#headers)  
+[Emphasis](#emphasis)  
+...snip...    
+<a name="headers"/>
+## Headers
+
 #### Requirements
 A specific environment for Lazy Luna is recommended. The environment should operate on Python 3.8 or higher with the following libraries installed:
 * Pydicom 2.2.0 or higher
@@ -35,4 +42,4 @@ Lazy Luna offers a GUI for reader and case comparison. This allows for loading s
 ## License and Use
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-If the code was helpful to you please cite[my paper](https://www.nature.com/articles/s41598-022-10464-w).
+If the code was helpful to you please cite [my paper](https://www.nature.com/articles/s41598-022-10464-w).
