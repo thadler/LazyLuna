@@ -11,6 +11,7 @@ A specific environment for Lazy Luna is recommended. The environment should oper
 * Shapely 1.8.0 or higher
 * Rasterio 1.2.10 
 * Pandas 1.2.4
+
 The Graphical user interface operates on PyQt5 or higher
 * PyQt5 12.11.0
 * Matplotlib 3.3.4
