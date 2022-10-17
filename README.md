@@ -44,26 +44,11 @@ Lazy Luna offers a GUI for reader and case comparison. This allows for loading s
 As described in the paper, a first user experience with Lazy Luna can be realized by comparing a neural network's segmentations of the EMIDEC image dataset to EMIDEC's gold standard contours. 
 
 
-1. First ordered list item
-2. Another item
-⋅⋅* Unordered sub-list. 
-1. Actual numbers don't matter, just that it's a number
-⋅⋅1. Ordered sub-list
-4. And another item.
 
-⋅⋅⋅You can have properly indented paragraphs within list items. Notice the blank line above, and the leading spaces (at least one, but we'll use three here to also align the raw Markdown).
-
-⋅⋅⋅To have a line break without a paragraph, you will need to use two trailing spaces.⋅⋅
-⋅⋅⋅Note that this line is separate, but within the same paragraph.⋅⋅
-⋅⋅⋅(This is contrary to the typical GFM line break behaviour, where trailing spaces are not required.)
-
-* Unordered list can use asterisks
-- Or minuses
-+ Or pluses
 
 1. Install an environment for Lazy Luna
-⋅⋅1. Install Lazy Luna
-⋅⋅2. Install LL's requirements
+    1. Install Lazy Luna
+    2. Install LL's requirements
 2. Download the EMIDEC Dataset from [here](http://emidec.com/dataset)
 ⋅⋅1. Unzip the dataset into a folder as in figure below
 2. The annotations for the undertrained neural network are automatically downloaded with Lazy Luna's code in the subfolder /docs. 
