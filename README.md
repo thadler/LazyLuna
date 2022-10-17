@@ -54,7 +54,6 @@ As described in the paper, a first user experience with Lazy Luna can be realize
     1. This converts EMIDEC's Nifti images into DICOM format and the gold standard contours into Lazy Luna Annotation format
 4. Open the Analyzer Tool
 
-EMIDEC image files are in nifti format and can be converted to the Dicom format by running the EMIDEC Notebook in notebooks. After the conversion: open 
 
 
 ## License
