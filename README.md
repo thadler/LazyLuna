@@ -46,13 +46,13 @@ As described in the paper, a first user experience with Lazy Luna can be realize
 1. Install an environment for Lazy Luna
     1. Install Lazy Luna
     2. Install LL's requirements
-2. Download the EMIDEC - training - Dataset from [here](http://emidec.com/dataset)
+2. Download the EMIDEC training Dataset from [here](http://emidec.com/dataset)
     1. Unzip the dataset into a folder as in figure below
-3. Prepare Dataset
-    1. Zipped annotations for the UNet are automatically downloaded with Lazy Luna's code in the subfolder /docs. 
+3. Prepare Lazy Luna Data Folder
+    1. Zipped annotations for the UNet are automatically downloaded with Lazy Luna's code in the /docs. 
         1. Copy case_slice_to_sops.json in /docs to the directory as in figure below
         2. Unzip the Emidec_AI folder in /docs into the directory as in figure below
-3. Run the Emidec_Converter Notebook in the subfolder /Notebooks
+3. Run the Emidec_Converter jupyter Notebook in /Notebooks
     1. This converts EMIDEC's Nifti images into DICOM format and the gold standard and AI contours into Lazy Luna Annotation format
 4. Open the Analyzer Tool
 
