@@ -8,3 +8,6 @@ Sequence or use-case specific classes can be inherited from these base classes i
 
 ![Screenshot](docs/Figure_classdiagram.png)
 
+<p align="center">
+  <img src="docs/Figure_classdiagram.png" width="350" title="Hi there!">
+</p>
