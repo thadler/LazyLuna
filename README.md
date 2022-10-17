@@ -43,17 +43,16 @@ Lazy Luna offers a GUI for reader and case comparison. This allows for loading s
 
 As described in the paper, a first user experience with Lazy Luna can be realized by comparing a neural network's segmentations of the EMIDEC image dataset to EMIDEC's gold standard contours. 
 
-
-
-
 1. Install an environment for Lazy Luna
     1. Install Lazy Luna
     2. Install LL's requirements
 2. Download the EMIDEC Dataset from [here](http://emidec.com/dataset)
-⋅⋅1. Unzip the dataset into a folder as in figure below
-2. The annotations for the undertrained neural network are automatically downloaded with Lazy Luna's code in the subfolder /docs. 
-⋅⋅1. Unzip them into the directory as below
-
+    1. Unzip the dataset into a folder as in figure below
+    2. Zipped annotations for the undertrained UNet are automatically downloaded with Lazy Luna's code in the subfolder /docs. 
+    3. Unzip them into the directory as in figure below
+3. Run the EMIDEC Notebook in the subfolder /Notebooks
+    1. This converts EMIDEC's Nifti images into DICOM format and the gold standard contours into Lazy Luna Annotation format
+4. Open the Analyzer Tool
 
 EMIDEC image files are in nifti format and can be converted to the Dicom format by running the EMIDEC Notebook in notebooks. After the conversion: open 
 
