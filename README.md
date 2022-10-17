@@ -49,11 +49,13 @@ As described in the paper, a first user experience with Lazy Luna can be realize
 2. Download the EMIDEC - training - Dataset from [here](http://emidec.com/dataset)
     1. Unzip the dataset into a folder as in figure below
     2. Zipped annotations for the undertrained UNet are automatically downloaded with Lazy Luna's code in the subfolder /docs. 
-    3. Unzip them into the directory as in figure below
-3. Run the EMIDEC Notebook in the subfolder /Notebooks
-    1. This converts EMIDEC's Nifti images into DICOM format and the gold standard contours into Lazy Luna Annotation format
+    3. Copy case_slice_to_sops.json in /docs to the directory as in figure below
+    4. Unzip the Emidec_AI folder in /docs into the directory as in figure below
+3. Run the Emidec_Converter Notebook in the subfolder /Notebooks
+    1. This converts EMIDEC's Nifti images into DICOM format and the gold standard and AI contours into Lazy Luna Annotation format
 4. Open the Analyzer Tool
 
+<p align="center"> <img src="docs/DirectoryStructureForEmidec.png" width="500" title="Lazy Luna's Difference Tracing!"> </p>
 
 
 ## License
