@@ -59,8 +59,6 @@ class SAX_CINE_View(View):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CINE']
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -79,8 +77,6 @@ class SAX_CINE_View(View):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CINE']
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
@@ -157,8 +153,6 @@ class SAX_CS_View(SAX_CINE_View):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CS']
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -176,8 +170,6 @@ class SAX_CS_View(SAX_CINE_View):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CS']
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if 'SAX CS' in case.other_categories.keys(): case.categories = case.other_categories['SAX CS']
@@ -255,8 +247,6 @@ class LAX_CINE_View(View):
             print(k, len(case.all_imgs_sop2filepath[k]))
         case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX CINE 2CV'],
                                   **case.all_imgs_sop2filepath['LAX CINE 4CV']}
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -285,8 +275,6 @@ class LAX_CINE_View(View):
         # switch images
         case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX CINE 2CV'], 
                                   **case.all_imgs_sop2filepath['LAX CINE 4CV']}
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
@@ -436,8 +424,6 @@ class SAX_T1_PRE_View(View):
         # switch images
         print('WHATS THERE???: ', case.all_imgs_sop2filepath.keys())
         case.imgs_sop2filepath = case.all_imgs_sop2filepath[self.ll_tag]
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -458,8 +444,6 @@ class SAX_T1_PRE_View(View):
             st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath[self.ll_tag]
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
@@ -537,8 +521,6 @@ class SAX_T2_View(View):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T2']
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -557,8 +539,6 @@ class SAX_T2_View(View):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX T2']
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):
@@ -632,9 +612,6 @@ class SAX_LGE_View(View):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX LGE']
-        # attach annotation type
-        #case.attach_annotation_type(SAX_LGE_Annotation)
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'other_categories'): case.other_categories = dict()
@@ -660,8 +637,6 @@ class SAX_LGE_View(View):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX LGE']
-        # attach annotation type
-        case.attach_annotation_type(Annotation)
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use
         if not hasattr(case, 'categories'):

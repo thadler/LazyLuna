@@ -237,7 +237,8 @@ class LAX_Category:
             return self.case.load_anno(sop)
         except Exception as e:
             print(traceback.format_exc())
-            return Annotation(None)
+            sop = None
+        return self.case.load_anno(sop)
 
     def get_img(self, slice_nr, phase_nr, value_normalize=True, window_normalize=True):
         try:
