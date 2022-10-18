@@ -1,7 +1,6 @@
 from time import time
 
 import numpy as np
-from skimage.transform import resize
 from scipy.ndimage import morphology
 from shapely.geometry import Polygon, MultiPolygon, LineString, GeometryCollection, Point, MultiPoint, shape
 from skimage.measure import find_contours
@@ -10,17 +9,6 @@ from rasterio import features
 from PIL import Image, ImageDraw
 from descartes import PolygonPatch
 import matplotlib.pyplot as plt
-
-
-
-def get_polygons_from_geometry(geo):
-    if isinstance(geo, list):       geo = MultiPolygon(geo)
-    if geo.is_empty or geo.area==0: geo = MultiPolygon([])
-    if isinstance(geo, Polygon):    geo = MultiPolygon([geo])
-    return list(geo)
-
-def bounding_box(geo):
-    return geo.bounds
 
 
 ##################
@@ -36,8 +24,8 @@ def to_mask(polygons, height, width):
     https://rasterio.readthedocs.io/en/latest/api/rasterio.features.html#rasterio.features.rasterize
     """
     if not isinstance(polygons, list):
-        if isinstance(polygons, Polygon) or isinstance(polygons, MultiPolygon):polygons = [polygons]
-        else: raise Exception('CATCH.to_mask accepts a List of Polygons or Multipolygons')
+        if isinstance(polygons, Polygon) or isinstance(polygons, MultiPolygon): polygons = [polygons]
+        else: raise Exception('to_mask accepts a List of Polygons or Multipolygons')
     if len(polygons) > 0:
         try: mask = features.rasterize(polygons, out_shape=(height, width), dtype=np.uint8)
         except Exception as e:
@@ -62,7 +50,6 @@ def to_polygon(mask):
             if polygon.geom_type == 'Polygon' and polygon.is_valid: polygons.append(polygon)
             else: print('Ignoring GeoJSON with cooresponding shape: ' + 
                       str(polygon.geom_type) + ' | Valid: ' + str(polygon.is_valid))
-    
     return MultiPolygon(polygons) if len(polygons)>0 else Polygon()#polygons[0]
 
 
@@ -83,15 +70,7 @@ def geometry_collection_to_Polygon(geom_collection):
 ####################
 # Metric functions #
 ####################
-def mask_dice(geo1, geo2, debug=False):
-    if debug: st = time()
-    mask1, mask2 = geo2mask(geo1, 200, 200, res=8), geo2mask(geo2, 200, 200, res=8)
-    area1, area2 = np.sum(mask1), np.sum(mask2)
-    overlap = np.sum(mask1 & mask2)
-    dice = 2*overlap / (area1 + area2)
-    if debug: print("Mask dice took: ", time()-st)
-    return dice
-    
+
 # works for Polygons, Multipolygons, GeometryCollections (containing LineStrings)
 def dice(geo1, geo2, debug=False):
     if debug: st = time()
@@ -108,23 +87,6 @@ def hausdorff(geo1, geo2):
     #if not geo1.is_empty and geo2.is_empty: return np.nan
     return geo1.hausdorff_distance(geo2)
 
-def mask_asd(geo1, geo2, voxel_sizes, connectivity=1, debug=False):
-    if debug: st = time()
-    area1, area2 = geo1.area, geo2.area
-    if area1==0==area2: return 0
-    if area1==0 or area2==0: return np.nan
-    mask1, mask2 = geo2mask(geo1, 200, 200, res=8), geo2mask(geo2, 200, 200, res=8)
-    input_1 = np.atleast_1d(mask1.astype(np.bool8))
-    input_2 = np.atleast_1d(mask2.astype(np.bool8))
-    conn = morphology.generate_binary_structure(input_1.ndim, connectivity)
-    S_1 = input_1 ^ morphology.binary_erosion(input_1, conn)
-    S_2 = input_2 ^ morphology.binary_erosion(input_2, conn)
-    dta = morphology.distance_transform_edt(~S_1, voxel_sizes)
-    dtb = morphology.distance_transform_edt(~S_2, voxel_sizes)
-    surface_distance = np.concatenate([np.ravel(dta[S_2!=0]), np.ravel(dtb[S_1!=0])])
-    asd = surface_distance.mean()
-    if debug: print('Mask ASD took: ', time()-st)
-    return asd
 
 #######################
 # geometry operations #
@@ -153,26 +115,6 @@ def get_geometry_comparison(geo1, geo2):
 #####################
 # plotting funtions #
 #####################
-def plot_mask(mask):
-    fig, ax = plt.subplots(1,1,figsize=(7,7))
-    ax.imshow(mask, interpolation='none')
-    
-def plot_masks(masks):
-    fig, axes = plt.subplots(1,len(masks),figsize=(15,15))
-    for i in range(len(masks)): axes[i].imshow(masks[i], interpolation='none')
-    plt.show()
-    
-def plot_mask_comparison(mask1, mask2):
-    h,w = mask1.shape
-    mask_comparison = np.zeros((h,w,3))
-    mask_comparison[:,:,0] = np.logical_and(mask1==1, mask2==0)
-    mask_comparison[:,:,2] = np.logical_and(mask2==1, mask1==0)
-    mask_comparison[:,:,1] = np.logical_and(mask1==1, mask2==1)
-    fig, axes = plt.subplots(1,3,figsize=(15,15))
-    axes[0].imshow(mask1,           interpolation='none')
-    axes[1].imshow(mask2,           interpolation='none')
-    axes[2].imshow(mask_comparison, interpolation='none')
-    
 def plot_outlines(ax, geo, edge_c=(1,1,1,1.0)):
     patch = PolygonPatch(geo, facecolor=(0,0,0,0.0), edgecolor=edge_c)
     ax.add_patch(patch)
@@ -191,7 +133,6 @@ def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'],alpha=0.4):
     
 def plot_geo_face(ax, geo, c='r', ec=None, alpha=0.4):
     # buffer is a hack, make sure contours are in clockwise or counter cw direction
-    #ax.add_patch(PolygonPatch(geo.buffer(0), color=c, alpha=alpha))
     ax.add_patch(PolygonPatch(geo.buffer(0), color=c, ec=ec, alpha=alpha))
         
 def plot_points(ax, points, c='w', marker='x', s=None):

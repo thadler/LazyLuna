@@ -10,11 +10,8 @@ import traceback
 
 
 ########################################################################
-########################################################################
 ## For conversion from Pandas DataFrame to PyQt5 Abstract Table Model ##
 ########################################################################
-########################################################################
-
 class DataFrameModel(QtGui.QStandardItemModel):
     def __init__(self, data, parent=None):
         QtGui.QStandardItemModel.__init__(self, parent)
@@ -23,28 +20,23 @@ class DataFrameModel(QtGui.QStandardItemModel):
             data_col = [QtGui.QStandardItem("{}".format(x)) for x in data.iloc[:,i].values]
             self.appendColumn(data_col)
         return
-
-    def rowCount(self, parent=None):
+    
+    def rowCount(self, parent=None): 
         return len(self._data.values)
-
-    def columnCount(self, parent=None):
+    
+    def columnCount(self, parent=None): 
         return self._data.columns.size
-
+    
     def headerData(self, x, orientation, role):
         try:
-            if orientation==QtCore.Qt.Horizontal and role==QtCore.Qt.DisplayRole:
-                return self._data.columns[x]
-            if orientation==QtCore.Qt.Vertical   and role==QtCore.Qt.DisplayRole:
-                return self._data.index[x]
-        except Exception as e:
-            print('WARNING !!!: ', e)
+            if orientation==QtCore.Qt.Horizontal and role==QtCore.Qt.DisplayRole: return self._data.columns[x]
+            if orientation==QtCore.Qt.Vertical   and role==QtCore.Qt.DisplayRole: return self._data.index[x]
+        except Exception as e: print('WARNING !!!: ', e)
         return None
     
     
 ########################
-########################
 ## Custom Table Class ##
-########################
 ########################
 class Table:
     def __init__(self):

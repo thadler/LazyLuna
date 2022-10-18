@@ -13,7 +13,6 @@ from LazyLuna.Annotation import Annotation
 ########
 # Case #
 ########
-
 class Case:
     def __init__(self, imgs_path, annos_path, case_name, reader_name, debug=False):
         if debug: st = time()
@@ -72,11 +71,9 @@ class Case:
         return storage_path
 
 
-
 ###################
 # Case Comparison #
 ###################
-
 class Case_Comparison:
     def __init__(self, case1, case2):
         self.case1, self.case2 = case1, case2
