@@ -4,7 +4,6 @@
 #
 # Views take case of customizing cases, images, outputs and tabs to specific use cases
 #
-#
 
 from LazyLuna.Mini_LL    import *
 from LazyLuna.Categories import *
@@ -387,7 +386,7 @@ class SAX_T1_PRE_View(View):
         self.available_colormaps = ['gray']
         self.ll_tag = 'SAX T1 PRE'
         self.load_categories()
-        self.contour_names = ['lv_endo', 'lv_myo']
+        self.contour_names = ['lv_myo']
         self.point_names   = ['sacardialRefPoint']
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
         
@@ -496,7 +495,7 @@ class SAX_T2_View(View):
         self.colormap            = 'gray'
         self.available_colormaps = ['gray']
         self.load_categories()
-        self.contour_names = ['lv_endo', 'lv_myo']
+        self.contour_names = ['lv_myo']
         self.point_names   = ['sacardialRefPoint']
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
         
@@ -586,7 +585,7 @@ class SAX_LGE_View(View):
         self.available_colormaps = ['gray']
         self.load_categories()
         # contour names with scars
-        self.contour_names = ['lv_endo', 'lv_myo', 'scar', 'noreflow']
+        self.contour_names = ['lv_myo', 'scar', 'noreflow']
         for exclude in [False, True]:
             cont_name = 'scar_fwhm' + ('_excluded_area' if exclude else '')
             self.contour_names += [cont_name]
