@@ -16,15 +16,11 @@ from LazyLuna.Mini_LL import Case
 
 
 class LL_CaseConverter_TabWidget(QWidget):
-    def __init__(self, parent, case_folder_path, dbpath, db_connection):
+    def __init__(self, parent):
         super(QWidget, self).__init__(parent)
         self.parent = parent
         self.layout = QGridLayout(self)
         self.layout.setSpacing(7)
-        # initializing some variables
-        self.case_folder_path = case_folder_path
-        self.dbpath           = dbpath
-        self.db_connection    = db_connection
         self.ui_init()
     
     def ui_init(self):
@@ -41,9 +37,11 @@ class LL_CaseConverter_TabWidget(QWidget):
         convert_llcases_action.setStatusTip("Converts Images and Annotations to Lazy Luna Cases.")
         convert_llcases_action.triggered.connect(self.convert_cases)
         
-        import_cases_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','database-import.png')), "&Import Cases to DB", self)
-        import_cases_action.setStatusTip("Import Cases to the DB.")
-        import_cases_action.triggered.connect(self.import_cases)
+        
+        select_casefolder_action = QAction(QIcon(os.path.join(self.parent.bp, 'Icons','folder-open-image.png')), "&Select Cases Folder", self)
+        select_casefolder_action.setStatusTip("This is for bulk conversion. Select the folder where all relevant cases are to be stored.")
+        select_casefolder_action.triggered.connect(self.select_cases_folder)
+        
         
         # Toolbar
         self.toolbar = QToolBar("My main toolbar")
@@ -62,20 +60,20 @@ class LL_CaseConverter_TabWidget(QWidget):
         b3.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b3.setFont(QFont('', fontsize))
         b3.setDefaultAction(convert_llcases_action)
         self.toolbar.addWidget(b3)
-        spacer = QWidget();
-        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding);
-        # toolBar is a pointer to an existing toolbar
-        self.toolbar.addWidget(spacer);
         b4 = QToolButton(); b4.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         b4.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding); b4.setFont(QFont('', fontsize))
-        b4.setDefaultAction(import_cases_action)
+        b4.setDefaultAction(select_casefolder_action)
         self.toolbar.addWidget(b4)
         
         
         self.dicoms_folder_label  = QLabel('Dicom  Folder: ')
         self.dicoms_folder_text   = QLabel('')
+        self.case_folder_label    = QLabel('Cases  Folder: ')
+        self.case_folder_text     = QLabel('')
         self.layout.addWidget(self.dicoms_folder_label,  1, 0, 1,1)
         self.layout.addWidget(self.dicoms_folder_text,   2, 0, 1,1)
+        self.layout.addWidget(self.case_folder_label,    3, 0, 1,1)
+        self.layout.addWidget(self.case_folder_text,     4, 0, 1,1)
         
         # File System View
         self.fileSystemModel = QFileSystemModel()
@@ -93,14 +91,13 @@ class LL_CaseConverter_TabWidget(QWidget):
         self.tree.header().resizeSection(0, 200)
         self.tree.setDragEnabled(True)
         self.tree.setStatusTip('Find and select reader folders you wish to connect to the images.')
-        self.layout.addWidget(self.tree, 3,0, 1,2)
+        self.layout.addWidget(self.tree, 5,0, 1,2)
         
         
         # Table View on the right
         # set table view
         self.tableView = QTableView()
         self.layout.addWidget(self.tableView, 1, 2, 5,8)
-        
         
         # set layout
         self.setLayout(self.layout)
@@ -110,6 +107,16 @@ class LL_CaseConverter_TabWidget(QWidget):
         ########################
         #self.layout.addWidget(self.tabs)
         
+        
+    
+    def select_cases_folder(self):
+        try:
+            dialog = QFileDialog(self, '')
+            dialog.setFileMode(QFileDialog.DirectoryOnly)
+            if dialog.exec_() == QDialog.Accepted:
+                self.case_folder_path = dialog.selectedFiles()[0]
+                self.case_folder_text.setText(self.case_folder_path)
+        except Exception as e: print(traceback.format_exc())
         
     def select_dicoms_folder(self):
         try:
@@ -139,12 +146,10 @@ class LL_CaseConverter_TabWidget(QWidget):
                 self.tableView.horizontalHeader().setSectionResizeMode(i, QHeaderView.ResizeToContents)
         except Exception as e: print(traceback.format_exc())
             
-    ###########################
-    ## TODO: Make to QTHREAD ##
-    ###########################
     def convert_cases(self):
         if not self.has_dicom_folder(): return
         if not self.has_selected_reader_folders(): return
+        if not self.has_cases_folder(): return
         
         # Information Message for User
         msg = QMessageBox()
@@ -196,7 +201,6 @@ class LL_CaseConverter_TabWidget(QWidget):
                     col, row = get_case_info(c, cp)
                     self.insert_case(c, cp)
                 except Exception as e: print(traceback.format_exc()); continue
-            self.parent.tab.update_tableview_tabs()
         except Exception as e: print(traceback.format_exc()); pass
         
     def import_cases(self):
@@ -212,30 +216,7 @@ class LL_CaseConverter_TabWidget(QWidget):
             self.parent.tab.update_tableview_tabs()
         except Exception as e: print(traceback.format_exc()); pass
         
-    def insert_case(self, case, casepath, tabname=None):
-        query =  'INSERT OR REPLACE INTO Cases (casename, readername, age, gender, weight, height, creation_date, study_uid, casepath) VALUES'
-        _, row = get_case_info(case, casepath)
-        query += '("'
-        for val in row: query += val + '", "'
-        query = query[:-3] + ');'
-        self.execute_query(query)
-        query =  'INSERT OR REPLACE  INTO Case_to_Tab (study_uid, readername, tab) VALUES'
-        query += '("' + row[-2] + '", "' + row[1] + '", "ALL");'
-        self.execute_query(query)
-        if tabname is None: return
-        query =  'INSERT INTO Tabnames (tab) VALUES'
-        query += '("' + tabname + '");'
-        self.execute_query(query)
-        query =  'INSERT OR REPLACE  INTO Case_to_Tab (study_uid, readername, tab) VALUES'
-        query += '("' + row[-2] + '", "' + row[1] + '", "' + tabname + '");'
-        self.execute_query(query)
 
-    def execute_query(self, query):
-        cursor = self.db_connection.cursor()
-        try: cursor.execute(query); print("Query executed successfully")
-        except Error as e: print(f"The error '{e}' occurred")
-        try: self.db_connection.commit()
-        except Error as e: print(f"The error '{e}' occurred")
             
     def has_selected_reader_folders(self):
         if len(list(set([self.fileSystemModel.filePath(index) for index in self.tree.selectedIndexes()])))!=0: return True
@@ -254,4 +235,15 @@ class LL_CaseConverter_TabWidget(QWidget):
         msg.setInformativeText("Use the above button to select such a folder.")
         retval = msg.exec_()
         return False
+    
+    def has_cases_folder(self):
+        if hasattr(self, 'case_folder_path'): return True
+        msg = QMessageBox() # Information Message for User
+        msg.setIcon(QMessageBox.Information)
+        msg.setText("You must select a folder to which the cases should be loaded first.")
+        msg.setInformativeText("Use the above button to select such a folder.")
+        retval = msg.exec_()
+        return False
         
+        
+    

@@ -17,8 +17,6 @@ from LazyLuna.Tables import Table
 from LazyLuna.Figures import Image_List_Presenter
 from LazyLuna.loading_functions import *
 
-from catch_converter.parse_contours import parse_cvi42ws
-
 
 class DcmLabeling_2_TabWidget(QWidget):
     def __init__(self, parent, dcms, overriding_dict):
