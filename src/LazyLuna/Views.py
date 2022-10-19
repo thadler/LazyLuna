@@ -421,7 +421,6 @@ class SAX_T1_PRE_View(View):
     def initialize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
-        print('WHATS THERE???: ', case.all_imgs_sop2filepath.keys())
         case.imgs_sop2filepath = case.all_imgs_sop2filepath[self.ll_tag]
         # if categories have not been attached, attach the first and init other_categories
         # otherwise it has categories and a type, so store the old categories for later use

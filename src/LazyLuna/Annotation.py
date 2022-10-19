@@ -11,25 +11,21 @@ class Annotation:
         except: self.anno = dict()
         self.sop = sop
 
-    def plot_all_contour_outlines(self, ax, c='w', debug=False):
-        for cname in self.available_contour_names():
-            utils.plot_outlines(ax, self.get_contour(cname), edge_c=c)
-            
-    def plot_contour_outlines(self, ax, cont_name, edge_c=(1,1,1,1.0), debug=False):
-        if self.has_contour(cont_name):
-            utils.plot_outlines(ax, self.get_contour(cont_name), edge_c)
+    def plot_contours(self, ax, cont_name='all', c='w', debug=False):
+        if cont_name not in ['all', None]: 
+            if self.has_contour(cont_name): utils.plot_outlines(ax, self.get_contour(cont_name), edge_c)
+        else:
+            for cname in self.available_contour_names(): utils.plot_outlines(ax, self.get_contour(cname), edge_c=c)
 
-    def plot_all_points(self, ax, c='w', marker='x', s=None):
-        for p in self.available_point_names():
-            self.plot_point(ax, p, c, marker, s)
+    def plot_points(self, ax, point_name='all', c='w', marker='x', s=None):
+        if point_name not in ['all', None]:
+            if self.has_point(point_name): utils.plot_points(ax, self.get_point(point_name), c=c, marker=marker, s=s)
+        else:
+            for p in self.available_point_names(): utils.plot_points(ax, self.get_point(p), c, marker, s)
 
-    def plot_contour_face(self, ax, cont_name, c='r', alpha=0.4):
+    def plot_face(self, ax, cont_name, c='r', alpha=0.4):
         if not self.has_contour(cont_name): return
         utils.plot_geo_face(ax, self.get_contour(cont_name), c=c, ec=c, alpha=alpha)
-
-    def plot_point(self, ax, point_name, c='w', marker='x', s=None):
-        if not self.has_point(point_name): return
-        utils.plot_points(ax, self.get_point(point_name), c=c, marker=marker, s=s)
 
     def plot_cont_comparison(self, ax, other_anno, cont_name, colors=['g','r','b'], alpha=0.4):
         cont1, cont2 = self.get_contour(cont_name), other_anno.get_contour(cont_name)

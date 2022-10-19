@@ -215,13 +215,11 @@ class Annotation_Comparison(Visualization):
         ax3.imshow(img2,'gray', extent=extent); ax4.imshow(img1,'gray', extent=extent)
         self.suptitle('Category: ' + cat1.name + ', slice: ' + str(slice_nr))
         if self.add_annotation:
-            anno1.plot_contour_face   (ax1,        contour_name, alpha=0.4, c='r')
+            anno1.plot_face           (ax1,        contour_name, alpha=0.4, c='r')
             anno1.plot_cont_comparison(ax2, anno2, contour_name, alpha=0.4)
-            anno2.plot_contour_face   (ax3,        contour_name, alpha=0.4, c='b')
-            #anno1.plot_all_contour_outlines(ax1) # looks like overlooked slices when different phases for RV and LV
-            #anno2.plot_all_contour_outlines(ax3)
-            anno1.plot_all_points(ax1)
-            anno2.plot_all_points(ax3)
+            anno2.plot_face           (ax3,        contour_name, alpha=0.4, c='b')
+            anno1.plot_points(ax1)
+            anno2.plot_points(ax3)
         for ax in [ax1, ax2, ax3]: ax.set_xticks([]); ax.set_yticks([])
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
         
@@ -271,10 +269,10 @@ class Basic_Presenter(Visualization):
         ax1.imshow(img1,'gray', extent=extent); ax2.imshow(img2,'gray', extent=extent)
         self.suptitle('Category: ' + cat1.name + ', slice: ' + str(slice_nr))
         if self.add_annotation:
-            anno1.plot_all_contour_outlines(ax1) # looks like overlooked slices when different phases for RV and LV
-            anno2.plot_all_contour_outlines(ax2)
-            anno1.plot_all_points(ax1)
-            anno2.plot_all_points(ax2)
+            anno1.plot_contours(ax1) # looks like overlooked slices when different phases for RV and LV
+            anno2.plot_contours(ax2)
+            anno1.plot_points(ax1)
+            anno2.plot_points(ax2)
         ax1.set_title(self.cc.case1.reader_name)
         ax2.set_title(self.cc.case2.reader_name)
         for ax in [ax1, ax2]: ax.set_xticks([]); ax.set_yticks([])
@@ -380,16 +378,16 @@ class Angle_Segment_Comparison(Visualization):
                 x, y = np.array(bb.exterior.xy)
                 lx, ly, ux, uy = x.min()-b-5, y.min()-b, x.max()+b, y.max()+b
                 for ax in axes: ax.set_xlim([lx, ux]); ax.set_ylim([ly, uy]); ax.invert_yaxis()
-            anno1.plot_all_contour_outlines(axes[0])
+            anno1.plot_contours(axes[0])
             anno1.plot_cont_comparison(axes[1], anno2, 'lv_myo')
-            anno2.plot_all_contour_outlines(axes[2])
+            anno2.plot_contours(axes[2])
             if byreader is None:
-                anno1.plot_point(axes[0], 'sacardialRefPoint')
-                anno2.plot_point(axes[2], 'sacardialRefPoint')
+                anno1.plot_points(axes[0], 'sacardialRefPoint')
+                anno2.plot_points(axes[2], 'sacardialRefPoint')
             elif byreader == 1:
-                for j in [0,2]: anno1.plot_point(axes[j], 'sacardialRefPoint')
+                for j in [0,2]: anno1.plot_points(axes[j], 'sacardialRefPoint')
             elif byreader == 2:
-                for j in [0,2]: anno2.plot_point(axes[j], 'sacardialRefPoint')
+                for j in [0,2]: anno2.plot_points(axes[j], 'sacardialRefPoint')
         
         self.tight_layout()
         self.canvas.draw()
@@ -440,9 +438,9 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
         axes[2].imshow(img2,'gray', extent=extent); axes[3].imshow(img1,'gray', extent=extent)
         self.suptitle('Case: ' + cc.case1.case_name + ', Contour: ' + contour_name + ', category: ' + cat1.name + ', slice: ' + str(slice_nr), fontsize=30)
         if self.add_annotation:
-            anno1.plot_contour_face   (axes[0],        contour_name, alpha=0.4, c='r')
+            anno1.plot_face   (axes[0],        contour_name, alpha=0.4, c='r')
             anno1.plot_cont_comparison(axes[1], anno2, contour_name, alpha=0.4)
-            anno2.plot_contour_face   (axes[2],        contour_name, alpha=0.4, c='b')
+            anno2.plot_face   (axes[2],        contour_name, alpha=0.4, c='b')
         for ax in axes: ax.set_xticks([]); ax.set_yticks([])
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
         patches = [PolygonPatch(d,facecolor=c, edgecolor=c,  alpha=0.4) for c in ['red', 'green', 'blue']]

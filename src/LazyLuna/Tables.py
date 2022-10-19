@@ -211,7 +211,7 @@ class LAX_CC_Metrics_Table(Table):
         if pretty:
             self.df[['ml diff', 'abs ml diff', 'HD']] = self.df[['ml diff', 'abs ml diff', 'HD']].round(1)
             #self.df[['DSC']] = self.df[['DSC']].astype('Int64')
-            self.df[['DSC']] = self.df[['DSC']].apply(int)
+            self.df[['DSC']] = self.df[['DSC']].astype(int)
         unique_cats = self.df['category'].unique()
         df = DataFrame()
         for cat_i, cat in enumerate(unique_cats):
