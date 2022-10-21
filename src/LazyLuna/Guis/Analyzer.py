@@ -16,9 +16,8 @@ import numpy as np
 
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables import *
-from LazyLuna.Mini_LL import Case_Comparison
+from LazyLuna.Containers import Case_Comparison
 from LazyLuna.Guis.Addable_Tabs.CCs_Overview_Tab import CCs_Overview_Tab
-from LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab import CC_Metrics_Tab
 
 
 

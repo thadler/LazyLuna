@@ -25,8 +25,6 @@ class View:
 
 class SAX_CINE_View(View):
     def __init__(self):
-        self.colormap            = 'gray'
-        self.available_colormaps = ['gray']
         self.load_categories()
         self.contour2categorytype = {None      : self.all,    'lv_endo' : self.lvcats,  'lv_epi'  : self.myocats,
                                      'lv_pamu' : self.lvcats, 'lv_myo'  : self.myocats, 'rv_endo' : self.rvcats,
@@ -189,8 +187,6 @@ class SAX_CS_View(SAX_CINE_View):
 
 class LAX_CINE_View(View):
     def __init__(self):
-        self.colormap            = 'gray'
-        self.available_colormaps = ['gray']
         self.load_categories()
         """
         self.contour_names        = ['lv_lax_endo', 'lv_lax_myo', 'rv_lax_endo', 'la', 'ra']
@@ -200,8 +196,7 @@ class LAX_CINE_View(View):
                          'la'         : self.la_cats,  'ra'         : self.ra_cats}
         """
         self.contour_names        = ['la', 'ra']
-        self.contour2categorytype = {None : self.all, 
-                                     'la': self.la_cats, 'ra': self.ra_cats}
+        self.contour2categorytype = {None : self.all, 'la': self.la_cats, 'ra': self.ra_cats}
         
         # register tabs here:
         """
@@ -366,7 +361,8 @@ class LAX_CINE_View(View):
             print(traceback.print_exc())
         try:
             metrics_table = LAX_CCs_MetricsTable()
-            metrics_table.calculate(ccs, self)
+            metrics_table.calculate(self, ccs)
+            #    def calculate(self, view, ccs, fixed_phase_first_reader=False, pretty=True):
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
             print(traceback.print_exc())
@@ -382,11 +378,9 @@ class LAX_CINE_View(View):
             
 class SAX_T1_PRE_View(View):
     def __init__(self):
-        self.colormap            = 'gray'
-        self.available_colormaps = ['gray']
         self.ll_tag = 'SAX T1 PRE'
         self.load_categories()
-        self.contour_names = ['lv_myo']
+        self.contour_names = ['lv_myo', 'lv_endo']
         self.point_names   = ['sacardialRefPoint']
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
         
@@ -491,10 +485,8 @@ class SAX_T1_POST_View(SAX_T1_PRE_View):
 
 class SAX_T2_View(View):
     def __init__(self):
-        self.colormap            = 'gray'
-        self.available_colormaps = ['gray']
         self.load_categories()
-        self.contour_names = ['lv_myo']
+        self.contour_names = ['lv_myo', 'lv_endo']
         self.point_names   = ['sacardialRefPoint']
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
         
@@ -580,11 +572,9 @@ class SAX_T2_View(View):
 
 class SAX_LGE_View(View):
     def __init__(self):
-        self.colormap            = 'gray'
-        self.available_colormaps = ['gray']
         self.load_categories()
         # contour names with scars
-        self.contour_names = ['lv_myo', 'scar', 'noreflow']
+        self.contour_names = ['lv_myo', 'lv_endo', 'scar', 'noreflow']
         for exclude in [False, True]:
             cont_name = 'scar_fwhm' + ('_excluded_area' if exclude else '')
             self.contour_names += [cont_name]

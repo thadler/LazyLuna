@@ -8,7 +8,7 @@ import pydicom
 from time import time
 import traceback
 
-from LazyLuna.Mini_LL import Annotation
+from LazyLuna.Annotation import Annotation
 from LazyLuna import utils
 
 

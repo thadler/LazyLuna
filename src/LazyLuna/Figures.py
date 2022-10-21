@@ -20,6 +20,7 @@ import pandas
 from LazyLuna import Mini_LL
 from LazyLuna.Tables import *
 from LazyLuna import utils
+from LazyLuna.Metrics import *
         
 from mpl_interactions import ioff, panhandler, zoom_factory
 
@@ -452,7 +453,7 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
         if debug: print('Took: ', time()-st)
         
     def initialize_yeild_next(self, rounds=None):
-        dsc, hd, mld = Mini_LL.DiceMetric(), Mini_LL.HausdorffMetric(), Mini_LL.mlDiffMetric()
+        dsc, hd, mld = DiceMetric(), HausdorffMetric(), mlDiffMetric()
         count = 0
         while (rounds is None) or (count<rounds):
             for cc in self.ccs:
@@ -508,22 +509,21 @@ class BlandAltman(Visualization):
         for cc in case_comparisons:
             cr1 = [cr.get_val() for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr.get_val() for cr in cc.case2.crs if cr.name==cr_name][0]
-            rows.append([(cr1+cr2)/2.0, cr1-cr2])
-        df = DataFrame(rows, columns=[cr_name, cr_name+' difference'])
+            rows.append([cc.case1.case_name, cc.case1.studyinstanceuid, (cr1+cr2)/2.0, cr1-cr2])
+        df = DataFrame(rows, columns=['case_name', 'studyuid', cr_name, cr_name+' difference'])
+        df = df.dropna()
         sns.scatterplot(ax=ax, x=cr_name, y=cr_name+' difference', data=df, markers='o', 
-                        palette=swarm_palette, size=np.abs(df[cr_name+' difference']), 
-                        s=10, legend=False)
+                        palette=swarm_palette, size=np.abs(df[cr_name+' difference']), s=10, legend=False)
         ax.axhline(df[cr_name+' difference'].mean(), ls="-", c=".2")
         ax.axhline(df[cr_name+' difference'].mean()+1.96*df[cr_name+' difference'].std(), ls=":", c=".2")
         ax.axhline(df[cr_name+' difference'].mean()-1.96*df[cr_name+' difference'].std(), ls=":", c=".2")
-
         ax.set_title(cr_name+' Bland Altman', fontsize=14)
         ax.set_ylabel(cr.unit, fontsize=12)
         ax.set_xlabel(cr.unit, fontsize=12)
         ax.set_xlabel(cr.name+' '+cr.unit, fontsize=12)
         sns.despine()
-        
-        texts = [cc.case1.case_name for cc in case_comparisons]
+        texts = df['case_name'].tolist()
+        studyuids = df['studyuid'].tolist()
         annot = ax.annotate("", xy=(0,0), xytext=(20,20), textcoords="offset points", 
                             bbox=dict(boxstyle="round", fc="w"), arrowprops=dict(arrowstyle="->"))
         annot.set_visible(False)
@@ -551,8 +551,9 @@ class BlandAltman(Visualization):
             vis = annot.get_visible()
             if event.inaxes==ax:
                 cont, ind = ax.collections[0].contains(event)
-                name = [cc.case1.case_name for cc in case_comparisons][ind['ind'][0]]
-                cc = [cc for cc in case_comparisons][ind['ind'][0]]
+                name = texts[ind['ind'][0]]
+                studyuid = studyuids[ind['ind'][0]]
+                cc = [cc for cc in case_comparisons if cc.case1.studyinstanceuid==studyuid][0]
                 for tab_name, tab in self.view.case_tabs.items(): 
                     t = tab()
                     t.make_tab(self.gui, self.view, cc)
@@ -592,8 +593,9 @@ class PairedBoxplot(Visualization):
             cr1 = [cr.get_val() for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr.get_val() for cr in cc.case2.crs if cr.name==cr_name][0]
             if np.isnan(cr1) or np.isnan(cr2): continue
-            rows.extend([[readername1, cr1], [readername2, cr2]])
-        df = DataFrame(rows, columns=['Reader', cr_name])
+            casename, studyuid = cc.case1.case_name, cc.case1.studyinstanceuid
+            rows.extend([[casename, studyuid, readername1, cr1], [casename, studyuid, readername2, cr2]])
+        df = DataFrame(rows, columns=['casename', 'studyuid', 'Reader', cr_name])
         print(df)
         # Plot
         sns.boxplot  (ax=ax, data=df, y='Reader', x=cr_name, width=0.4, palette=custom_palette, orient='h', linewidth=1)
@@ -616,12 +618,10 @@ class PairedBoxplot(Visualization):
             x = [locs1[i, 0], locs2_sorted[i, 0]]
             y = [locs1[i, 1], locs2_sorted[i, 1]]
             ax.plot(x, y, color="black", alpha=0.4, linewidth=0.3)
-        
-        texts = [cc.case1.case_name for cc in case_comparisons]
-        
+        studyuids = df['studyuid'].tolist()[::2]
         # sorts cr names by cr value
-        ccs1 = sorted([cc for cc in case_comparisons], key=lambda cc: [cr for cr in cc.case1.crs if cr.name==cr_name][0].get_val())
-        ccs2 = sorted([cc for cc in case_comparisons], key=lambda cc: [cr for cr in cc.case2.crs if cr.name==cr_name][0].get_val())
+        ccs1 = sorted([cc for cc in case_comparisons if cc.case1.studyinstanceuid in studyuids], key=lambda cc: [cr for cr in cc.case1.crs if cr.name==cr_name][0].get_val())
+        ccs2 = sorted([cc for cc in case_comparisons if cc.case2.studyinstanceuid in studyuids], key=lambda cc: [cr for cr in cc.case2.crs if cr.name==cr_name][0].get_val())
         texts1 = [cc.case1.case_name for cc in ccs1]
         texts2 = [cc.case1.case_name for cc in ccs2]
         
@@ -948,7 +948,6 @@ class T1_bullseye_plot(Visualization):
         self.add_annotation = True
         
     def visualize(self, segBold=[], minv=None, maxv=None):
-        #v        = SAX_T1_View()
         self.clear()
         cat      = self.case.categories[0]
         means, stds = cat.calc_mapping_aha_model()
@@ -1051,7 +1050,6 @@ class T1_diff_bullseye_plot(Visualization):
         self.add_annotation = True
         
     def visualize(self, segBold=[], minv=None, maxv=None):
-        #v   = SAX_T1_View()
         self.clear()
         cat1 = self.cc.case1.categories[0]
         cat2 = self.cc.case2.categories[0]
@@ -1154,7 +1152,6 @@ class Statistical_T1_bullseye_plot(Visualization):
         self.add_annotation = True
         
     def visualize(self, segBold=[], minv=None, maxv=None):
-        #v        = SAX_T1_View()
         self.clear()
         collecting_means = []
         collecting_stds  = []
@@ -1263,7 +1260,6 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
         self.add_annotation = True
         
     def visualize(self, segBold=[], minv=None, maxv=None):
-        #v   = SAX_T1_View()
         self.clear()
         
         collecting_means = []
@@ -1449,16 +1445,14 @@ class LAX_BlandAltman(Visualization):
         axes[2][1].axhline(mean-1.96*std, ls=":", c=".2")
 
         m_table = LAX_CCs_MetricsTable()
-        m_table.calculate(ccs, view)
-        #display(m_table.df)
+        m_table.calculate(view, ccs)
 
         ra_vals = m_table.df['ra LAX 4CV RAES DSC'].to_list() + m_table.df['ra LAX 4CV RAED DSC'].to_list()
         la4vals = m_table.df['la LAX 4CV LAES DSC'].to_list() + m_table.df['la LAX 4CV LAED DSC'].to_list()
         la2vals = m_table.df['la LAX 2CV LAES DSC'].to_list() + m_table.df['la LAX 2CV LAED DSC'].to_list()
 
         dicebp = sns.boxplot(ax=axes[3][0], data=[ra_vals,la4vals,la2vals], width=0.4)
-        sns.swarmplot(ax=axes[3][0], data=[ra_vals,la4vals,la2vals], 
-                      palette=swarm_palette, dodge=True)
+        sns.swarmplot(ax=axes[3][0], data=[ra_vals,la4vals,la2vals], palette=swarm_palette, dodge=True)
         axes[3][0].set_xticklabels(['RA 4CV', 'LA 4CV', 'LA 2CV'])
         axes[3][0].set_ylabel('DSC [%]')
 
@@ -1577,8 +1571,7 @@ class LAX_Volumes_BlandAltman(Visualization):
         axes[2][1].axhline(mean-1.96*std, ls=":", c=".2")
 
         m_table = LAX_CCs_MetricsTable()
-        m_table.calculate(ccs, view)
-        #display(m_table.df)
+        m_table.calculate(view, ccs)
 
         ra_vals = m_table.df['ra LAX 4CV RAES DSC'].to_list() + m_table.df['ra LAX 4CV RAED DSC'].to_list()
         la4vals = m_table.df['la LAX 4CV LAES DSC'].to_list() + m_table.df['la LAX 4CV LAED DSC'].to_list()

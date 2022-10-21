@@ -17,7 +17,7 @@ import traceback
 
 import pandas
 
-from LazyLuna.Mini_LL import Case_Comparison
+from LazyLuna.Containers import Case_Comparison
 from LazyLuna.Views   import *
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables  import *
@@ -55,10 +55,14 @@ class CC_Metrics_Tab(QWidget):
             self.metrics_table  = T2_CC_Metrics_Table()
         else: # type(view) is LAX_CINE_View:
             self.metrics_table  = LAX_CC_Metrics_Table()
-        self.metrics_table.calculate(Case_Comparison(view.customize_case(cc.case1), view.customize_case(cc.case2)))
-        self.metrics_table.present_contour_df(view.contour_names[0])
+        #self.metrics_table.calculate(Case_Comparison(view.customize_case(cc.case1), view.customize_case(cc.case2)))
+        #self.metrics_table.present_contour_df(view.contour_names[0])
+        
+        self.metrics_table.calculate(view, Case_Comparison(view.customize_case(cc.case1), view.customize_case(cc.case2)), view.contour_names[0])
+        
         self.metrics_TableView = QTableView()
         self.metrics_TableView.setModel(self.metrics_table.to_pyqt5_table_model())
+        self.metrics_TableView.resizeColumnsToContents()
         layout.addWidget(self.metrics_TableView, 1,0, 1,1)
         self.annotation_comparison_figure = Annotation_Comparison()
         cat = cc.case1.categories[0]
@@ -79,11 +83,13 @@ class CC_Metrics_Tab(QWidget):
     def recalculate_metrics_table(self):
         cont_name = self.combobox_select_contour.currentText()
         if cont_name=='Choose a Contour': return
-        cat = self.view.get_categories(self.cc.case1, cont_name)[0]
+        view = self.view
+        cat = view.get_categories(self.cc.case1, cont_name)[0]
+        cc = Case_Comparison(view.customize_case(self.cc.case1), view.customize_case(self.cc.case2))
         try:
-            self.metrics_table.present_contour_df(cont_name)
-            self.metrics_table.present_contour_df(cont_name)
+            self.metrics_table.calculate(view, cc, cont_name)
             self.metrics_TableView.setModel(self.metrics_table.to_pyqt5_table_model())
+            self.metrics_TableView.resizeColumnsToContents()
         except Exception as e: print(traceback.format_exc())
         try: self.annotation_comparison_figure.visualize(0, cat, cont_name)
         except Exception as e: print(traceback.format_exc())

@@ -2,8 +2,10 @@
 # Clinical Results #
 ####################
 
-from LazyLuna.Categories import *
 import traceback
+import numpy as np
+
+from LazyLuna.Categories import *
 
 # decorator function for exception handling
 def CR_exception_handler(f):
@@ -36,7 +38,6 @@ class LVSAX_ESV(Clinical_Result):
     def set_CR_information(self):
         self.name = 'LVESV'
         self.unit = '[ml]'
-        # MUST IMPORT CATEGORIES HERE
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ES_Category)][0]
 
     @CR_exception_handler

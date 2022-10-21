@@ -19,7 +19,7 @@ import copy
 
 import pandas as pd
 
-from LazyLuna.Mini_LL import Case_Comparison
+from LazyLuna.Containers import Case_Comparison
 from LazyLuna.loading_functions import *
 from LazyLuna.Tables import *
 from LazyLuna.Figures import *
