@@ -136,7 +136,7 @@ class CC_OverviewTable(Table):
         self.df = cc_df
         
         
-"""
+
 class CC_SAX_DiceTable(Table):
     def calculate(self, case_comparisons, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
@@ -154,7 +154,7 @@ class CC_SAX_DiceTable(Table):
                 rows.append([c1.case_name, False, cname, np.nanmean(dices)])
                 rows.append([c1.case_name, True, cname, np.nanmean([d for d in dices if 0<d<100])])
         self.df = DataFrame(rows, columns=columns)
-"""
+
         
 class CC_ClinicalResultsAveragesTable(Table):
     def calculate(self, case_comparisons):
