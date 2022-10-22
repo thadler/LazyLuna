@@ -90,6 +90,21 @@ class mlDiffMetric(Metric):
         pw, ph = dcm.PixelSpacing; vd = dcm.SliceThickness
         m      = (pw*ph*vd/1000.0) * (geo1.area - geo2.area)
         return "{:.2f}".format(m) if string else m
+    
+    
+class absMlDiffMetric(Metric):
+    def __init__(self):
+        super().__init__()
+
+    def set_information(self):
+        self.name = 'absolute millilitre'
+        self.unit = '[ml]'
+
+    @Metrics_exception_handler
+    def get_val(self, geo1, geo2, dcm=None, string=False):
+        pw, ph = dcm.PixelSpacing; vd = dcm.SliceThickness
+        m      = np.abs((pw*ph*vd/1000.0) * (geo1.area - geo2.area))
+        return "{:.2f}".format(m) if string else m
 
 
 ############################

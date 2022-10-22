@@ -116,8 +116,9 @@ class SAX_CINE_View(View):
         except Exception as e:
             print(traceback.print_exc())
         try:
-            metrics_table = CCs_MetricsTable()
-            metrics_table.calculate(ccs, self)
+            #metrics_table = CCs_MetricsTable()
+            metrics_table = SAX_CINE_CCs_Metrics_Table()
+            metrics_table.calculate(self, ccs)
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
             print(traceback.print_exc())
@@ -464,7 +465,8 @@ class SAX_T1_PRE_View(View):
             print('CR Table store exeption: ', traceback.print_exc())
         try:
             metrics_table = T1_CCs_MetricsTable()
-            metrics_table.calculate(ccs, self)
+            #metrics_table.calculate(ccs, self)
+            metrics_table.calculate(self, ccs)
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
             print('Metrics Table store exeption: ', traceback.print_exc())
@@ -555,7 +557,7 @@ class SAX_T2_View(View):
             print('CR Table store exeption: ', traceback.print_exc())
         try:
             metrics_table = T2_CCs_MetricsTable()
-            metrics_table.calculate(ccs, self)
+            metrics_table.calculate(self, ccs)
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
             print('Metrics Table store exeption: ', traceback.print_exc())

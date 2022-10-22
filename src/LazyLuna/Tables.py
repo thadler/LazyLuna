@@ -72,26 +72,26 @@ class CC_ClinicalResultsTable(Table):
         df = DataFrame(rows, columns=columns)
         if with_dices: df = pandas.concat([df, self.dices_dataframe(case_comparisons, contour_names)], axis=1, join="outer")
         self.df = df
-        
+    
     def dices_dataframe(self, case_comparisons, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
         columns = ['case', 'avg dice', 'avg dice cont by both', 'avg HD']
         for cc in case_comparisons:
             c1, c2 = cc.case1, cc.case2
-            analyzer = Mini_LL.SAX_CINE_analyzer(cc)
             row = [c1.case_name]
-            df = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader=False)
+            df = self.get_vals_for_dices(cc, contour_names)
             all_dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0] in contour_names]
             all_hds   = [d[1] for d in df[['contour name', 'HD' ]].values if d[0] in contour_names]
-            row.append(np.mean(all_dices)); row.append(np.mean([d for d in all_dices if 0<d<100])); row.append(np.mean(all_hds))
+            row.append(np.nanmean(all_dices)); row.append(np.nanmean([d for d in all_dices if 0<d<100])); row.append(np.nanmean(all_hds))
             for cname in contour_names:
                 dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0]==cname]
                 hds   = [d[1] for d in df[['contour name', 'HD' ]].values if d[0]==cname]
-                row.append(np.mean(dices)); row.append(np.mean([d for d in dices if 0<d<100])); row.append(np.mean(hds))
+                row.append(np.nanmean(dices)); row.append(np.nanmean([d for d in dices if 0<d<100])); row.append(np.nanmean(hds))
             rows.append(row)
         for c in contour_names: columns.extend([c+' avg dice', c+' avg dice cont by both', c+' avg HD'])
         df = DataFrame(rows, columns=columns)
         return df
+    
     
     def add_bland_altman_dataframe(self, case_comparisons):
         case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
@@ -100,6 +100,27 @@ class CC_ClinicalResultsTable(Table):
         for i in range(len(columns)//2):
             col_n = columns[i*2].replace(' '+case1.reader_name, ' avg').replace(' '+case2.reader_name, ' avg')
             self.df[col_n] = self.df[[columns[i*2], columns[i*2+1]]].mean(axis=1)
+            
+    def get_vals_for_dices(self, cc, contournames):
+        from LazyLuna.Views import SAX_CINE_View
+        dsc_m, hd_m = DiceMetric(), HausdorffMetric()
+        view = SAX_CINE_View()
+        case1, case2 = cc.case1, cc.case2
+        rows, cols = [], ['casename', 'contour name', 'DSC', 'HD']
+        for d in range(case1.categories[0].nr_slices):
+            for cn in contournames:
+                cats1, cats2 = view.get_categories(case1, cn), view.get_categories(case2, cn)
+                for cat1, cat2 in zip(cats1, cats2):
+                    try:
+                        p1, p2 = cat1.phase, cat2.phase
+                        dcm = cat1.get_dcm(d, p1)
+                        anno1, anno2 = cat1.get_anno(d, p1), cat2.get_anno(d, p2)
+                        cont1, cont2 = anno1.get_contour(cn), anno2.get_contour(cn)
+                        dsc       = dsc_m.get_val(cont1, cont2, dcm, string=False)
+                        hd        = hd_m .get_val(cont1, cont2, dcm, string=False)
+                        rows.append([case1.case_name, cn, dsc, hd])
+                    except: print(traceback.format_exc()); continue
+        return DataFrame(rows, columns=cols)
         
 
 class CC_OverviewTable(Table):
@@ -112,11 +133,10 @@ class CC_OverviewTable(Table):
                                                           'SAX T2', 'SAX LGE'])
         cc_df.rename({'Reader_x': 'Reader1', 'Reader_y': 'Reader2', 'Path_x': 'Path1', 'Path_y': 'Path2'}, inplace=True, axis=1)
         cc_df   = cc_df.reindex(columns=['Case Name', 'Reader1', 'Reader2', 'Age (Y)', 'Gender (M/F)', 'Weight (kg)', 'Height (m)', 'SAX CINE', 'SAX CS', 'LAX CINE', 'SAX T1 PRE', 'SAX T1 POST', 'SAX T2', 'SAX LGE', 'Path1', 'Path2'])
-        print('CC OVERVIEW TABLE')
-        print(cc_df.shape)
         self.df = cc_df
         
         
+"""
 class CC_SAX_DiceTable(Table):
     def calculate(self, case_comparisons, contour_names=['lv_endo','lv_myo','rv_endo']):
         rows = []
@@ -134,7 +154,7 @@ class CC_SAX_DiceTable(Table):
                 rows.append([c1.case_name, False, cname, np.nanmean(dices)])
                 rows.append([c1.case_name, True, cname, np.nanmean([d for d in dices if 0<d<100])])
         self.df = DataFrame(rows, columns=columns)
-
+"""
         
 class CC_ClinicalResultsAveragesTable(Table):
     def calculate(self, case_comparisons):
@@ -163,84 +183,6 @@ class CC_ClinicalResultsAveragesTable(Table):
             rows.append(row)
         self.df = pandas.DataFrame(rows, columns=columns)
         
-
-class CC_Metrics_Table(Table):
-    def calculate(self, case_comparison, fixed_phase_first_reader=False):
-        rows = []
-        analyzer = Mini_LL.SAX_CINE_analyzer(case_comparison)
-        self.metric_vals = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader)
-        self.metric_vals = self.metric_vals[['category', 'slice', 'contour name', 'ml diff', 'abs ml diff', 'DSC', 'HD', 'has_contour1', 'has_contour2', 'position1', 'position2']]
-        self.metric_vals.sort_values(by='slice', axis=0, ascending=True, inplace=True, ignore_index=True)
-        
-    def present_contour_df(self, contour_name, pretty=True):
-        self.df = self.metric_vals[self.metric_vals['contour name']==contour_name]
-        if pretty:
-            self.df[['ml diff', 'abs ml diff', 'HD']] = self.df[['ml diff', 'abs ml diff', 'HD']].round(1)
-            self.df[['DSC']] = self.df[['DSC']].astype(int)
-        #print(self.df)
-        unique_cats = self.df['category'].unique()
-        #print('Unique categories; ', unique_cats)
-        df = DataFrame()
-        for cat_i, cat in enumerate(unique_cats):
-            curr = self.df[self.df['category']==cat]
-            curr = curr.rename(columns={k:cat+' '+k for k in curr.columns if k not in ['slice', 'category']})
-            curr.reset_index(drop=True, inplace=True)
-            if cat_i==0: df = curr
-            else:        df = df.merge(curr, on='slice', how='outer')
-        df = df.drop(labels=[c for c in df.columns if 'category' in c or 'contour name' in c], axis=1)
-        df = self.resort(df, contour_name)
-        self.df = df
-        
-    def resort(self, df, contour_name):
-        metric_vals = self.metric_vals[self.metric_vals['contour name']==contour_name]
-        unique_cats = metric_vals['category'].unique()
-        n = len([c for c in df.columns if unique_cats[0] in c])
-        cols = list(df.columns[0:1])
-        for i in range(n): cols += [df.columns[1+i+j*n] for j in range(len(unique_cats))]
-        return df[cols]
-
-
-
-class T2_CC_Metrics_Table(Table):
-    def calculate(self, case_comparison, fixed_phase_first_reader=False):
-        rows = []
-        analyzer = Mini_LL.SAX_T2_analyzer(case_comparison)
-        self.metric_vals = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader)
-        self.metric_vals = self.metric_vals[['category', 'slice', 'contour name', 'DSC', 'HD', 'T2_R1', 'T2_R2', 'T2_Diff', 'Angle_Diff', 'has_contour1', 'has_contour2']]
-        self.metric_vals.sort_values(by='slice', axis=0, ascending=True, inplace=True, ignore_index=True)
-        
-    def present_contour_df(self, contour_name, pretty=True):
-        self.df = self.metric_vals[self.metric_vals['contour name']==contour_name]
-        print(self.df)
-        if pretty:
-            self.df[['HD','T2_R1','T2_R2','T2_Diff']] = self.df[['HD','T2_R1','T2_R2','T2_Diff']].round(1)
-            self.df[['Angle_Diff']] = self.df[['Angle_Diff']].round(1)
-            self.df[['DSC']] = self.df[['DSC']].astype(int)
-        print(self.df)
-        unique_cats = self.df['category'].unique()
-        print('Unique categories; ', unique_cats)
-        df = DataFrame()
-        for cat_i, cat in enumerate(unique_cats):
-            curr = self.df[self.df['category']==cat]
-            curr = curr.rename(columns={k:cat+' '+k for k in curr.columns if k not in ['slice', 'category']})
-            curr.reset_index(drop=True, inplace=True)
-            if cat_i==0: df = curr
-            else:        df = df.merge(curr, on='slice', how='outer')
-        df = df.drop(labels=[c for c in df.columns if 'category' in c or 'contour name' in c], axis=1)
-        df = self.resort(df, contour_name)
-        self.df = df
-        
-    def resort(self, df, contour_name):
-        metric_vals = self.metric_vals[self.metric_vals['contour name']==contour_name]
-        unique_cats = metric_vals['category'].unique()
-        n = len([c for c in df.columns if unique_cats[0] in c])
-        cols = list(df.columns[0:1])
-        for i in range(n): cols += [df.columns[1+i+j*n] for j in range(len(unique_cats))]
-        return df[cols]
-
-
-
-
         
 class SAX_Cine_CCs_pretty_averageCRs_averageMetrics_Table(Table):
     def calculate(self, case_comparisons, view):
@@ -273,10 +215,9 @@ class SAX_Cine_CCs_pretty_averageCRs_averageMetrics_Table(Table):
             new_names.append(n)
         cr_table['Name'] = new_names
         self.cr_table = cr_table
-        #display(cr_table)
         
-        metrics_table = CCs_MetricsTable()
-        metrics_table.calculate(case_comparisons, view)
+        metrics_table = SAX_CINE_CCs_Metrics_Table()
+        metrics_table.calculate(view, case_comparisons, pretty=False)
         metrics_table = metrics_table.df
         
         rows = []
@@ -288,26 +229,22 @@ class SAX_Cine_CCs_pretty_averageCRs_averageMetrics_Table(Table):
             row1, row2 = [position, 'Dice (all slices) [%]'], [position, 'Dice (slices contoured by both) [%]']
             row3, row4 = [position, 'HD [mm]'], [position, 'Abs. ml diff. (per slice) [ml]']
             for contname in ['lv_endo', 'lv_myo', 'rv_endo']:
-                print(position, contname)
                 subtable = metrics_table[[k for k in metrics_table.columns if contname in k]]
-                #display(subtable)
                 dice_ks     = [k for k in subtable.columns if 'DSC' in k]
-                position_ks = [k for k in subtable.columns if 'position1' in k]
+                position_ks = [k for k in subtable.columns if 'Pos1' in k]
                 all_dices = []
-                for ki in range(len(dice_ks)): all_dices.extend([d for d in subtable[subtable[position_ks[ki]]==position][dice_ks[ki]]])
-                #print('all dices: ', all_dices)
+                for ki in range(len(dice_ks)): 
+                    all_dices.extend([d for d in subtable[subtable[position_ks[ki]]==position][dice_ks[ki]]])
                 row1.append(np.nanmean(all_dices))
                 row2.append(np.nanmean([d for d in all_dices if 0<d<100]))
                 hd_ks = [k for k in subtable.columns if 'HD' in k]
                 hds   = []
                 for ki in range(len(hd_ks)): hds.extend([d for d in subtable[subtable[position_ks[ki]]==position][hd_ks[ki]]])
-                #print('hds: ', hds)
                 row3.append(np.nanmean(hds))
                 # abs ml diff
-                mld_ks = [k for k in subtable.columns if 'abs ml diff' in k]
+                mld_ks = [k for k in subtable.columns if 'Abs ml Diff' in k]
                 mlds   = []
                 for ki in range(len(mld_ks)): mlds.extend([d for d in subtable[subtable[position_ks[ki]]==position][mld_ks[ki]]])
-                #print('mlds: ', mlds)
                 row4.append(np.nanmean(mlds))
             rows.extend([row1, row2, row3, row4])
         self.metrics_table = pandas.DataFrame(rows, columns=['Position', 'Metric', 'LV Endocardial Contour', 'LV Myocardial Contour', 'RV Endocardial Contour'])
@@ -342,30 +279,6 @@ class CCs_MetricsTable(Table):
         self.df = pandas.concat(cases, axis=0, ignore_index=True)
         
 
-                
-
-class T2_CCs_MetricsTable(Table):
-    def calculate(self, case_comparisons, view):
-        cases = []
-        for cc in case_comparisons:
-            cc_table = T2_CC_Metrics_Table()
-            cc_table.calculate(cc)
-            tables = []
-            for c_i, contname in enumerate(view.contour_names):
-                cc_table.present_contour_df(contname, pretty=False)
-                cc_table.df = cc_table.df.rename(columns={k:contname+' '+k for k in cc_table.df.columns if 'slice' not in k})
-                if c_i!=0: cc_table.df.drop(labels='slice', axis=1, inplace=True)
-                tables.append(cc_table.df)
-            table = pandas.concat(tables, axis=1)
-            table['Case']    = cc.case1.case_name
-            table['Reader1'] = cc.case1.reader_name
-            table['Reader2'] = cc.case2.reader_name
-            cols = list(table.columns)[-3:] + list(table.columns)[:-3]
-            table = table[cols]
-            cases.append(table)
-        self.df = pandas.concat(cases, axis=0, ignore_index=True)
-                
-
 class CC_AngleAvgT1ValuesTable(Table):
     def calculate(self, case_comparison, category, nr_segments, byreader=None):
         self.cc = case_comparison
@@ -380,7 +293,6 @@ class CC_AngleAvgT1ValuesTable(Table):
         for k in keys: 
             for r in [r1,r2,r1+'-'+r2]:
                 columns += [r+' '+'('+'{:.1f}'.format(k[0])+'°, '+'{:.1f}'.format(k[1])+'°)']
-        print(columns)
         
         for d in range(cat1.nr_slices):
             img1,  img2  = cat1.get_img (d,0, True, False), cat2.get_img (d,0, True, False)
@@ -464,7 +376,6 @@ class LAX_CC_Metrics_Table(Table):
             try:
                 p1, p2 = (cat1.phase, cat2.phase) if not fixed_phase_first_reader else (cat1.phase, cat1.phase)
                 dcm = cat1.get_dcm(0, p1)
-                ph, pw = cat1.pixel_h, cat1.pixel_w
                 anno1, anno2 = cat1.get_anno(0, p1), cat2.get_anno(0, p2)
                 cont1, cont2 = anno1.get_contour(contname), anno2.get_contour(contname)
                 area_diff = areadiff_m.get_val(cont1, cont2, dcm, string=pretty)
@@ -491,7 +402,6 @@ class LAX_CCs_MetricsTable(Table):
                     try:
                         p1, p2 = (cat1.phase, cat2.phase) if not fixed_phase_first_reader else (cat1.phase, cat1.phase)
                         dcm = cat1.get_dcm(0, p1)
-                        ph, pw = cat1.pixel_h, cat1.pixel_w
                         anno1, anno2 = cat1.get_anno(0, p1), cat2.get_anno(0, p2)
                         cont1, cont2 = anno1.get_contour(contname), anno2.get_contour(contname)
                         area_diff = areadiff_m.get_val(cont1, cont2, dcm, string=pretty)
@@ -507,9 +417,12 @@ class LAX_CCs_MetricsTable(Table):
         self.df = DataFrame(rows, columns=cols)
         
         
-        
 
 class T1_CC_Metrics_Table(Table):
+    def get_column_names(self, cat):
+        n = cat.name
+        return [n+' Area Diff', n+' DSC', n+' HD', n+' T1avg_r1', n+' T1avg_r2', n+' T1avgDiff', n+' AngleDiff', n+' hascont1', cat1.name+' hascont2']
+    
     def calculate(self, view, cc, contname, fixed_phase_first_reader=False, pretty=True):
         dsc_m, hd_m, areadiff_m = DiceMetric(), HausdorffMetric(), AreaDiffMetric()
         t1avg_m, t1avgdiff_m, angle_m = T1AvgReaderMetric(), T1AvgDiffMetric(), AngleDiffMetric()
@@ -522,7 +435,6 @@ class T1_CC_Metrics_Table(Table):
                     dcm = cat1.get_dcm(d, 0)
                     img1 = cat1.get_img(d,0, True, False)
                     img2 = cat2.get_img(d,0, True, False)
-                    ph, pw = cat1.pixel_h, cat1.pixel_w
                     anno1, anno2 = cat1.get_anno(d, 0), cat2.get_anno(d, 0)
                     cont1, cont2 = anno1.get_contour(contname), anno2.get_contour(contname)
                     area_diff = areadiff_m.get_val(cont1, cont2, dcm, string=pretty)
@@ -534,32 +446,176 @@ class T1_CC_Metrics_Table(Table):
                     has_cont1, has_cont2 = anno1.has_contour(contname), anno2.has_contour(contname)
                     rows.append([area_diff, dsc, hd, t1avg_r1, t1avg_r2, t1avg_diff, angle_diff, has_cont1, has_cont2])
                 except Exception as e: rows.append([np.nan for _ in range(9)]); print(traceback.format_exc())
-            n = cat1.name
-            cols = [n+' Area Diff', n+' DSC', n+' HD', n+' T1avg_r1', n+' T1avg_r2', n+' T1avgDiff', n+' AngleDiff', n+' hascont1', cat1.name+' hascont2']
+            cols = self.get_column_names(cat1)
         self.df = DataFrame(rows, columns=cols)
         
     
 
 class T1_CCs_MetricsTable(Table):
+    def get_column_names(self, cat):
+        n = cat.name
+        return ['Casename', 'Slice', n+' Area Diff', n+' DSC', n+' HD', n+' T1avg_r1', n+' T1avg_r2', n+' T1avgDiff', n+' Insertion Point AngleDiff', n+' hascont1', n+' hascont2']
     
-    """
-    def calculate(self, case_comparisons, view):
-        cases = []
-        for cc in case_comparisons:
-            cc_table = T1_CC_Metrics_Table()
-            cc_table.calculate(cc)
-            tables = []
-            for c_i, contname in enumerate(view.contour_names):
-                cc_table.present_contour_df(contname, pretty=False)
-                cc_table.df = cc_table.df.rename(columns={k:contname+' '+k for k in cc_table.df.columns if 'slice' not in k})
-                if c_i!=0: cc_table.df.drop(labels='slice', axis=1, inplace=True)
-                tables.append(cc_table.df)
-            table = pandas.concat(tables, axis=1)
-            table['Case']    = cc.case1.case_name
-            table['Reader1'] = cc.case1.reader_name
-            table['Reader2'] = cc.case2.reader_name
-            cols = list(table.columns)[-3:] + list(table.columns)[:-3]
-            table = table[cols]
-            cases.append(table)
-        self.df = pandas.concat(cases, axis=0, ignore_index=True)
-   """
+    def calculate(self, view, ccs, fixed_phase_first_reader=False, pretty=True):
+        dsc_m, hd_m, areadiff_m = DiceMetric(), HausdorffMetric(), AreaDiffMetric()
+        t1avg_m, t1avgdiff_m, angle_m = T1AvgReaderMetric(), T1AvgDiffMetric(), AngleDiffMetric()
+        rows, cols = [], []
+        for i, cc in enumerate(ccs):
+            case1, case2 = cc.case1, cc.case2
+            contname = 'lv_myo'
+            cats1, cats2 = view.get_categories(case1, contname), view.get_categories(case2, contname)
+            for cat1, cat2 in zip(cats1, cats2):
+                for d in range(cat1.nr_slices):
+                    try:
+                        dcm = cat1.get_dcm(d, 0)
+                        img1 = cat1.get_img(d,0, True, False)
+                        img2 = cat2.get_img(d,0, True, False)
+                        anno1, anno2 = cat1.get_anno(d, 0), cat2.get_anno(d, 0)
+                        cont1, cont2 = anno1.get_contour(contname), anno2.get_contour(contname)
+                        area_diff = areadiff_m.get_val(cont1, cont2, dcm, string=pretty)
+                        dsc       = dsc_m.get_val(cont1, cont2, dcm, string=pretty)
+                        hd        = hd_m.get_val(cont1, cont2, dcm, string=pretty)
+                        t1avg_r1, t1avg_r2 = t1avg_m.get_val(cont1, img1, string=pretty), t1avg_m.get_val(cont2, img2, string=pretty)
+                        t1avg_diff = t1avgdiff_m.get_val(cont1, cont2, img1, img2, string=pretty)
+                        angle_diff = angle_m.get_val(anno1, anno2, string=pretty)
+                        has_cont1, has_cont2 = anno1.has_contour(contname), anno2.has_contour(contname)
+                        rows.append([case1.case_name, d, area_diff, dsc, hd, t1avg_r1, t1avg_r2, t1avg_diff, angle_diff, has_cont1, has_cont2])
+                    except Exception as e: rows.append([np.nan for _ in range(11)]); print(traceback.format_exc())
+        cols = self.get_column_names(cat1)
+        self.df = DataFrame(rows, columns=cols)
+        
+        
+class T2_CC_Metrics_Table(T1_CC_Metrics_Table):
+    def get_column_names(self, cat):
+        n = cat.name
+        return [n+' Area Diff', n+' DSC', n+' HD', n+' T2avg_r1', n+' T2avg_r2', n+' T2avgDiff', n+' AngleDiff', n+' hascont1', n+' hascont2']
+
+class T2_CCs_MetricsTable(T1_CCs_MetricsTable):
+    def get_column_names(self, cat):
+        n = cat.name
+        return ['Casename', 'Slice', n+' Area Diff', n+' DSC', n+' HD', n+' T2avg_r1', n+' T2avg_r2', n+' T2avgDiff', n+' Insertion Point AngleDiff', n+' hascont1', n+' hascont2']
+
+    
+class SAX_CINE_CC_Metrics_Table(Table):
+    def get_column_names(self, view, case, contname):
+        cols = []
+        for cat in view.get_categories(case, contname): 
+            n = cat.name
+            cols.extend([n+' '+s for s in ['ml Diff', 'Area Diff', 'DSC', 'HD', 'Pos1', 'Pos2', 'hascont1', 'hascont2']])
+        return cols
+    
+    def resort(self, row, cats):
+        n = len(cats)
+        n_metrics = len(row)//n
+        ret = []
+        for i in range(n_metrics):
+            for j in range(n):
+                ret.append(row[i+j*n_metrics])
+        return ret
+    
+    def _is_apic_midv_basal_outside(self, case, d, p, cont_name):
+        cat  = case.categories[0]
+        anno = cat.get_anno(d, p)
+        has_cont = anno.has_contour(cont_name)
+        if not has_cont:                    return 'outside'
+        if has_cont and d==0:               return 'basal'
+        if has_cont and d==cat.nr_slices-1: return 'apical'
+        prev_has_cont = cat.get_anno(d-1, p).has_contour(cont_name)
+        next_has_cont = cat.get_anno(d+1, p).has_contour(cont_name)
+        if prev_has_cont and next_has_cont: return 'midv'
+        if prev_has_cont and not next_has_cont: return 'apical'
+        if not prev_has_cont and next_has_cont: return 'basal'
+    
+    def calculate(self, view, cc, contname, fixed_phase_first_reader=False, pretty=True):
+        mlDiff_m, dsc_m, hd_m, areadiff_m = mlDiffMetric(), DiceMetric(), HausdorffMetric(), AreaDiffMetric()
+        case1, case2 = cc.case1, cc.case2
+        cats1, cats2 = view.get_categories(case1, contname), view.get_categories(case2, contname)
+        rows, cols = [], []
+        for d in range(cats1[0].nr_slices):
+            row = []
+            for cat1, cat2 in zip(cats1, cats2):
+                try:
+                    p1, p2 = (cat1.phase, cat2.phase) if not fixed_phase_first_reader else (cat1.phase, cat1.phase)
+                    dcm = cat1.get_dcm(d, p1)
+                    anno1, anno2 = cat1.get_anno(d, p1), cat2.get_anno(d, p2)
+                    cont1, cont2 = anno1.get_contour(contname), anno2.get_contour(contname)
+                    ml_diff   = mlDiff_m.get_val(cont1, cont2, dcm, string=pretty)
+                    area_diff = areadiff_m.get_val(cont1, cont2, dcm, string=pretty)
+                    dsc       = dsc_m.get_val(cont1, cont2, dcm, string=pretty)
+                    hd        = hd_m.get_val(cont1, cont2, dcm, string=pretty)
+                    pos1 = self._is_apic_midv_basal_outside(case1, d, p1, contname)
+                    pos2 = self._is_apic_midv_basal_outside(case2, d, p2, contname)
+                    has_cont1, has_cont2 = anno1.has_contour(contname), anno2.has_contour(contname)
+                    row.extend([ml_diff, area_diff, dsc, hd, pos1, pos2, has_cont1, has_cont2])
+                except Exception as e: row.extend([np.nan for _ in range(8)]); print(traceback.format_exc())
+            rows.append(self.resort(row, cats1))
+        cols = self.resort(self.get_column_names(view, case1, contname), cats1)
+        self.df = DataFrame(rows, columns=cols)
+        
+        
+
+class SAX_CINE_CCs_Metrics_Table(Table):
+    def get_column_names(self, view, case):
+        cols = ['Casename', 'Slice']
+        for cn in view.contour_names:
+            cols_extension = []
+            cats = view.get_categories(case, cn)
+            for cat in cats: 
+                n = cat.name
+                cols_extension.extend([cn+' '+n+' '+s for s in ['ml Diff', 'Abs ml Diff', 'Area Diff', 'DSC', 'HD', 'Pos1', 'Pos2', 'hascont1', 'hascont2']])
+            cols.extend(self.resort(cols_extension, cats))
+        return cols
+    
+    def resort(self, row, cats):
+        n = len(cats)
+        n_metrics = len(row)//n
+        ret = []
+        for i in range(n_metrics):
+            for j in range(n):
+                ret.append(row[i+j*n_metrics])
+        return ret
+    
+    def _is_apic_midv_basal_outside(self, case, d, p, cont_name):
+        cat  = case.categories[0]
+        anno = cat.get_anno(d, p)
+        has_cont = anno.has_contour(cont_name)
+        if not has_cont:                    return 'outside'
+        if has_cont and d==0:               return 'basal'
+        if has_cont and d==cat.nr_slices-1: return 'apical'
+        prev_has_cont = cat.get_anno(d-1, p).has_contour(cont_name)
+        next_has_cont = cat.get_anno(d+1, p).has_contour(cont_name)
+        if prev_has_cont and next_has_cont: return 'midv'
+        if prev_has_cont and not next_has_cont: return 'apical'
+        if not prev_has_cont and next_has_cont: return 'basal'
+    
+    def calculate(self, view, ccs, fixed_phase_first_reader=False, pretty=True):
+        mlDiff_m, absmldiff_m, dsc_m, hd_m, areadiff_m = mlDiffMetric(), absMlDiffMetric(), DiceMetric(), HausdorffMetric(), AreaDiffMetric()
+        rows, cols = [], []
+        for cc in ccs:
+            case1, case2 = cc.case1, cc.case2
+            for d in range(case1.categories[0].nr_slices):
+                row = [case1.case_name, d]
+                for contname in view.contour_names:
+                    cats1, cats2 = view.get_categories(case1, contname), view.get_categories(case2, contname)
+                    row_extension = []
+                    for cat1, cat2 in zip(cats1, cats2):
+                        try:
+                            p1, p2 = (cat1.phase, cat2.phase) if not fixed_phase_first_reader else (cat1.phase, cat1.phase)
+                            dcm = cat1.get_dcm(d, p1)
+                            anno1, anno2 = cat1.get_anno(d, p1), cat2.get_anno(d, p2)
+                            cont1, cont2 = anno1.get_contour(contname), anno2.get_contour(contname)
+                            ml_diff   = mlDiff_m.get_val(cont1, cont2, dcm, string=pretty)
+                            absmldiff = absmldiff_m.get_val(cont1, cont2, dcm, string=pretty)
+                            area_diff = areadiff_m.get_val(cont1, cont2, dcm, string=pretty)
+                            dsc       = dsc_m.get_val(cont1, cont2, dcm, string=pretty)
+                            hd        = hd_m.get_val(cont1, cont2, dcm, string=pretty)
+                            pos1 = self._is_apic_midv_basal_outside(case1, d, p1, contname)
+                            pos2 = self._is_apic_midv_basal_outside(case2, d, p2, contname)
+                            has_cont1, has_cont2 = anno1.has_contour(contname), anno2.has_contour(contname)
+                            row_extension.extend([ml_diff, absmldiff, area_diff, dsc, hd, pos1, pos2, has_cont1, has_cont2])
+                        except Exception as e: row_extension.extend([np.nan for _ in range(9)]); print(traceback.format_exc())
+                    row.extend(self.resort(row_extension, cats1))
+                rows.append(row)
+        cols = self.get_column_names(view, case1)
+        self.df = DataFrame(rows, columns=cols)
+    

@@ -48,16 +48,14 @@ class CC_Metrics_Tab(QWidget):
         layout.addWidget(self.combobox_select_contour, 0, 0)
 
         if type(view) in [SAX_CINE_View, SAX_CS_View, SAX_LGE_View]:
-            self.metrics_table  = CC_Metrics_Table()
+            self.metrics_table  = SAX_CINE_CC_Metrics_Table()
         elif type(view) in [SAX_T1_PRE_View, SAX_T1_POST_View]:
             self.metrics_table  = T1_CC_Metrics_Table()
         elif type(view) in [SAX_T2_View]:
             self.metrics_table  = T2_CC_Metrics_Table()
         else: # type(view) is LAX_CINE_View:
             self.metrics_table  = LAX_CC_Metrics_Table()
-        #self.metrics_table.calculate(Case_Comparison(view.customize_case(cc.case1), view.customize_case(cc.case2)))
-        #self.metrics_table.present_contour_df(view.contour_names[0])
-        
+            
         self.metrics_table.calculate(view, Case_Comparison(view.customize_case(cc.case1), view.customize_case(cc.case2)), view.contour_names[0])
         
         self.metrics_TableView = QTableView()

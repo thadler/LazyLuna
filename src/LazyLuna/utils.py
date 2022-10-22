@@ -72,19 +72,13 @@ def geometry_collection_to_Polygon(geom_collection):
 ####################
 
 # works for Polygons, Multipolygons, GeometryCollections (containing LineStrings)
-def dice(geo1, geo2, debug=False):
-    if debug: st = time()
-    area1, area2 = geo1.area, geo2.area
-    if area1==0==area2:                return 100.0
+def dice(geo1, geo2):
+    if geo1.is_empty and geo2.is_empty: return 100.0
     overlap = geo1.intersection(geo2)
-    dice = 100.0 * 2*overlap.area / (area1 + area2)
-    if debug: print("Dice took: ", time()-st)
-    return dice
+    return 100.0 * (2*overlap.area) / (geo1.area + geo2.area)
 
 def hausdorff(geo1, geo2):
-    # setting them to nan only causes issues
-    #if geo1.is_empty and not geo2.is_empty: return np.nan
-    #if not geo1.is_empty and geo2.is_empty: return np.nan
+    if geo1.is_empty and geo2.is_empty: return 0.0
     return geo1.hausdorff_distance(geo2)
 
 
