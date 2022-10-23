@@ -1,28 +1,23 @@
 import os
 import traceback
 
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib import gridspec, colors, cm
 from matplotlib.figure import Figure
 from matplotlib.collections import PathCollection
+from mpl_interactions import ioff, panhandler, zoom_factory
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 import shapely
-from descartes import PolygonPatch
 from shapely.geometry import Polygon
+from descartes import PolygonPatch
+from scipy.stats import probplot
 import numpy as np
-from scipy.stats import wilcoxon, probplot
-from statsmodels.graphics.gofplots import qqplot
 import pandas
 
-from LazyLuna import Mini_LL
 from LazyLuna.Tables import *
-from LazyLuna import utils
 from LazyLuna.Metrics import *
-        
-from mpl_interactions import ioff, panhandler, zoom_factory
+from LazyLuna import utils
 
 
 class Visualization(Figure):
@@ -95,7 +90,6 @@ class SAX_BlandAltman(Visualization):
         ax.set_xlabel("", fontsize=14)
         ax.set_ylim(ymin=65, ymax=101)
         for i, boxplot in enumerate(dicebp.patches):
-            print(boxplot)
             if i%2 == 0: boxplot.set_facecolor(custom_palette[i//2])
             else:        boxplot.set_facecolor(custom_palette2[i//2])
         sns.despine()
@@ -293,7 +287,7 @@ class Basic_Presenter(Visualization):
         if event.key == 'down' : slice_nr = (slice_nr+1) % category.nr_slices
         if event.key == 'left' : category = categories[(idx-1)%len(categories)]
         if event.key == 'right': category = categories[(idx+1)%len(categories)]
-        print('In key press: ', slice_nr, category)
+        #print('In key press: ', slice_nr, category)
         self.visualize(slice_nr, category)
 
 
@@ -482,7 +476,6 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
         self.yielder = self.initialize_yeild_next(rounds=1)
         for cc, slice_nr, category, contour_name in self.yielder:
             figname = cc.case1.case_name+'_'+str(slice_nr)+'_'+category.name+'_'+contour_name
-            print(figname)
             self.visualize(cc, slice_nr, category, contour_name)
             self.savefig(os.path.join(storepath, figname+'.png'), dpi=100, facecolor="#FFFFFF")
     
@@ -596,7 +589,6 @@ class PairedBoxplot(Visualization):
             casename, studyuid = cc.case1.case_name, cc.case1.studyinstanceuid
             rows.extend([[casename, studyuid, readername1, cr1], [casename, studyuid, readername2, cr2]])
         df = DataFrame(rows, columns=['casename', 'studyuid', 'Reader', cr_name])
-        print(df)
         # Plot
         sns.boxplot  (ax=ax, data=df, y='Reader', x=cr_name, width=0.4, palette=custom_palette, orient='h', linewidth=1)
         sns.swarmplot(ax=ax, data=df, y='Reader', x=cr_name, palette=swarm_palette, orient='h')
@@ -838,19 +830,30 @@ class Qualitative_Correlationplot(Visualization):
     def set_gui(self, gui):
         self.gui = gui
         
+    
     def all_cases_metrics_table(self, ccs):
-        all_dfs = []
+        from LazyLuna.Views import SAX_CINE_View
+        view = SAX_CINE_View()
+        mlDiff_m, absmldiff_m, dsc_m = mlDiffMetric(), absMlDiffMetric(), DiceMetric()
+        rows = []
+        cols = ['case', 'category', 'slice', 'contour name', 'ml diff', 'abs ml diff', 'DSC']
         for i, cc in enumerate(ccs):
-            st=time(); print(i, ' of ', len(ccs), end=', ')
-            analyzer = Mini_LL.SAX_CINE_analyzer(cc)
-            df = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader=False)
-            df.drop(columns=['sop1','sop2','reader1','reader2','position2','has_contour1','has_contour2',
-                             'depth_perc','max_slices','phase1','phase2'], inplace=True)
-            df = df[df['contour name'].isin(['lv_endo','lv_myo','rv_endo'])]
-            all_dfs.append(df)
-            print('took: ', time()-st)
-        df = pandas.concat(all_dfs, axis=0, ignore_index=True)
-        return df
+            case1, case2 = cc.case1, cc.case2
+            for d in range(case1.categories[0].nr_slices):
+                for cn in view.contour_names:
+                    cats1, cats2 = view.get_categories(case1, cn), view.get_categories(case2, cn)
+                    for cat1, cat2 in zip(cats1, cats2):
+                        try:
+                            p1, p2 = cat1.phase, cat2.phase
+                            dcm = cat1.get_dcm(d, p1)
+                            anno1, anno2 = cat1.get_anno(d, p1), cat2.get_anno(d, p2)
+                            cont1, cont2 = anno1.get_contour(cn), anno2.get_contour(cn)
+                            ml_diff   = mlDiff_m.get_val(cont1, cont2, dcm, string=False)
+                            absmldiff = absmldiff_m.get_val(cont1, cont2, dcm, string=False)
+                            dsc       = dsc_m.get_val(cont1, cont2, dcm, string=False)
+                            rows.append([case1.case_name, cat1.name, d, cn, ml_diff, absmldiff, dsc])
+                        except Exception as e: rows.append([np.nan for _ in range(7)]); print(traceback.format_exc())
+        return DataFrame(rows, columns=cols)
     
     def visualize(self, case_comparisons, metric='ml diff', hue='contour name'):
         df = self.all_cases_metrics_table(case_comparisons)
@@ -962,10 +965,8 @@ class T1_bullseye_plot(Visualization):
         cmap = plt.cm.gnuplot # ??? which colormap?
         cmap = plt.cm.bwr
         
-        print(minv, maxv)
         if minv is None: minv=np.min(means)
         if maxv is None: maxv=np.max(means)
-        print(minv, maxv)
         
         minv, maxv = min([minv, 995]), max([maxv, 1005])
         minv = min([minv, 1000 - (maxv-1000)])
@@ -1172,10 +1173,8 @@ class Statistical_T1_bullseye_plot(Visualization):
         cmap = plt.cm.gnuplot # ??? which colormap?
         cmap = plt.cm.bwr
         
-        print(minv, maxv)
         if minv is None: minv=np.min(means)
         if maxv is None: maxv=np.max(means)
-        print(minv, maxv)
         
         minv, maxv = min([minv, 995]), max([maxv, 1005])
         minv = min([minv, 1000 - (maxv-1000)])

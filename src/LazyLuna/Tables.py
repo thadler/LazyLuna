@@ -1,4 +1,4 @@
-# General information for analyzer loading & statistics
+# General information for Analyzer Tool loading & statistics
 # saving (to excel spreadsheet), displaying (to pyqt5)
 
 import pandas
@@ -7,7 +7,6 @@ from PyQt5 import Qt, QtWidgets, QtGui, QtCore, uic
 import traceback
 
 from LazyLuna.loading_functions import *
-from LazyLuna import Mini_LL
 from LazyLuna.Metrics import *
 
 
@@ -33,7 +32,7 @@ class DataFrameModel(QtGui.QStandardItemModel):
         try:
             if orientation==QtCore.Qt.Horizontal and role==QtCore.Qt.DisplayRole: return self._data.columns[x]
             if orientation==QtCore.Qt.Vertical   and role==QtCore.Qt.DisplayRole: return self._data.index[x]
-        except Exception as e: print('WARNING !!!: ', e)
+        except Exception as e: print('WARNING in DataFrameModel!!!: ', traceback.format_exc())
         return None
     
     
@@ -139,13 +138,14 @@ class CC_OverviewTable(Table):
 
 class CC_SAX_DiceTable(Table):
     def calculate(self, case_comparisons, contour_names=['lv_endo','lv_myo','rv_endo']):
+        from LazyLuna.Views import SAX_CINE_View
+        view = SAX_CINE_View()
         rows = []
         case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
         columns=['case name', 'cont by both', 'cont type', 'avg dice']
         for cc in case_comparisons:
             c1, c2 = cc.case1, cc.case2
-            analyzer = Mini_LL.SAX_CINE_analyzer(cc)
-            df = analyzer.get_case_contour_comparison_pandas_dataframe(fixed_phase_first_reader=False)
+            df = self.get_vals_for_dices(view, cc, contour_names)
             all_dices = [d[1] for d in df[['contour name', 'DSC']].values if d[0] in contour_names]
             rows.append([c1.case_name, False, 'all', np.nanmean(all_dices)])
             rows.append([c1.case_name, True, 'all',  np.nanmean([d for d in all_dices if 0<d<100])])
@@ -154,6 +154,27 @@ class CC_SAX_DiceTable(Table):
                 rows.append([c1.case_name, False, cname, np.nanmean(dices)])
                 rows.append([c1.case_name, True, cname, np.nanmean([d for d in dices if 0<d<100])])
         self.df = DataFrame(rows, columns=columns)
+        
+    
+    def get_vals_for_dices(self, view, cc, contournames):
+        dsc_m = DiceMetric()
+        case1, case2 = cc.case1, cc.case2
+        rows, cols = [], ['contour name', 'DSC']
+        for d in range(case1.categories[0].nr_slices):
+            for cn in contournames:
+                cats1, cats2 = view.get_categories(case1, cn), view.get_categories(case2, cn)
+                for cat1, cat2 in zip(cats1, cats2):
+                    try:
+                        p1, p2 = cat1.phase, cat2.phase
+                        dcm = cat1.get_dcm(d, p1)
+                        anno1, anno2 = cat1.get_anno(d, p1), cat2.get_anno(d, p2)
+                        cont1, cont2 = anno1.get_contour(cn), anno2.get_contour(cn)
+                        dsc       = dsc_m.get_val(cont1, cont2, dcm, string=False)
+                        rows.append([cn, dsc])
+                    except: print(traceback.format_exc()); continue
+        return DataFrame(rows, columns=cols)
+        
+
 
         
 class CC_ClinicalResultsAveragesTable(Table):
@@ -348,14 +369,14 @@ class CC_StatsOverviewTable(Table):
         return h
     
     def calculate(self, ccs):
-        columns = ['Nr Cases','Age (Y)','Gender (M/F)','Weight (kg)','Height (m)']
+        columns = ['Nr Cases','Age (Y)','Gender (M/F/Unknown)','Weight (kg)','Height (m)']
         ages    = np.array([self.get_age(cc) for cc in ccs])
-        genders = [self.get_gender(cc) for cc in ccs]
+        genders = np.array([self.get_gender(cc) for cc in ccs])
         weights = np.array([self.get_weight(cc) for cc in ccs])
         heights = np.array([self.get_height(cc) for cc in ccs])
         
         rows = [[len(ccs), '{:.1f}'.format(np.nanmean(ages))+' ('+'{:.1f}'.format(np.nanstd(ages))+')', 
-                str(np.sum(genders=='M'))+'/'+str(np.sum(genders=='F')), 
+                str(np.sum(genders=='M'))+'/'+str(np.sum(genders=='F'))+'/'+str(int(np.sum([1 for g in genders if g not in ['M','F']]))), 
                 '{:.1f}'.format(np.nanmean(weights))+' ('+'{:.1f}'.format(np.nanstd(weights))+')', 
                 '{:.1f}'.format(np.nanmean(heights))+' ('+'{:.1f}'.format(np.nanstd(heights))+')']]
         
@@ -366,7 +387,6 @@ class CC_StatsOverviewTable(Table):
 
 
 class LAX_CC_Metrics_Table(Table):
-    
     def calculate(self, view, cc, contname, fixed_phase_first_reader=False, pretty=True):
         dsc_m, hd_m, areadiff_m = DiceMetric(), HausdorffMetric(), AreaDiffMetric()
         case1, case2 = cc.case1, cc.case2
@@ -389,7 +409,6 @@ class LAX_CC_Metrics_Table(Table):
 
         
 class LAX_CCs_MetricsTable(Table):
-    # view, cc, contname, fixed_phase_first_reader=False, pretty=True):
     def calculate(self, view, ccs, fixed_phase_first_reader=False, pretty=True):
         dsc_m, hd_m, areadiff_m = DiceMetric(), HausdorffMetric(), AreaDiffMetric()
         rows, cols = [], ['Casename']
@@ -560,7 +579,7 @@ class SAX_CINE_CCs_Metrics_Table(Table):
         for cn in view.contour_names:
             cols_extension = []
             cats = view.get_categories(case, cn)
-            for cat in cats: 
+            for cat in cats:
                 n = cat.name
                 cols_extension.extend([cn+' '+n+' '+s for s in ['ml Diff', 'Abs ml Diff', 'Area Diff', 'DSC', 'HD', 'Pos1', 'Pos2', 'hascont1', 'hascont2']])
             cols.extend(self.resort(cols_extension, cats))

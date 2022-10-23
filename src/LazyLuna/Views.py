@@ -5,7 +5,6 @@
 # Views take case of customizing cases, images, outputs and tabs to specific use cases
 #
 
-from LazyLuna.Mini_LL    import *
 from LazyLuna.Categories import *
 from LazyLuna.ClinicalResults import *
 
@@ -70,7 +69,7 @@ class SAX_CINE_View(View):
         return case
     
     def customize_case(self, case, debug=False):
-        print('starting customize: ', case.case_name)
+        #print('starting customize: ', case.case_name)
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX CINE']
@@ -93,7 +92,7 @@ class SAX_CINE_View(View):
         # set new type
         case.type = 'SAX CINE'
         if debug: print('Customization in SAX CINE view took: ', time()-st)
-        print('ending customize: ', case.case_name)
+        #print('ending customize: ', case.case_name)
         return case
     
     def store_information(self, ccs, path):
@@ -237,9 +236,6 @@ class LAX_CINE_View(View):
     def initialize_case(self, case, debug=False):
         if debug: st=time()
         # switch images
-        print('ALL image keys: ', case.all_imgs_sop2filepath.keys())
-        for k in case.all_imgs_sop2filepath.keys():
-            print(k, len(case.all_imgs_sop2filepath[k]))
         case.imgs_sop2filepath = {**case.all_imgs_sop2filepath['LAX CINE 2CV'],
                                   **case.all_imgs_sop2filepath['LAX CINE 4CV']}
         # if categories have not been attached, attach the first and init other_categories
@@ -363,7 +359,6 @@ class LAX_CINE_View(View):
         try:
             metrics_table = LAX_CCs_MetricsTable()
             metrics_table.calculate(self, ccs)
-            #    def calculate(self, view, ccs, fixed_phase_first_reader=False, pretty=True):
             metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
         except Exception as e:
             print(traceback.print_exc())

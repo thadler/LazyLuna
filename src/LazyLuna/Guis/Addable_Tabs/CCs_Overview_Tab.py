@@ -73,6 +73,7 @@ class CCs_Overview_Tab(QWidget):
         self.overview_table.calculate(case_comparisons)
         self.overview_TableView = QTableView()
         self.overview_TableView.setModel(self.overview_table.to_pyqt5_table_model())
+        self.overview_TableView.resizeColumnsToContents()
         layout.addWidget(self.overview_TableView, 1, 2, 10,1)
 
         ###########
@@ -241,6 +242,7 @@ class CCs_Overview_Tab(QWidget):
             self.combobox_stats_tab.clear(); self.combobox_stats_tab.addItems(['Choose a Tab']+[str(tab) for tab in v.stats_tabs])
             self.overview_table.calculate(new_ccs)
             self.overview_TableView.setModel(self.overview_table.to_pyqt5_table_model())
+            self.overview_TableView.resizeColumnsToContents()
             self.case_comparisons = [Case_Comparison(v.customize_case(cc.case1), v.customize_case(cc.case2)) for cc in self.case_comparisons]
         except Exception as e:
             print(traceback.format_exc())
