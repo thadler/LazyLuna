@@ -21,7 +21,7 @@ class View:
         """Takes a LazyLuna.Containers.Case object and tries to instantiate it according to this View
         
         Note:
-            Initialize_case calculates relevant phases for the case. This is a time-intensive operation (several seconds)
+            Initialize_case calculates relevant attributes (such as phases) for the case. This is a time-intensive operation (several seconds)
             
         Args:
             case (LazyLuna.Containers.Case object): The case to customize
