@@ -39,7 +39,7 @@ class CCs_Qualitative_Correlationplot_Tab(QWidget):
         self.qc = Qualitative_Correlationplot()
         self.qc_canvas = FigureCanvas(self.qc)
         self.qc.set_view(view); self.qc.set_canvas(self.qc_canvas); self.qc.set_gui(gui)
-        self.qc.visualize(ccs, metric='ml diff', hue='contour name')
+        self.qc.visualize(ccs)
         self.qc_canvas.setFocusPolicy(Qt.Qt.ClickFocus)
         self.qc_canvas.setFocus()
         self.qc_toolbar = NavigationToolbar(self.qc_canvas, gui)

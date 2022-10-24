@@ -276,30 +276,9 @@ class SAX_Cine_CCs_pretty_averageCRs_averageMetrics_Table(Table):
     
     def present_crs(self):
         self.df = self.cr_table
-        
-        
-class CCs_MetricsTable(Table):
-    def calculate(self, case_comparisons, view):
-        cases = []
-        for cc in case_comparisons:
-            cc_table = CC_Metrics_Table()
-            cc_table.calculate(cc)
-            tables = []
-            for c_i, contname in enumerate(view.contour_names):
-                cc_table.present_contour_df(contname, pretty=False)
-                cc_table.df = cc_table.df.rename(columns={k:contname+' '+k for k in cc_table.df.columns if 'slice' not in k})
-                if c_i!=0: cc_table.df.drop(labels='slice', axis=1, inplace=True)
-                tables.append(cc_table.df)
-            table = pandas.concat(tables, axis=1)
-            table['Case']    = cc.case1.case_name
-            table['Reader1'] = cc.case1.reader_name
-            table['Reader2'] = cc.case2.reader_name
-            cols = list(table.columns)[-3:] + list(table.columns)[:-3]
-            table = table[cols]
-            cases.append(table)
-        self.df = pandas.concat(cases, axis=0, ignore_index=True)
-        
 
+        
+        
 class CC_AngleAvgT1ValuesTable(Table):
     def calculate(self, case_comparison, category, nr_segments, byreader=None):
         self.cc = case_comparison
@@ -374,12 +353,9 @@ class CC_StatsOverviewTable(Table):
         genders = np.array([self.get_gender(cc) for cc in ccs])
         weights = np.array([self.get_weight(cc) for cc in ccs])
         heights = np.array([self.get_height(cc) for cc in ccs])
-        
         rows = [[len(ccs), '{:.1f}'.format(np.nanmean(ages))+' ('+'{:.1f}'.format(np.nanstd(ages))+')', 
-                str(np.sum(genders=='M'))+'/'+str(np.sum(genders=='F'))+'/'+str(int(np.sum([1 for g in genders if g not in ['M','F']]))), 
-                '{:.1f}'.format(np.nanmean(weights))+' ('+'{:.1f}'.format(np.nanstd(weights))+')', 
-                '{:.1f}'.format(np.nanmean(heights))+' ('+'{:.1f}'.format(np.nanstd(heights))+')']]
-        
+                str(np.sum(genders=='M'))+'/'+str(np.sum(genders=='F'))+'/'+str(int(np.sum([1 for g in genders if g not in ['M','F']]))), '{:.1f}'.format(np.nanmean(weights))+' ('+'{:.1f}'.format(np.nanstd(weights))+')', 
+               '{:.1f}'.format(np.nanmean(heights))+' ('+'{:.1f}'.format(np.nanstd(heights))+')']]
         information_summary_df  = DataFrame(rows, columns=columns)
         self.df = information_summary_df
         
@@ -440,7 +416,7 @@ class LAX_CCs_MetricsTable(Table):
 class T1_CC_Metrics_Table(Table):
     def get_column_names(self, cat):
         n = cat.name
-        return [n+' Area Diff', n+' DSC', n+' HD', n+' T1avg_r1', n+' T1avg_r2', n+' T1avgDiff', n+' AngleDiff', n+' hascont1', cat1.name+' hascont2']
+        return [n+' Area Diff', n+' DSC', n+' HD', n+' T1avg_r1', n+' T1avg_r2', n+' T1avgDiff', n+' AngleDiff', n+' hascont1', n+' hascont2']
     
     def calculate(self, view, cc, contname, fixed_phase_first_reader=False, pretty=True):
         dsc_m, hd_m, areadiff_m = DiceMetric(), HausdorffMetric(), AreaDiffMetric()

@@ -831,7 +831,7 @@ class Qualitative_Correlationplot(Visualization):
         self.gui = gui
         
     
-    def all_cases_metrics_table(self, ccs):
+    def all_cases_metrics_table(self, ccs, contour_names=['lv_endo', 'lv_myo', 'rv_endo']):
         from LazyLuna.Views import SAX_CINE_View
         view = SAX_CINE_View()
         mlDiff_m, absmldiff_m, dsc_m = mlDiffMetric(), absMlDiffMetric(), DiceMetric()
@@ -840,7 +840,7 @@ class Qualitative_Correlationplot(Visualization):
         for i, cc in enumerate(ccs):
             case1, case2 = cc.case1, cc.case2
             for d in range(case1.categories[0].nr_slices):
-                for cn in view.contour_names:
+                for cn in contour_names:
                     cats1, cats2 = view.get_categories(case1, cn), view.get_categories(case2, cn)
                     for cat1, cat2 in zip(cats1, cats2):
                         try:
@@ -855,7 +855,7 @@ class Qualitative_Correlationplot(Visualization):
                         except Exception as e: rows.append([np.nan for _ in range(7)]); print(traceback.format_exc())
         return DataFrame(rows, columns=cols)
     
-    def visualize(self, case_comparisons, metric='ml diff', hue='contour name'):
+    def visualize(self, case_comparisons):
         df = self.all_cases_metrics_table(case_comparisons)
         self.curr_fig = 0
         self.set_figwidth(20); self.set_figheight(9)
@@ -872,7 +872,7 @@ class Qualitative_Correlationplot(Visualization):
                 
         colors = ["#FF2020", "#00bd00", "#4d50ff"]# Set your custom color palette
         customPalette = sns.set_palette(sns.color_palette(colors))
-        sns.scatterplot(ax=ax_corr, data=df, x=metric, y='DSC', size='abs ml diff', hue=hue, picker=True, palette=customPalette)
+        sns.scatterplot(ax=ax_corr, data=df, x='ml diff', y='DSC', size='abs ml diff', hue='contour name', picker=True, palette=customPalette)
         xmax = np.max(np.abs(ax_corr.get_xlim())); ymax = np.max(np.abs(ax_corr.get_ylim()))
         ax_corr.set_xlim([-xmax, xmax]); ax_corr.set_ylim([-5, ymax])
         
