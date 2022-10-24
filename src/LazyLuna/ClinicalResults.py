@@ -1008,6 +1008,7 @@ class LAX_4CV_RAEDAREA(Clinical_Result):
         self.name = '4CV_RAEDAREA'
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_RAED_Category)][0]
+        self.tol_range = 1.0
 
     @CR_exception_handler
     def get_val(self, string=False):
@@ -1094,6 +1095,7 @@ class LAX_4CV_LAEDAREA(Clinical_Result):
         self.name = '4CV_LAEDAREA'
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_4CV_LAED_Category)][0]
+        self.tol_range = 2.1
 
     @CR_exception_handler
     def get_val(self, string=False):
@@ -1179,6 +1181,7 @@ class LAX_2CV_LAEDAREA(Clinical_Result):
         self.name = '2CV_LAEDAREA'
         self.unit = '[cm^2]'
         self.cat  = [c for c in self.case.categories if isinstance(c, LAX_2CV_LAED_Category)][0]
+        self.tol_range = 2.0
 
     @CR_exception_handler
     def get_val(self, string=False):
