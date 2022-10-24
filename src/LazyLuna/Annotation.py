@@ -13,7 +13,7 @@ class Annotation:
 
     def plot_contours(self, ax, cont_name='all', c='w', debug=False):
         if cont_name not in ['all', None]: 
-            if self.has_contour(cont_name): utils.plot_outlines(ax, self.get_contour(cont_name), edge_c)
+            if self.has_contour(cont_name): utils.plot_outlines(ax, self.get_contour(cont_name), edge_c=c)
         else:
             for cname in self.available_contour_names(): utils.plot_outlines(ax, self.get_contour(cname), edge_c=c)
 
