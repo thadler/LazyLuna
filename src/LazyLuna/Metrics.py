@@ -72,6 +72,7 @@ class DiceMetric(Metric):
         Args:
             geo1 (shapely.geometry): first object for comparison
             geo2 (shapely.geometry): second object for comparison
+            dcm (dicom dataset):     dicom dataset with pixel spacing
             string (bool):           return string of float with 2 decimal places
             
         Returns:
@@ -102,7 +103,7 @@ class AreaDiffMetric(Metric):
         Args:
             geo1 (shapely.geometry): first object for comparison
             geo2 (shapely.geometry): second object for comparison
-            dcm (shapely.geometry):  dicom dataset with pixel spacing and slice thickness
+            dcm (dicom dataset):     dicom dataset with pixel spacing and slice thickness
             string (bool):           return string of float with 2 decimal places
             
         Returns:
@@ -134,7 +135,7 @@ class HausdorffMetric(Metric):
         Args:
             geo1 (shapely.geometry): first object for comparison
             geo2 (shapely.geometry): second object for comparison
-            dcm (shapely.geometry):  dicom dataset with pixel spacing
+            dcm (dicom dataset):     dicom dataset with pixel spacing
             string (bool):           return string of float with 2 decimal places
             
         Returns:
@@ -166,7 +167,7 @@ class mlDiffMetric(Metric):
         Args:
             geo1 (shapely.geometry): first object for comparison
             geo2 (shapely.geometry): second object for comparison
-            dcm (shapely.geometry):  dicom dataset with pixel spacing
+            dcm (dicom dataset):     dicom dataset with pixel spacing and slice thickness
             string (bool):           return string of float with 2 decimal places
             
         Returns:
@@ -198,7 +199,7 @@ class absMlDiffMetric(Metric):
         Args:
             geo1 (shapely.geometry): first object for comparison
             geo2 (shapely.geometry): second object for comparison
-            dcm (shapely.geometry):  dicom dataset with pixel spacing
+            dcm (dicom dataset):     dicom dataset with pixel spacing and slice thickness
             string (bool):           return string of float with 2 decimal places
             
         Returns:

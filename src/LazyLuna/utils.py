@@ -74,13 +74,35 @@ def to_polygon(mask):
 # Metric functions #
 ####################
 
-# works for Polygons, Multipolygons, GeometryCollections (containing LineStrings)
 def dice(geo1, geo2):
+    """Calculates Dice metric value
+    
+    Args:
+        geo1 (shapely.geometry): Like a Polygon, Multipolygon, GeometryCollection (containing LineStrings)
+        geo2 (shapely.geometry): Like a Polygon, Multipolygon, GeometryCollection (containing LineStrings)
+        
+    Returns:
+        float: Dice value in [0, 100]%
+    """
     if geo1.is_empty and geo2.is_empty: return 100.0
     overlap = geo1.intersection(geo2)
     return 100.0 * (2*overlap.area) / (geo1.area + geo2.area)
 
 def hausdorff(geo1, geo2):
+    """Calculates Hausdorff distance
+    
+    Note:
+        - if both geometries are empty: HD = 0
+        - if only one is empty: HD = np.nan
+        - otherwise regular definition
+    
+    Args:
+        geo1 (shapely.geometry): Like a Polygon, Multipolygon, GeometryCollection (containing LineStrings)
+        geo2 (shapely.geometry): Like a Polygon, Multipolygon, GeometryCollection (containing LineStrings)
+        
+    Returns:
+        float: Hausdorff distance value
+    """
     if geo1.is_empty and geo2.is_empty: return 0.0
     return geo1.hausdorff_distance(geo2)
 
@@ -89,19 +111,23 @@ def hausdorff(geo1, geo2):
 # geometry operations #
 #######################
 def get_overlapping_geometry(geo1, geo2):
+    """get intersection"""
     overlap = geo1.intersection(geo2)
     if overlap.is_empty: overlap = Polygon([])
     return overlap
 
 def get_geometry_diff1(geo1, geo2):
+    """get difference"""
     diff = geo1.difference(geo2)
     return diff
     
 def get_geometry_diff2(geo1, geo2):
+    """get difference"""
     return get_geometry_diff1(geo2, geo1)
 
 # convenience function
 def get_geometry_comparison(geo1, geo2):
+    """returns (intersection(geo1, geo2), difference(geo1,geo2), difference(geo2,geo1))"""
     overlapping = get_overlapping_geometry(geo1, geo2)
     diff1 = get_geometry_diff1(geo1, geo2)
     diff2 = get_geometry_diff2(geo1, geo2)
@@ -113,10 +139,12 @@ def get_geometry_comparison(geo1, geo2):
 # plotting funtions #
 #####################
 def plot_outlines(ax, geo, edge_c=(1,1,1,1.0)):
+    """plots geometry outlines onto matplotlib.pyplot.axis"""
     patch = PolygonPatch(geo, facecolor=(0,0,0,0.0), edgecolor=edge_c)
     ax.add_patch(patch)
         
 def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'],alpha=0.4):
+    """plots geometry surface comparison onto matplotlib.pyplot.axis"""
     agreed, diff1, diff2 = get_geometry_comparison(geo1, geo2)
     if agreed.geom_type=='GeometryCollection' and not agreed.is_empty:
         agreed = MultiPolygon([g for g in agreed.geoms if g.area!=0])
@@ -129,10 +157,12 @@ def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'],alpha=0.4):
             ax.add_patch(PolygonPatch(thing.buffer(0), color=colors[i], alpha=alpha))
     
 def plot_geo_face(ax, geo, c='r', ec=None, alpha=0.4):
+    """plots geometry surface onto matplotlib.pyplot.axis"""
     # buffer is a hack, make sure contours are in clockwise or counter cw direction
     ax.add_patch(PolygonPatch(geo.buffer(0), color=c, ec=ec, alpha=alpha))
         
 def plot_points(ax, points, c='w', marker='x', s=None):
+    """plots points onto matplotlib.pyplot.axis"""
     if points.geom_type=='Point': # case: points is really just point
         ax.scatter(points.x, points.y, c=c, marker=marker, s=s)
         return
@@ -144,14 +174,20 @@ def plot_points(ax, points, c='w', marker='x', s=None):
 ## Spatial Dicom Operations ##
 ##############################
 def transform_ics_to_rcs(dcm, arr_points=None):
-    '''
-    ics = image coordinate system (tupel of x-, y-values in units of pixel in dicom pixel data x = column, y = row)
-    rcs = reference coordinate system (standard to store points in dicom tags)
-    Function to transform ics -> rcs in dependence of arr_points
-    :param dcm: object - pydicom object
-    :param arr_points: array - nx2 array with x and y values (units of pixels) of the points in the dicom image plane for conversion points to
-    :return: list of lists - 1 x n x 3
-    '''
+    """Transforms points on the dcm image (in ics) into points in a 3D reference coordinate system (rcs)
+    
+    Notes:
+        ics = image coordinate system (tupel of x-, y-values in units of pixel in dicom pixel data x=column, y=row)
+        rcs = reference coordinate system (standard to store points in dicom tags)
+        Function to transform ics -> rcs in dependence of arr_points
+        
+    Args:
+        dcm (dicom dataset): input dicom dataset with attributes to calculate basis transformation matrix 
+        arr_points (array - nx2 array with x and y values (units of pixels) of the points in the dicom image plane for conversion
+        
+    Returns:
+        list of lists - 1 x n x 3
+    """
     # conversion as described in https://dicom.innolitics.com/ciods/rt-dose/roi-contour/30060039/30060040/30060050
     # modified for inversion purpose: P = Mx + S / x = M^-1(P-S)
     matrix = np.zeros((3, 3))

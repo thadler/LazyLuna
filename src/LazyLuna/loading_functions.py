@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from operator import itemgetter
 import pickle
 import pydicom
 from time import time
@@ -8,6 +7,14 @@ import pandas
 import numpy as np
 
 def get_study_uid(imgs_path):
+    """Returns StudyInstanceUID for Dicom folder
+    
+    Note: 
+        Assumes that there is only one study in folder.
+    
+    Returns:
+        str: StudyInstanceUID
+    """
     for ip, p in enumerate(Path(imgs_path).glob('**/*.dcm')):
         try:
             dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
@@ -16,6 +23,17 @@ def get_study_uid(imgs_path):
         except: continue
 
 def annos_to_table(annos_path):
+    """Returns DataFrame with information on annotations in folder
+    
+    Notes:
+        columns: (studyinstanceuid, sopinstanceuid, nr of geometries in annotation, path to annotation)
+    
+    Args:
+        annos_path (str): folder path to annotations, folder name is StudyInstanceUID
+    
+    Returns:
+        pandas.DataFrame: table of information on annotations in folder path
+    """
     rows = []
     study_uid = os.path.basename(annos_path)
     columns = ['study_uid', 'sop_uid', 'annotated', 'anno_path']
@@ -28,8 +46,18 @@ def annos_to_table(annos_path):
     return df
 
 def dicom_images_to_table(imgs_path):
-    columns    = ['case', 'study_uid', 'sop_uid', 'series_descr', 
-                  'series_uid', 'LL_tag', 'dcm_path']
+    """Returns DataFrame with on available dicom datasets in folder
+    
+    Note:
+        Columns = (casename, studyinstanceuid, sopinstanceuid, series description, seriesuid, LL_tag, path to dicom dataset)
+    
+    Args:
+        imgs_path (str): folder path to dicom datasets
+    
+    Returns:
+        pandas.DataFrame: table of information on dicom datasets in folder path
+    """
+    columns    = ['case', 'study_uid', 'sop_uid', 'series_descr', 'series_uid', 'LL_tag', 'dcm_path']
     rows, case = [], os.path.basename(imgs_path)
     for ip, p in enumerate(Path(imgs_path).glob('**/*.dcm')):
         try:
@@ -45,6 +73,19 @@ def dicom_images_to_table(imgs_path):
     return df
 
 def present_nrimages_nr_annos_table(images_df, annotation_df, by_series=False):
+    """Returns DataFrame with on dicom datasets in folder
+    
+    Note:
+        Columns = (casename, studyinstanceuid, sopinstanceuid, series description, (seriesuid), LL_tag, path to dicom dataset)
+    
+    Args:
+        images_df (pandas.DataFrame):     taken from function LazyLuna.loading_functions.dicom_images_to_table
+        annotation_df (pandas.DataFrame): taken from function LazyLuna.loading_functions.annos_to_table
+        by_series (bool):                 if True differentiates rows by series_uid, if False by seriesDescription
+    
+    Returns:
+        pandas.DataFrame: table of information on dicom datasets and annotations pertaining to them
+    """
     combined = pandas.merge(images_df, annotation_df, on=['sop_uid', 'study_uid'], how='left')
     combined.fillna(0, inplace=True)
     if by_series:
@@ -70,10 +111,20 @@ def present_nrimages_nr_annos_table(images_df, annotation_df, by_series=False):
     return df
 
 def present_nrimages_table(images_df, by_series=False):
-    if by_series:
-        nr_imgs  = images_df[['series_descr','series_uid','LL_tag']].value_counts()
-    else:
-        nr_imgs  = images_df[['series_descr','LL_tag']].value_counts()
+    """Returns DataFrame with information on available dicom datasets in folder
+    
+    Note: 
+        Columns = (seriesDescription, (series_uid), LL_tag, nr_imgs)
+    
+    Args:
+        images_df (pandas.DataFrame): taken from function LazyLuna.loading_functions.dicom_images_to_table
+        by_series (bool):             if True differentiates rows by series_uid, if False by seriesDescription
+    
+    Returns:
+        pandas.DataFrame: table of information on dicom datasets
+    """
+    if by_series: nr_imgs  = images_df[['series_descr','series_uid','LL_tag']].value_counts()
+    else:         nr_imgs  = images_df[['series_descr','LL_tag']].value_counts()
     nr_imgs   = nr_imgs.to_dict()
     imgs_keys = list(nr_imgs.keys())
     for k in imgs_keys: 
@@ -89,6 +140,17 @@ def present_nrimages_table(images_df, by_series=False):
 
 
 def get_paths_for_series_descr(imgs_df, annos_df, series_description, series_uid=None):
+    """Returns paths for dcms and annotations by series_descritpion (and seriesuid)
+    
+    Args:
+        imgs_df (pandas.DataFrame):  taken from function LazyLuna.loading_functions.dicom_images_to_table
+        annos_df (pandas.DataFrame): taken from function LazyLuna.loading_functions.annos_to_table
+        series_description (str):    seriesDescription
+        by_series (str):             SeriesUID (subselection if not None)
+    
+    Returns:
+        (list of str, list of str): list of paths to dicom datasets, list of paths to annotation files
+    """
     if series_uid is not None:
         imgs = imgs_df .loc[imgs_df ['series_descr'].isin([series_description]) & imgs_df ['series_uid'].isin([series_uid])]
     else:
@@ -97,7 +159,18 @@ def get_paths_for_series_descr(imgs_df, annos_df, series_description, series_uid
     annos.fillna('', inplace=True)
     return imgs['dcm_path'].unique().tolist(), annos['anno_path'].unique().tolist()
 
+
 def get_img_paths_for_series_descr(imgs_df, series_description, series_uid=None):
+    """Returns paths for dcms by series_descritpion (and seriesuid)
+    
+    Args:
+        imgs_df (pandas.DataFrame):  taken from function LazyLuna.loading_functions.dicom_images_to_table
+        series_description (str):    seriesDescription
+        by_series (str):             SeriesUID (subselection if not None)
+    
+    Returns:
+        list of str: list of paths to dicom datasets
+    """
     if series_uid is not None:
         imgs = imgs_df .loc[imgs_df ['series_descr'].isin([series_description]) & imgs_df ['series_uid'].isin([series_uid])]
     else:
@@ -106,15 +179,30 @@ def get_img_paths_for_series_descr(imgs_df, series_description, series_uid=None)
 
 
 def add_LL_tag(store_path, dcm, tag='Lazy Luna: None'): # Lazy Luna: SAX CS
+    """Adds a LazyLuna name tag to a dicom dataset and stores it
+    
+    Args:
+        store_path (str):    dicom dataset path
+        dcm (dicom dataset): dicom file to which the tag is added
+        tag (str):           tag label text
+    """
     try:    dcm[0x0b, 0x10].value = tag
     except: dcm.private_block(0x000b, tag, create=True)
     dcm.save_as(filename=store_path, write_like_original=False)
 
 def get_LL_tag(dcm): # Lazy Luna: SAX CS
+    """Returns LL tag if available, else 'None' (str)"""
     try:    return dcm[0x0b, 0x10].value
     except: return 'None'
 
 def add_and_store_LL_tags(imgs_df, key2LLtag, overriding_dict=None):
+    """Stores LL Tags for all images
+    
+    Args:
+        imgs_df (pandas.DataFrame):           taken from function LazyLuna.loading_functions.dicom_images_to_table
+        key2LLtag (dict of (str,(str)): str): mapping of (seriesDescription, (seriesUID)) to LL tag
+        overriding_dict (dict of str: str):   mapping of SOPInstanceUID to LL tag
+    """
     # key2LLtag: {(sd,ser_uid):'Lazy Luna: tag name'} or
     # key2LLtag: {(sd,):'Lazy Luna: tag name'}
     sdAndSeriesUID = isinstance(list(key2LLtag.keys())[0], tuple) and len(list(key2LLtag.keys())[0])>1
@@ -132,6 +220,19 @@ def add_and_store_LL_tags(imgs_df, key2LLtag, overriding_dict=None):
             continue
 
 def get_cases_table(cases, paths, return_dataframe=True, debug=False):
+    """Returns a table for Case presentation
+    
+    Note:
+        Columns = [Casename, Readername, Age, Gender, Weight, Height, SAX CINE, SAX CS, LAX CINE, SAX T1 PRE, SAX T1 POST, SAX T2, SAX LGE', Path]
+    
+    Args:
+        cases (list of Case):    List of Case objects
+        paths (list of str):     List of Case filepaths
+        return_dataframe (bool): if True make pandas.DataFrame, else returns list
+        
+    Returns:
+        list | pandas.DataFrame: table to present Cases
+    """
     def get_dcm(case):
         for k in case.all_imgs_sop2filepath.keys():
             try: sop = next(iter(case.all_imgs_sop2filepath[k]))
@@ -183,6 +284,14 @@ def get_cases_table(cases, paths, return_dataframe=True, debug=False):
 ########################
 
 def read_annos_into_sop2filepaths(path, debug=False):
+    """Returns dictionary mapping of SOPInstanceUIDs to filepaths
+    
+    Args:
+        path (str): path to Annotation files
+        
+    Returns:
+        (dict of str: str): Mapping of SOPInstanceUID to filepath
+    """
     if debug: st = time()
     paths = [f for f in os.listdir(path) if 'case' not in f]
     anno_sop2filepath = dict()
@@ -192,6 +301,14 @@ def read_annos_into_sop2filepaths(path, debug=False):
     return anno_sop2filepath
 
 def read_dcm_images_into_sop2filepaths(path, debug=False):
+    """Returns nested dictionary mapping of LL type to SOPInstanceUIDs to filepaths
+    
+    Args:
+        path (str): path to dicom dataset files
+        
+    Returns:
+        (dict of str: dict of str: str): Nested mapping of LL type to SOPInstanceUID to filepath
+    """
     if debug: st = time()
     sop2filepath = dict()
     for n in ['SAX CINE', 'SAX CS', 'SAX T1 PRE', 'SAX T1 POST', 'SAX T2', 'LAX CINE 2CV', 'LAX CINE 3CV', 'LAX CINE 4CV', 'SAX LGE', 'None']:
@@ -208,16 +325,27 @@ def read_dcm_images_into_sop2filepaths(path, debug=False):
 
 # returns the base paths for Cases
 def get_imgs_and_annotation_paths(bp_imgs, bp_annos):
-    """
-    bp_imgs is a folder structured like:
-    bp_imgs
-    |--> imgs folder 1 --> dicoms within
-    |--> imgs folder 2 --> ...
-    |--> ...
-    bp_annos is a folder like:
-    bp_annos
-    |--> pickles folder 1 --> pickles within
-    |--> pickles folder 2 ...
+    """Returns list of tuples, like (Case Dicom folder path, Annotation folder path)
+    
+    Note:
+        Annotation folder path may not exist. The annotation folder is assumed to be named after the StudyInstanceUID
+    
+        bp_imgs is a folder structured like:
+        bp_imgs
+        |--> imgs folder 1 --> dicoms within
+        |--> imgs folder 2 --> ...
+        |--> ...
+        bp_annos is a folder like:
+        bp_annos
+        |--> pickles folder 1 --> pickles within
+        |--> pickles folder 2 ...
+        
+    Args:
+        bp_imgs (str):  path to folder containing case folders of dicom datasets (see note)
+        bp_annos (str): path to folder containing annotation folders (see note)
+        
+    Returns:
+        list of (str, str): list of (Case Dicom folder path, Annotation folder path)
     """
     imgpaths_annopaths_tuples = []
     img_folders = os.listdir(bp_imgs)
@@ -232,6 +360,15 @@ def get_imgs_and_annotation_paths(bp_imgs, bp_annos):
 
 
 def get_case_info(case, path):
+    """Returns columns, rows
+    
+    Args:
+        case (LazyLuna.Containers.Case): case for which information is sorted
+        path (str): path to Case pickle file
+        
+    Returns:
+        (list (str), list(str)): List of column names, list of case information pertaining to columns
+    """
     def get_dcm(case):
         for k in case.all_imgs_sop2filepath.keys():
             try: 
