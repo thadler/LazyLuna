@@ -69,21 +69,6 @@ def to_polygon(mask):
     return MultiPolygon(polygons) if len(polygons)>0 else Polygon()#polygons[0]
 
 
-"""
-def geometry_collection_to_Polygon(geom_collection):
-    ret = geom_collection
-    if ret.geom_type not in ['Polygon', 'MultiPolygon'] and hasattr(ret, 'geoms'):
-        polygons = []
-        for geom in ret.geoms:
-            polygon = shape(geom)
-            if polygon.geom_type=='Polygon' and polygon.is_valid: polygons.append(polygon)
-            else: pass
-        ret = MultiPolygon(polygons) if len(polygons)>0 else Polygon()
-    if ret.is_empty or ret.area==0:
-        ret = Polygon()
-    return ret
-"""
-
 
 ####################
 # Metric functions #
