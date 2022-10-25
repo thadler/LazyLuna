@@ -569,7 +569,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
         self.lax_sop_fps = []
         for sop, fp in self.case.annos_sop2filepath.items():
             anno = Annotation(fp, sop)
-            if anno.has_point('lv_lax_extent'):
+            if anno.has_point('lv_extent'):
                 self.lax_sop_fps.append((sop, fp, anno, self.get_lax_image(sop)))
     
     def get_lax_image(self, sop):
@@ -587,7 +587,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
         lax_dcm      = self.lax_sop_fps[0][3]
         lax_h, lax_w = lax_dcm.pixel_array.shape
         lax_anno     = self.lax_sop_fps[0][2]
-        p1, p2, p3 = [[lax_anno.get_point('lv_lax_extent')[i].y, lax_anno.get_point('lv_lax_extent')[i].x] for i in range(3)]
+        p1, p2, p3 = [[lax_anno.get_point('lv_extent')[i].y, lax_anno.get_point('lv_extent')[i].x] for i in range(3)]
         extpoints_rcs = utils.transform_ics_to_rcs(lax_dcm, np.array([p1, p2, p3]))
         ext_st  = (extpoints_rcs[0] + extpoints_rcs[1])/2.0
         ext_end = extpoints_rcs[2]
@@ -833,7 +833,7 @@ class SAX_LGE_Category(SAX_slice_phase_Category):
         self.lax_sop_fps = []
         for sop, fp in self.case.annos_sop2filepath.items():
             anno = Annotation(fp, sop)
-            if anno.has_point('lv_lax_extent'):
+            if anno.has_point('lv_extent'):
                 self.lax_sop_fps.append((sop, fp, anno, self.get_lax_image(sop)))
                 #fig, ax = plt.subplots(1,1,figsize=(7,7))
                 #ax.imshow(self.lax_sop_fps[-1][-1].pixel_array)

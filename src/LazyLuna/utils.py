@@ -16,12 +16,21 @@ import matplotlib.pyplot as plt
 ##################
 
 def to_mask(polygons, height, width):
-    """
-    Convert to mask (Origin (0.0, 0.0))
-    rasterio.features.rasterize(shapes, out_shape=None, fill=0, out=None, transform=Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
-    all_touched=False, merge_alg=MergeAlg.replace, default_value=1, dtype=None)
-    For Origin (-0.5, -0.5) apply Affine Transformation (1.0, 0.0, -0.5, 0.0, 1.0, -0.5)
-    https://rasterio.readthedocs.io/en/latest/api/rasterio.features.html#rasterio.features.rasterize
+    """Convert to mask (Origin (0.0, 0.0))
+    
+    Note:
+        rasterio.features.rasterize(shapes, out_shape=None, fill=0, out=None, transform=Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
+        all_touched=False, merge_alg=MergeAlg.replace, default_value=1, dtype=None)
+        For Origin (-0.5, -0.5) apply Affine Transformation (1.0, 0.0, -0.5, 0.0, 1.0, -0.5)
+        https://rasterio.readthedocs.io/en/latest/api/rasterio.features.html#rasterio.features.rasterize
+        
+    Args:
+        polygons (shapely.geometry. Polygon | Multipolygon): geometry to be burned into mask
+        height (int): output mask height
+        width (int):  output mask width
+        
+    Returns:
+        ndarray (2D array of np.uint8): binarized mask of polygon
     """
     if not isinstance(polygons, list):
         if isinstance(polygons, Polygon) or isinstance(polygons, MultiPolygon): polygons = [polygons]
@@ -37,11 +46,18 @@ def to_mask(polygons, height, width):
 
 
 def to_polygon(mask):
-    """
-    Convert to Polygons (Origin (0.0, 0.0))
-    rasterio.features.shapes(source, mask=None, connectivity=4, transform=Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0))
-    For Origin (-0.5, -0.5) apply Polygon Transformation -0.5 for all xy
-    https://rasterio.readthedocs.io/en/latest/api/rasterio.features.html#rasterio.features.shapes
+    """Convert mask to Polygons (Origin (0.0, 0.0))
+    
+    Note:
+        rasterio.features.shapes(source, mask=None, connectivity=4, transform=Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0))
+        For Origin (-0.5, -0.5) apply Polygon Transformation -0.5 for all xy
+        https://rasterio.readthedocs.io/en/latest/api/rasterio.features.html#rasterio.features.shapes
+        
+    Args:
+        mask (ndarray (2D array of np.uint8): binary mask
+        
+    Returns:
+        MultiPolygon | Polygon: Geometries extracted from mask, empty Polygon if empty mask
     """
     polygons = []
     for geom, val in features.shapes(mask):
@@ -53,6 +69,7 @@ def to_polygon(mask):
     return MultiPolygon(polygons) if len(polygons)>0 else Polygon()#polygons[0]
 
 
+"""
 def geometry_collection_to_Polygon(geom_collection):
     ret = geom_collection
     if ret.geom_type not in ['Polygon', 'MultiPolygon'] and hasattr(ret, 'geoms'):
@@ -65,6 +82,7 @@ def geometry_collection_to_Polygon(geom_collection):
     if ret.is_empty or ret.area==0:
         ret = Polygon()
     return ret
+"""
 
 
 ####################
@@ -133,7 +151,7 @@ def plot_points(ax, points, c='w', marker='x', s=None):
     if points.geom_type=='Point': # case: points is really just point
         ax.scatter(points.x, points.y, c=c, marker=marker, s=s)
         return
-    xs, ys = [point.x for point in points], [point.y for point in points]
+    xs, ys = [point.x for point in points.geoms], [point.y for point in points.geoms]
     ax.scatter(xs, ys, c=c, marker=marker, s=s)
     
     
