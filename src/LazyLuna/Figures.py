@@ -346,7 +346,7 @@ class Angle_Segment_Comparison(Visualization):
         
         if not self.switch_to_image:
             refpoint = None
-            if byreader is not None: refpoint = anno1.get_point('sacardialRefPoint') if byreader==1 else anno2.get_point('sacardialRefPoint')
+            if byreader is not None: refpoint = anno1.get_point('sax_ref') if byreader==1 else anno2.get_point('sax_ref')
             myo_vals1 = anno1.get_myo_mask_by_angles(img1, nr_segments, refpoint)
             myo_vals2 = anno2.get_myo_mask_by_angles(img2, nr_segments, refpoint)
             # make vals to pandas table
@@ -358,7 +358,7 @@ class Angle_Segment_Comparison(Visualization):
                 for v in myo_vals2[k]:
                     row = ['R2', '('+str(int(np.round(k[0])))+'°, '+str(int(np.round(k[1])))+'°)', v]
                     rows.append(row)
-                row = ['R1-R2', '('+str(int(np.round(k[0])))+'°, '+str(int(np.round(k[1])))+'°)', np.mean(myo_vals1[k])-np.mean(myo_vals2[k])]
+                row = ['R1-R2', '('+str(int(np.round(k[0])))+'°, '+str(int(np.round(k[1])))+'°)', np.nanmean(myo_vals1[k])-np.nanmean(myo_vals2[k])]
                 rows.append(row)
             columns = ['Reader', 'Angle Bins', 'Value']
             df = pandas.DataFrame(rows, columns=columns)
@@ -410,12 +410,12 @@ class Angle_Segment_Comparison(Visualization):
             anno1.plot_cont_comparison(axes[1], anno2, 'lv_myo')
             anno2.plot_contours(axes[2])
             if byreader is None:
-                anno1.plot_points(axes[0], 'sacardialRefPoint')
-                anno2.plot_points(axes[2], 'sacardialRefPoint')
+                anno1.plot_points(axes[0], 'sax_ref')
+                anno2.plot_points(axes[2], 'sax_ref')
             elif byreader == 1:
-                for j in [0,2]: anno1.plot_points(axes[j], 'sacardialRefPoint')
+                for j in [0,2]: anno1.plot_points(axes[j], 'sax_ref')
             elif byreader == 2:
-                for j in [0,2]: anno2.plot_points(axes[j], 'sacardialRefPoint')
+                for j in [0,2]: anno2.plot_points(axes[j], 'sax_ref')
         
         self.tight_layout()
         self.canvas.draw()
