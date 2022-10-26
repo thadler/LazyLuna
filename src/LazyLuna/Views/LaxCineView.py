@@ -162,7 +162,7 @@ class LAX_CINE_View(View):
     
     def store_information(self, ccs, path):
         try:
-            cr_table = CC_ClinicalResultsTable()
+            cr_table = CCs_ClinicalResultsTable()
             cr_table.calculate(ccs)
             cr_table.store(os.path.join(path, 'clinical_results.csv'))
         except Exception as e:

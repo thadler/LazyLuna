@@ -1,5 +1,5 @@
 # General information for Analyzer Tool loading & statistics
-# saving (to excel spreadsheet), displaying (to pyqt5)
+# saving (to excel spreadsheet), displaying (to pyqt5 - class below)
 
 import pandas
 from pandas import DataFrame
@@ -8,6 +8,39 @@ import traceback
 
 from LazyLuna.loading_functions import *
 from LazyLuna.Metrics import *
+
+    
+########################
+## Custom Table Class ##
+########################
+class Table:
+    """Table is a class for LazyLuna's tabular data
+
+    Table offers:
+        - tabular data as pandas.DataFrame objects     (as attr self.df)
+        - storing this data as csv spreadsheets        (as function self.store(str: path))
+        - presenting tabular data in pyqt5 table views (as function self.to_pyqt5_table_model())
+
+    Attributes:
+        df (pandas.DataFrame): tabular data
+    """
+    def __init__(self):
+        self.df = DataFrame()
+        
+    # overwrite
+    def calculate(self):
+        """overwrite this function to calculate the table and set the Table's pandas.DataFrame"""
+        self.df = DataFrame()
+        
+    def store(self, path):
+        """overwrite this function to store the Table's pandas.DataFrame (.df)"""
+        pandas.DataFrame.to_csv(self.df, path, sep=';', decimal=',')
+        
+    def to_pyqt5_table_model(self):
+        """Provides interface for PyQt5"""
+        return DataFrameModel(self.df)
+    
+
 
 
 ########################################################################
@@ -39,32 +72,4 @@ class DataFrameModel(QtGui.QStandardItemModel):
             if orientation==QtCore.Qt.Vertical   and role==QtCore.Qt.DisplayRole: return self._data.index[x]
         except Exception as e: print('WARNING in DataFrameModel!!!: ', traceback.format_exc())
         return None
-    
-    
-########################
-## Custom Table Class ##
-########################
-class Table:
-    """Table is a class for LazyLuna's tabular data
-
-    Table offers:
-        - tabular data as pandas.DataFrame objects
-        - storing this data as csv spreadsheets
-        - presenting tabular data in pyqt5 table views
-
-    Attributes:
-        df (pandas.DataFrame): tabular data
-    """
-    def __init__(self):
-        self.df = DataFrame()
-        
-    # overwrite
-    def calculate(self):
-        self.df = DataFrame()
-        
-    def store(self, path):
-        pandas.DataFrame.to_csv(self.df, path, sep=';', decimal=',')
-        
-    def to_pyqt5_table_model(self):
-        return DataFrameModel(self.df)
     
