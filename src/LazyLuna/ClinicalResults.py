@@ -20,15 +20,46 @@ def CR_exception_handler(f):
 
 
 class Clinical_Result:
+    """Clinical_Result is a class for the calculation, comparison and presentation of clinical parameters
+    
+        Arguments:
+            case (LazyLuna.Containers.Case): a case for which the parameter is calculated
+            
+        Attributes:
+            case (LazyLuna.Containers.Case): a case for which the parameter is calculated
+            unit (str): unit name for display
+            tol_range (float): acceptable deviation of clinical result 
+    """
     def __init(self, case):
         self.case = case
         self.name = ''
         self.unit = '[]'
         self.tol_range = 0
     @CR_exception_handler
-    def get_val(self, string=False):             pass
-    def get_val_diff(self, other, string=False): pass
+    def get_val(self, string=False):
+        """Calculates the clinical parameter for its case
+            
+        Args:
+            string (bool): If True provides the first two decimal points as a string
+            
+        Returns:
+            (float | str): the clinical parameter
+        """
+        pass
+    
+    def get_val_diff(self, other, string=False):
+        """Calculates the clinical parameter difference between this and other case
+            
+        Args:
+            other (LazyLuna.Containers.Case): The case to which the clinical parater is compared
+            string (bool): If True provides the first two decimal points as a string
+            
+        Returns:
+            (float | str): the clinical parameter difference
+        """
+        pass
 
+    
 class LVSAX_ESV(Clinical_Result):
     def __init__(self, case):
         self.case = case
