@@ -24,6 +24,12 @@ from LazyLuna.Figures.Visualization import *
         
 class SAXCINE_Confidence_Intervals_Tolerance_Ranges(Visualization):
     def visualize(self, case_comparisons, with_swarmplot=True):
+        """Takes a list of case_comparisons and plots confidence intervals for Clinical Results
+        
+        Args:
+            case_comparisons (list of LazyLuna.Containers.Case_Comparison): list of case comparisons for calculation
+            with_swarmplot (bool): whether to plot CRs of the individual case comparisons on top of the confidence intervals
+        """
         ccs = case_comparisons
         vals = {cr.name:[] for cr in ccs[0].case1.crs}
         for cc in ccs:

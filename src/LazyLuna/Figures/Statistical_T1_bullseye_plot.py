@@ -29,6 +29,15 @@ class Statistical_T1_bullseye_plot(Visualization):
         self.add_annotation = True
         
     def visualize(self, segBold=[], minv=None, maxv=None):
+        """Calculates a bullseye plot for cases in T1 mapping view
+        
+        Note:
+            requires setting values first:
+            - self.set_values(View, cases, canvas)
+        
+        Args:
+            None (works with the cases in set values)
+        """
         self.clear()
         collecting_means = []
         collecting_stds  = []

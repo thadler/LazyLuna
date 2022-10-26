@@ -29,6 +29,16 @@ class Basic_Presenter(Visualization):
         self.add_annotation = True
     
     def visualize(self, slice_nr, category, debug=False):
+        """Takes a case_comparison and presents the annotations of both readers side by side
+        
+        Note:
+            requires setting values first:
+            - self.set_values(View, Case_Comparison, canvas)
+        
+        Args:
+            slice_nr (int): slice depth
+            category (LazyLuna.Categories.Category): a case's category
+        """
         if debug: print('Start'); st = time()
         self.clear()
         self.slice_nr, self.category = slice_nr, category

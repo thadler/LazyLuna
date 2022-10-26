@@ -29,6 +29,15 @@ class Image_List_Presenter(Visualization):
         self.nr = 0
     
     def visualize(self, nr, debug=False):
+        """Presents an instance of a list images
+        
+        Note:
+            requires setting values first:
+            - self.set_values(images, canvas)
+        
+        Args:
+            nr (int): the n-th image to visualize
+        """
         if debug: print('Start'); st = time()
         self.clf()
         ax = self.add_subplot(111)

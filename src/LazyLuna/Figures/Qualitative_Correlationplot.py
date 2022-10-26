@@ -57,6 +57,17 @@ class Qualitative_Correlationplot(Visualization):
         return DataFrame(rows, columns=cols)
     
     def visualize(self, case_comparisons):
+        """Takes a list of case_comparisons and presents a Metrics correlation plot (for ml difference vs Dice) for different contour types. These can be investigated by interaction
+        
+        Note:
+            requires setting values first:
+            - self.set_view(View)
+            - self.set_canvas(canvas)
+            - self.set_gui(gui)
+        
+        Args:
+            case_comparisons (list of LazyLuna.Containers.Case_Comparison): list of case comparisons for calculation
+        """
         df = self.all_cases_metrics_table(case_comparisons)
         self.curr_fig = 0
         self.set_figwidth(20); self.set_figheight(9)

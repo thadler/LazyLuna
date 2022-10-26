@@ -30,6 +30,15 @@ class T1_bullseye_plot(Visualization):
         self.add_annotation = True
         
     def visualize(self, segBold=[], minv=None, maxv=None):
+        """Plots a bullseye plot for a single case in mapping view
+        
+        Note:
+            requires setting values first:
+            - self.set_values(View, case, canvas)
+        
+        Args:
+            None (uses case set in set_values)
+        """
         self.clear()
         cat      = self.case.categories[0]
         means, stds = cat.calc_mapping_aha_model()

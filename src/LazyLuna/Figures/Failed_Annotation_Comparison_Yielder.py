@@ -30,6 +30,18 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
         self.add_annotation = True
     
     def visualize(self, cc, slice_nr, category, contour_name, debug=False):
+        """Takes a list of case_comparisons and presents a Boxplot for a Clinical Result
+        
+        Note:
+            requires setting values first:
+            - self.set_values(View, list of Case_Comparisons)
+        
+        Args:
+            cc (LazyLuna.Containers.Case_Comparison): - current - case comparison for visualization
+            slice_nr (int): slice depth
+            category (LazyLuna.Categories.Category): a case's category
+            contour_type (str): contour type
+        """
         if debug: print('Start'); st = time()
         self.clear()
         self.cc, self.slice_nr, self.category, self.contour_name = cc, slice_nr, category, contour_name

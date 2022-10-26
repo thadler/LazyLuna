@@ -24,6 +24,11 @@ from LazyLuna.Figures.Visualization import *
     
 class SAX_Candlelight(Visualization):
     def visualize(self, case_comparisons):
+        """Takes a list of case_comparisons and presents candlelights for several clinical results
+        
+        Args:
+            case_comparisons (list of LazyLuna.Containers.Case_Comparison): list of case comparisons for calculation
+        """
         cases1 = [cc.case1 for cc in case_comparisons]
         cases2 = [cc.case2 for cc in case_comparisons]
         rows, columns    = 2, 4

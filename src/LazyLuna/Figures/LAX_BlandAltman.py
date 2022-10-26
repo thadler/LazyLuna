@@ -23,6 +23,12 @@ from LazyLuna.Figures.Visualization import *
 
 class LAX_BlandAltman(Visualization):
     def visualize(self, view, ccs):
+        """Takes a list of case_comparisons and presents a visualization of several blandaltman plots for areas
+        
+        Args:
+            view (LazyLuna.Views.View): A LAX_CINE View
+            ccs (list of LazyLuna.Containers.Case_Comparison): The blandaltmans are calculated for this list of case_comparisons
+        """
         cases1   = [cc.case1 for cc in ccs]
         cases2   = [cc.case2 for cc in ccs]
         rows, columns   = 4, 2

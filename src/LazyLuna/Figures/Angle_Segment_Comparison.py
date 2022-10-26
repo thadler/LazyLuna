@@ -29,6 +29,18 @@ class Angle_Segment_Comparison(Visualization):
         self.switch_to_image = False
     
     def visualize(self, d, category, nr_segments, byreader=None):
+        """Takes one case_comparison customized by a mapping view and divides the myocardium by slices and segments
+        
+        Note:
+            requires setting values first:
+            - self.set_values(View, Case_Comparison, canvas)
+        
+        Args:
+            d (int): slice depth
+            category (LazyLuna.Categories.Category): a case's mapping category
+            nr_segments (int): number of segments the myocardium is divided into
+            byreader (None|1|2): (optional) if None then the insertion point is reader specific, otherwise it is taken from reader1 or reader 2.
+        """
         self.clear()
         r1, r2 = self.cc.case1.reader_name, self.cc.case2.reader_name
         self.d,           self.category = d,           category

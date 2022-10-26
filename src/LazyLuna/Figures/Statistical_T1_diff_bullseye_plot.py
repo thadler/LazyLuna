@@ -29,6 +29,15 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
         self.add_annotation = True
         
     def visualize(self, segBold=[], minv=None, maxv=None):
+        """Plots a bullseye differences plot for case comparisons in mapping view
+        
+        Note:
+            requires setting values first:
+            - self.set_values(view, case comparisons, canvas)
+        
+        Args:
+            None (works with case comparisons in set_values)
+        """
         self.clear()
         
         collecting_means = []

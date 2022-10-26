@@ -32,6 +32,18 @@ class PairedBoxplot(Visualization):
         self.gui = gui
         
     def visualize(self, case_comparisons, cr_name):
+        """Takes a list of case_comparisons and presents a Paired Boxplot for a Clinical Result
+        
+        Note:
+            requires setting values first:
+            - self.set_view(View)
+            - self.set_canvas(canvas)
+            - self.set_gui(gui)
+        
+        Args:
+            case_comparisons (list of LazyLuna.Containers.Case_Comparison): list of case comparisons for calculation
+            cr_name (str): name of Clinical Result
+        """
         self.cr_name = cr_name
         cr = [cr for cr in case_comparisons[0].case1.crs if cr.name==cr_name][0]
         self.clf()

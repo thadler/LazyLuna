@@ -24,6 +24,12 @@ from LazyLuna.Figures.Visualization import *
         
 class LAXCINE_Confidence_Intervals_Tolerance_Ranges(Visualization):
     def visualize(self, case_comparisons, with_swarmplot=True):
+        """Takes a list of LAX_CINE case_comparisons and presents confidence intervals and tolerance ranges
+        
+        Args:
+            case_comparisons (list of LazyLuna.Containers.Case_Comparison): list of case comparisons for calculation
+            with_swarmplot (bool): whether to plot the points ontop of the confidence intervals or not
+        """
         ccs = case_comparisons
         vals = {cr.name:[] for cr in ccs[0].case1.crs if cr.name in ['4CV_RAEDAREA', '4CV_LAEDAREA', '2CV_LAEDAREA']}
         for cc in ccs:
