@@ -99,10 +99,12 @@ class Boxplot(Visualization):
                 cont, ind = ax.collections[0].contains(event)
                 name = [cc.case1.case_name for cc in case_comparisons][ind['ind'][0]]
                 cc = [cc for cc in case_comparisons][ind['ind'][0]]
-                for tab_name, tab in self.view.case_tabs.items(): 
-                    t = tab()
-                    t.make_tab(self.gui, self.view, cc)
-                    self.gui.tabs.addTab(t, tab_name+': '+cc.case1.case_name)
+                for tab_name, tab in self.view.case_tabs.items():
+                    try:
+                        t = tab()
+                        t.make_tab(self.gui, self.view, cc)
+                        self.gui.tabs.addTab(t, tab_name+': '+cc.case1.case_name)
+                    except: pass
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
