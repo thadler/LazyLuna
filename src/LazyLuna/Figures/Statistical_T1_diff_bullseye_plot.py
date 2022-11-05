@@ -35,8 +35,7 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
         
     def segment(self, center, st_angle, end_angle, radius_st, radius_end, steps=500):
         def polar_p(op, a,  dist): # origin point, angle, distance
-            return [op.x + dist*np.sin(np.radians(a)), op.y + dist*np.cos(np.radians(a))]
-        st_angle %= 360
+            return [op.x + dist*-np.sin(np.radians(a)), op.y + dist*-np.cos(np.radians(a))]
         step_angle_width = (end_angle - st_angle) / steps
         segment_vertices = [polar_p(center, st_angle, radius_st), polar_p(center, st_angle, radius_end)]
         for step in range(1, steps): 
@@ -75,16 +74,17 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
         stds  = np.mean(np.asarray(collecting_stds),  axis=0)
         
         cmap = plt.cm.PRGn
-        norm = colors.Normalize(vmin=np.min(means), vmax=np.max(means))
+        minv, maxv = min(np.min(means), -np.max(means)), max(-np.min(means), np.max(means))
+        norm = colors.Normalize(vmin=minv, vmax=maxv)
         
         ax = self.subplots(1,1)#, subplot_kw=dict(projection='polar'))
         ax.imshow(np.ones((240,280)), vmin=0, vmax=1, cmap='gray'); ax.axis('off')
 
         # plot segments with colors
         center = Point(120,120)
-        basal_segments = [self.segment(center, 30+60*i, 30+60*(i+1), 80, 110) for i in range(6)]
-        midv_segments  = [self.segment(center, 30+60*i, 30+60*(i+1), 50, 80)  for i in range(6)]
-        apex_segments  = [self.segment(center, 45+90*i, 45+90*(i+1), 20, 50)  for i in range(4)]
+        basal_segments = [self.segment(center, -30+60*i, -30+60*(i+1), 80, 110) for i in range(6)]
+        midv_segments  = [self.segment(center, -30+60*i, -30+60*(i+1), 50, 80)  for i in range(6)]
+        apex_segments  = [self.segment(center, -45+90*i, -45+90*(i+1), 20, 50)  for i in range(4)]
         segments = basal_segments + midv_segments + apex_segments
         for i_p, p in enumerate(segments): self.plot_polygon(ax, p, color=cmap(norm(means[i_p])), ec='k', lw=2.5)
         cbaxes = self.add_axes([0.79, 0.24, 0.03, 0.5])

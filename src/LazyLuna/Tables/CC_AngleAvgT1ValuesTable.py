@@ -34,7 +34,7 @@ class CC_AngleAvgT1ValuesTable(Table):
             img1,  img2  = cat1.get_img (d,0, True, False), cat2.get_img (d,0, True, False)
             anno1, anno2 = cat1.get_anno(d,0), cat2.get_anno(d,0)
             refpoint = None
-            if byreader is not None: refpoint = anno1.get_point('sacardialRefPoint') if byreader==1 else anno2.get_point('sacardialRefPoint')
+            if byreader is not None: refpoint = anno1.get_point('sax_ref') if byreader==1 else anno2.get_point('sax_ref')
             
             myo_vals1 = anno1.get_myo_mask_by_angles(img1, nr_segments, refpoint)
             myo_vals2 = anno2.get_myo_mask_by_angles(img2, nr_segments, refpoint)

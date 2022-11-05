@@ -35,8 +35,7 @@ class T1_bullseye_plot(Visualization):
         
     def segment(self, center, st_angle, end_angle, radius_st, radius_end, steps=500):
         def polar_p(op, a,  dist): # origin point, angle, distance
-            return [op.x + dist*np.sin(np.radians(a)), op.y + dist*np.cos(np.radians(a))]
-        st_angle %= 360
+            return [op.x + dist*-np.sin(np.radians(a)), op.y + dist*-np.cos(np.radians(a))]
         step_angle_width = (end_angle - st_angle) / steps
         segment_vertices = [polar_p(center, st_angle, radius_st), polar_p(center, st_angle, radius_end)]
         for step in range(1, steps): 
@@ -73,9 +72,9 @@ class T1_bullseye_plot(Visualization):
 
         # plot segments with colors
         center = Point(120,120)
-        basal_segments = [self.segment(center, 30+60*i, 30+60*(i+1), 80, 110) for i in range(6)]
-        midv_segments  = [self.segment(center, 30+60*i, 30+60*(i+1), 50, 80)  for i in range(6)]
-        apex_segments  = [self.segment(center, 45+90*i, 45+90*(i+1), 20, 50)  for i in range(4)]
+        basal_segments = [self.segment(center, -30+60*i, -30+60*(i+1), 80, 110) for i in range(6)]
+        midv_segments  = [self.segment(center, -30+60*i, -30+60*(i+1), 50, 80)  for i in range(6)]
+        apex_segments  = [self.segment(center, -45+90*i, -45+90*(i+1), 20, 50)  for i in range(4)]
         segments = basal_segments + midv_segments + apex_segments
         for i_p, p in enumerate(segments): self.plot_polygon(ax, p, color=cmap(norm(means[i_p])), ec='k', lw=2.5)
         cbaxes = self.add_axes([0.79, 0.24, 0.03, 0.5])
@@ -88,4 +87,3 @@ class T1_bullseye_plot(Visualization):
         
         ax.set_title('AHA Model [ms]: '+self.case.reader_name)
         self.canvas.draw()
-    
