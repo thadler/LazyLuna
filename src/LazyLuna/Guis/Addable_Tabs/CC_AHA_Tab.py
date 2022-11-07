@@ -44,8 +44,6 @@ class CC_AHA_Tab(QWidget):
             layout.addWidget(self.readerchoice_combobox, 0,0, 1,1)
         
             self.figure = T1_bullseye_plot()
-            print(T1_bullseye_plot)
-            print(self.figure)
             self.canvas = FigureCanvas(self.figure)
             #self.figure.set_values(view, cc.case1, self.canvas)
             #self.figure.visualize()
@@ -66,10 +64,7 @@ class CC_AHA_Tab(QWidget):
             reader = self.readerchoice_combobox.currentText()
             if reader=='Select Reader': return
             if reader=='R1':
-                print('in update...')
-                print(self.figure)
                 self.figure.set_values(self.view, self.cc.case1, self.canvas)
-                print(self.figure)
                 self.figure.visualize()
             if reader=='R2':
                 self.figure.set_values(self.view, self.cc.case2, self.canvas)

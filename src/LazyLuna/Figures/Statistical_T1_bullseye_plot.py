@@ -72,8 +72,7 @@ class Statistical_T1_bullseye_plot(Visualization):
         cmap=plt.cm.bwr
         norm = colors.Normalize(vmin=np.min(means), vmax=np.max(means))
         
-        ax = self.subplots(1,1)#, subplot_kw=dict(projection='polar'))
-        ax.imshow(np.ones((240,280)), vmin=0, vmax=1, cmap='gray'); ax.axis('off')
+        ax = self.subplots(1,1); ax.imshow(np.ones((240,280)), vmin=0, vmax=1, cmap='gray'); ax.axis('off')
 
         # plot segments with colors
         center = Point(120,120)
