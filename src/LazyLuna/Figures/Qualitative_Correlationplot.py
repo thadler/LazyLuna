@@ -53,7 +53,7 @@ class Qualitative_Correlationplot(Visualization):
                             absmldiff = absmldiff_m.get_val(cont1, cont2, dcm, string=False)
                             dsc       = dsc_m.get_val(cont1, cont2, dcm, string=False)
                             rows.append([case1.case_name, cat1.name, d, cn, ml_diff, absmldiff, dsc])
-                        except Exception as e: rows.append([np.nan for _ in range(7)]); print(traceback.format_exc())
+                        except Exception as e: print(traceback.format_exc()); continue
         return DataFrame(rows, columns=cols)
     
     def visualize(self, case_comparisons):
