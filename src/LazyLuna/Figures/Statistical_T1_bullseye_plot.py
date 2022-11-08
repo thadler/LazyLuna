@@ -66,8 +66,8 @@ class Statistical_T1_bullseye_plot(Visualization):
             stds  = np.concatenate((stds[0], stds[1], stds[2]))
             collecting_means.append(means)
             collecting_stds .append(stds)
-        means = np.mean(np.asarray(collecting_means), axis=0)
-        stds  = np.mean(np.asarray(collecting_stds),  axis=0)
+        means = np.nanmean(np.asarray(collecting_means), axis=0)
+        stds  = np.nanmean(np.asarray(collecting_stds),  axis=0)
         
         cmap=plt.cm.bwr
         norm = colors.Normalize(vmin=np.min(means), vmax=np.max(means))

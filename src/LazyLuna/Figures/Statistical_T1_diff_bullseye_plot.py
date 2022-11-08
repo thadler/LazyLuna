@@ -70,8 +70,8 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
             stds  = np.concatenate((stds1[0] -stds2[0],  stds1[1] -stds2[1],  stds1[2]-stds2[2]))
             collecting_means.append(means)
             collecting_stds.append(stds)
-        means = np.mean(np.asarray(collecting_means), axis=0)
-        stds  = np.mean(np.asarray(collecting_stds),  axis=0)
+        means = np.nanmean(np.asarray(collecting_means), axis=0)
+        stds  = np.nanmean(np.asarray(collecting_stds),  axis=0)
         
         cmap = plt.cm.PRGn
         minv, maxv = min(np.min(means), -np.max(means)), max(-np.min(means), np.max(means))

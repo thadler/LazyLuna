@@ -624,18 +624,30 @@ class SAX_T1_Category(SAX_slice_phase_Category):
         if self.nr_slices == 3:
             # assume 3 of 5 so: 0:base, 1:midv, 2:apex
             print('AHA as three individual slices.')
-            img, anno = self.get_img(0,0,True,False), self.get_anno(0,0)
-            b = anno.get_myo_mask_by_angles(img, nr_bins=6)
-            b_m = np.asarray([np.mean(v) for v in b.values()])
-            b_s = np.asarray([np.std(v) for v in b.values()])
-            img, anno = self.get_img(1,0,True,False), self.get_anno(1,0)
-            m = anno.get_myo_mask_by_angles(img, nr_bins=6)
-            m_m = np.asarray([np.mean(v) for v in m.values()])
-            m_s = np.asarray([np.std(v) for v in m.values()])
-            img, anno = self.get_img(2,0,True,False), self.get_anno(2,0)
-            a = anno.get_myo_mask_by_angles(img, nr_bins=4)
-            a_m = np.asarray([np.mean(v) for v in a.values()])
-            a_s = np.asarray([np.std(v) for v in a.values()])
+            try:
+                img, anno = self.get_img(0,0,True,False), self.get_anno(0,0)
+                b = anno.get_myo_mask_by_angles(img, nr_bins=6)
+                b_m = np.asarray([np.mean(v) for v in b.values()])
+                b_s = np.asarray([np.std(v) for v in b.values()])
+            except:
+                b_m = np.empty((6,)); b_m.fill(np.nan)
+                b_s = np.empty((6,)); b_s.fill(np.nan)
+            try:
+                img, anno = self.get_img(1,0,True,False), self.get_anno(1,0)
+                m = anno.get_myo_mask_by_angles(img, nr_bins=6)
+                m_m = np.asarray([np.mean(v) for v in m.values()])
+                m_s = np.asarray([np.std(v) for v in m.values()])
+            except:
+                m_m = np.empty((6,)); m_m.fill(np.nan)
+                m_s = np.empty((6,)); m_s.fill(np.nan)
+            try:
+                img, anno = self.get_img(2,0,True,False), self.get_anno(2,0)
+                a = anno.get_myo_mask_by_angles(img, nr_bins=4)
+                a_m = np.asarray([np.mean(v) for v in a.values()])
+                a_s = np.asarray([np.std(v) for v in a.values()])
+            except:
+                a_m = np.empty((4,)); a_m.fill(np.nan)
+                a_s = np.empty((4,)); a_s.fill(np.nan)
             return ([np.roll(b_m,1),np.roll(m_m,1),np.roll(a_m,1)],
                     [np.roll(b_s,1),np.roll(m_s,1),np.roll(a_s,1)])
         
