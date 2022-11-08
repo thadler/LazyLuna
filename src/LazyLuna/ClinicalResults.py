@@ -1338,7 +1338,8 @@ class SAXMap_GLOBALT1(Clinical_Result):
     def get_val(self, string=False):
         cr = []
         for d in range(self.cat.nr_slices):
-            cr += self.cat.get_anno(d,0).get_pixel_values('lv_myo', self.cat.get_img(d,0)).tolist()
+            try: cr += self.cat.get_anno(d,0).get_pixel_values('lv_myo', self.cat.get_img(d,0)).tolist()
+            except: continue
         cr = np.nanmean(cr)
         return "{:.2f}".format(cr) if string else cr
     
