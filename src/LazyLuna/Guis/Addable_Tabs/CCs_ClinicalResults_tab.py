@@ -83,9 +83,11 @@ class CCs_ClinicalResults_Tab(QWidget):
             row, col = idx.row(), idx.column()
             cr_name = self.crs_table.df['Clinical Result (mean±std)'].iloc[row].split(' ')[0]
             self.qq.visualize(self.ccs, cr_name)
-            #self.bp.visualize(self.ccs, cr_name)
             self.pair.visualize(self.ccs, cr_name)
             self.ba.visualize(self.ccs, cr_name)
+            if len(self.ba.failed_cr_rows)!=0:
+                self.popup = PresentFailedCasesPopup(self, cr_name)
+                self.popup.show()
         except Exception as e:
             print(traceback.format_exc())
         
@@ -101,7 +103,7 @@ class CCs_ClinicalResults_Tab(QWidget):
         self.crs_TableView.selectionModel().selectionChanged.connect(self.update_figures)
         self.crs_TableView.resizeColumnsToContents()
         return
-        
+
         
 class CR_Results_Worker(QThread):
     worksignal = pyqtSignal(pd.DataFrame)
@@ -118,3 +120,22 @@ class CR_Results_Worker(QThread):
 
     def set_ccs(self, ccs):
         self.ccs = copy.deepcopy(ccs)
+        
+        
+class PresentFailedCasesPopup(QWidget):
+    def __init__(self, parent, cr_name):
+        super().__init__()
+        self.parent = parent
+        self.setWindowTitle('Failed Calculations for ' + cr_name)
+        self.setGeometry(800, 300, 500, 300)
+        self.layout = QVBoxLayout(self)
+        self.initUI()
+
+    def initUI(self):
+        self.tableView = QTableView()
+        failed_rows = self.parent.ba.failed_cr_rows
+        df = DataFrame(failed_rows, columns=['case_name', 'studyuid'])
+        t = Table(); t.df = df
+        self.tableView.setModel(t.to_pyqt5_table_model())
+        self.tableView.resizeColumnsToContents()
+        self.layout.addWidget(self.tableView)

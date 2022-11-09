@@ -53,10 +53,13 @@ class QQPlot(Visualization):
         swarm_palette   = sns.color_palette(["#061C36", "#061C36"])
         
         rows = []
+        self.failed_cr_rows = []
         for cc in case_comparisons:
             cr1 = [cr for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr for cr in cc.case2.crs if cr.name==cr_name][0]
-            rows.append([cc.case1.reader_name+'-'+cc.case2.reader_name, cr1.get_val_diff(cr2)])
+            if np.isnan(cr1.get_val_diff(cr2)): self.failed_cr_rows.append([cc.case1.case_name, cc.case1.studyinstanceuid])
+            else: rows.append([cc.case1.reader_name+'-'+cc.case2.reader_name, cr1.get_val_diff(cr2)])
+            
         df = DataFrame(rows, columns=['Reader', cr_name+' difference'])
 
         # Plot

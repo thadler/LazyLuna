@@ -49,16 +49,16 @@ class BlandAltman(Visualization):
         cr = [cr for cr in case_comparisons[0].case1.crs if cr.name==cr_name][0]
         self.clf()
         ax = self.add_subplot(111, position=[0.16, 0.16, 0.68, 0.68])
-        #self.set_size_inches(w=15, h=7.5)
         swarm_palette   = sns.color_palette(["#061C36", "#061C36"])
         
         rows = []
+        self.failed_cr_rows = []
         for cc in case_comparisons:
             cr1 = [cr.get_val() for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr.get_val() for cr in cc.case2.crs if cr.name==cr_name][0]
-            rows.append([cc.case1.case_name, cc.case1.studyinstanceuid, (cr1+cr2)/2.0, cr1-cr2])
+            if np.isnan(cr1) or np.isnan(cr2): self.failed_cr_rows.append([cc.case1.case_name, cc.case1.studyinstanceuid])
+            else: rows.append([cc.case1.case_name, cc.case1.studyinstanceuid, (cr1+cr2)/2.0, cr1-cr2])
         df = DataFrame(rows, columns=['case_name', 'studyuid', cr_name, cr_name+' difference'])
-        df = df.dropna()
         sns.scatterplot(ax=ax, x=cr_name, y=cr_name+' difference', data=df, markers='o', 
                         palette=swarm_palette, size=np.abs(df[cr_name+' difference']), s=10, legend=False)
         ax.axhline(df[cr_name+' difference'].mean(), ls="-", c=".2")

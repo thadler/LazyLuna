@@ -55,12 +55,13 @@ class PairedBoxplot(Visualization):
         custom_palette  = sns.color_palette([sns.color_palette("Blues")[1], sns.color_palette("Purples")[1]])
         swarm_palette   = sns.color_palette(["#061C36", "#061C36"])
         rows = []
+        self.failed_cr_rows = []
         for cc in case_comparisons:
             cr1 = [cr.get_val() for cr in cc.case1.crs if cr.name==cr_name][0]
             cr2 = [cr.get_val() for cr in cc.case2.crs if cr.name==cr_name][0]
-            if np.isnan(cr1) or np.isnan(cr2): continue
             casename, studyuid = cc.case1.case_name, cc.case1.studyinstanceuid
-            rows.extend([[casename, studyuid, readername1, cr1], [casename, studyuid, readername2, cr2]])
+            if np.isnan(cr1) or np.isnan(cr2): self.failed_cr_rows.append([casename, studyuid])
+            else: rows.extend([[casename, studyuid, readername1, cr1], [casename, studyuid, readername2, cr2]])
         df = DataFrame(rows, columns=['casename', 'studyuid', 'Reader', cr_name])
         # Plot
         sns.boxplot  (ax=ax, data=df, y='Reader', x=cr_name, width=0.4, palette=custom_palette, orient='h', linewidth=1)
