@@ -50,7 +50,8 @@ class SAX_slice_phase_Category:
         
         # potentially flip slice direction: base top x0<x1, y0>y1, z0>z1, apex top x0>x1, y0<y1, z0<z1
         depthandtime2sop = {v:k for k,v in sop2depthandtime.items()}
-        img1, img2 = imgs[depthandtime2sop[(0,0)]], imgs[depthandtime2sop[(1,0)]]
+        try: img1, img2 = imgs[depthandtime2sop[(0,0)]], imgs[depthandtime2sop[(1,0)]]
+        except: return sop2depthandtime
         img1x,img1y,img1z = list(map(float,img1.ImagePositionPatient))
         img2x,img2y,img2z = list(map(float,img2.ImagePositionPatient))
         if img1x<img2x and img1y>img2y and img1z>img2z: pass
@@ -478,7 +479,8 @@ class SAX_T1_Category(SAX_slice_phase_Category):
                 sop2depthandtime[sopinstanceuid] = (i,0)
         # potentially flip slice direction: base top x0<x1, y0>y1, z0>z1, apex top x0>x1, y0<y1, z0<z1
         depthandtime2sop = {v:k for k,v in sop2depthandtime.items()}
-        img1, img2 = imgs[depthandtime2sop[(0,0)]], imgs[depthandtime2sop[(1,0)]]
+        try: img1, img2 = imgs[depthandtime2sop[(0,0)]], imgs[depthandtime2sop[(1,0)]]
+        except: return sop2depthandtime
         img1x,img1y,img1z = list(map(float,img1.ImagePositionPatient))
         img2x,img2y,img2z = list(map(float,img2.ImagePositionPatient))
         if img1x<img2x and img1y>img2y and img1z>img2z: pass
@@ -492,26 +494,33 @@ class SAX_T1_Category(SAX_slice_phase_Category):
     def set_image_height_width_depth(self, debug=False):
         if debug: st = time()
         nr_slices = self.nr_slices
-        dcm1 = self.case.load_dcm(self.depthandtime2sop[(0, 0)])
-        dcm2 = self.case.load_dcm(self.depthandtime2sop[(1, 0)])
-        self.height, self.width = dcm1.pixel_array.shape
-        self.pixel_h, self.pixel_w = list(map(float, dcm1.PixelSpacing))
-        spacingbs = []
-        for d in range(nr_slices-1):
-            dcm1 = self.case.load_dcm(self.depthandtime2sop[(d,   0)])
-            dcm2 = self.case.load_dcm(self.depthandtime2sop[(d+1, 0)])
-            spacingbs += [round(np.abs(dcm1.SliceLocation - dcm2.SliceLocation), 2)]
-            try: self.slice_thickness = dcm1.SliceThickness
-            except Exception as e: print('Exception in SAX_T1_Category, ', e)
-        self.spacing_between_slices = min(spacingbs)
-        self.missing_slices = []
-        for d in range(nr_slices-1):
-            dcm1 = self.case.load_dcm(self.depthandtime2sop[(d,   0)])
-            dcm2 = self.case.load_dcm(self.depthandtime2sop[(d+1, 0)])
-            curr_spacing = round(np.abs(dcm1.SliceLocation - dcm2.SliceLocation), 2)
-            if round(curr_spacing / self.spacing_between_slices) != 1:
-                for m in range(int(round(curr_spacing / self.spacing_between_slices))-1):
-                    self.missing_slices += [(d + m)]
+        dcm = self.case.load_dcm(self.depthandtime2sop[(0, 0)])
+        self.height, self.width = dcm.pixel_array.shape
+        self.pixel_h, self.pixel_w = list(map(float, dcm.PixelSpacing))
+        try: self.spacing_between_slices = dcm.SpacingBetweenSlices
+        except Exception as e:
+            self.spacing_between_slices = dcm.SliceThickness
+            print('Exception in SAX_Slice_Phase_Category, ', e)
+        try: self.slice_thickness = dcm.SliceThickness
+        except Exception as e: print('Exception in SAX_Slice_Phase_Category, ', e)
+        try:
+            spacingbs = []
+            for d in range(nr_slices-1):
+                dcm1 = self.case.load_dcm(self.depthandtime2sop[(d,   0)])
+                dcm2 = self.case.load_dcm(self.depthandtime2sop[(d+1, 0)])
+                spacingbs += [round(np.abs(dcm1.SliceLocation - dcm2.SliceLocation), 2)]
+                try: self.slice_thickness = dcm1.SliceThickness
+                except Exception as e: print('Exception in SAX_T1_Category, ', e)
+            self.spacing_between_slices = min(spacingbs)
+            self.missing_slices = []
+            for d in range(nr_slices-1):
+                dcm1 = self.case.load_dcm(self.depthandtime2sop[(d,   0)])
+                dcm2 = self.case.load_dcm(self.depthandtime2sop[(d+1, 0)])
+                curr_spacing = round(np.abs(dcm1.SliceLocation - dcm2.SliceLocation), 2)
+                if round(curr_spacing / self.spacing_between_slices) != 1:
+                    for m in range(int(round(curr_spacing / self.spacing_between_slices))-1):
+                        self.missing_slices += [(d + m)]
+        except Exception as e: print('Exception in SAX_Slice_Phase_Category, ', e)
                 
     def set_nr_slices_phases(self):
         dat = list(self.depthandtime2sop.keys())
@@ -722,7 +731,8 @@ class SAX_LGE_Category(SAX_slice_phase_Category):
                 sop2depthandtime[sopinstanceuid] = (i,0)
         # potentially flip slice direction: base top x0<x1, y0>y1, z0>z1, apex top x0>x1, y0<y1, z0<z1
         depthandtime2sop = {v:k for k,v in sop2depthandtime.items()}
-        img1, img2 = imgs[depthandtime2sop[(0,0)]], imgs[depthandtime2sop[(1,0)]]
+        try: img1, img2 = imgs[depthandtime2sop[(0,0)]], imgs[depthandtime2sop[(1,0)]]
+        except: return sop2depthandtime
         img1x,img1y,img1z = list(map(float,img1.ImagePositionPatient))
         img2x,img2y,img2z = list(map(float,img2.ImagePositionPatient))
         if img1x<img2x and img1y>img2y and img1z>img2z: pass
