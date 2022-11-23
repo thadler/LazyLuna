@@ -31,6 +31,7 @@ class Annotation:
     def __init__(self, filepath, sop=None):
         try:    self.anno = pickle.load(open(filepath, 'rb'))
         except: self.anno = dict()
+        self.filepath = filepath
         self.sop = sop
         self.h,  self.w  = self.get_image_size()
         self.ph, self.pw = self.get_pixel_size()
