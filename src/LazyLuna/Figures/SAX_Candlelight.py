@@ -73,3 +73,4 @@ class SAX_Candlelight(Visualization):
     
     def store(self, storepath, figurename='clinical_results_candlelights.png'):
         self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
+        return os.path.join(storepath, figurename)

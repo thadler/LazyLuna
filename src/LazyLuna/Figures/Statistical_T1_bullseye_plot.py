@@ -92,3 +92,6 @@ class Statistical_T1_bullseye_plot(Visualization):
         ax.set_title('Average AHA Model [ms]: '+self.cases[0].reader_name)
         self.canvas.draw()
     
+    def store(self, storepath, figurename='Averages_AHA_model.png'):
+        self.savefig(os.path.join(storepath, figurename), dpi=300, facecolor="#FFFFFF")
+        return os.path.join(storepath, figurename)

@@ -87,4 +87,4 @@ class SAX_BlandAltman(Visualization):
     
     def store(self, storepath, figurename='clinical_results_bland_altman.png'):
         self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
-    
+        return os.path.join(storepath, figurename)

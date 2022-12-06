@@ -152,3 +152,4 @@ class Qualitative_Correlationplot(Visualization):
     
     def store(self, storepath, figurename='qualitative_correlationplot.png'):
         self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
+        return os.path.join(storepath, figurename)

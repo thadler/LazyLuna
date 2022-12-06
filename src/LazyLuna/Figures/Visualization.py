@@ -24,4 +24,5 @@ class Visualization(Figure):
     def store(self, storepath, figurename='visualization.png'):
         """Overwrite this method for Figure storage"""
         self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
+        return os.path.join(storepath, figurename)
 

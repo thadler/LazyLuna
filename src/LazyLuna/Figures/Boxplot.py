@@ -112,3 +112,4 @@ class Boxplot(Visualization):
     
     def store(self, storepath, figurename='_bland_altman.png'):
         self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=100, facecolor="#FFFFFF")
+        return os.path.join(storepath, self.cr_name+figurename)

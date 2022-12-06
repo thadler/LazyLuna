@@ -97,3 +97,6 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
         ax.set_title('Average Differences AHA Model [ms]: '+self.ccs[0].case1.reader_name+' - '+self.ccs[0].case2.reader_name)
         self.canvas.draw()
     
+    def store(self, storepath, figurename='Average_Differences_AHA_model.png'):
+        self.savefig(os.path.join(storepath, figurename), dpi=300, facecolor="#FFFFFF")
+        return os.path.join(storepath, figurename)
