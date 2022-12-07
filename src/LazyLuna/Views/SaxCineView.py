@@ -1,14 +1,14 @@
 from LazyLuna.Categories import *
 from LazyLuna.ClinicalResults import *
-from LazyLuna.Views.View import View
+from LazyLuna.Views.View import *
 
 from LazyLuna.Tables  import *
 from LazyLuna.Figures import *
 
 import traceback
 
-from fpdf import FPDF
 import csv
+import PIL
 
 
 class SAX_CINE_View(View):
@@ -83,8 +83,6 @@ class SAX_CINE_View(View):
         return case
     
     def store_information(self, ccs, path, icon_path):
-        pdf = PDF(orientation='P', unit='mm', format='A4')
-
         try:
             cr_table = CCs_ClinicalResultsTable()
             cr_table.calculate(ccs)
@@ -94,26 +92,14 @@ class SAX_CINE_View(View):
         try:
             cr_overview_figure = SAX_BlandAltman()
             cr_overview_figure.visualize(ccs)
-            p = cr_overview_figure.store(path)
+            cr_p = cr_overview_figure.store(path)
             
-            pdf.add_page()
-            pdf.prepare_pretty_format(icon_path)
-            pdf.set_title('Clinical Results Differences')
-            pdf.set_chart(p, 20, 35, w=695/4, h=841/4)
-            pdf.set_text('Fig. 1 Clinical Parameter Bland-Altmans: Bland-Altman plots show clinical parameter averages and differences as points for all cases. Point size represents difference, the solid line marks the mean difference between readers, the dashed lines mark the mean differences ±1.96 standard deviations. The last plot offers two Dice boxplots per contour type, one for all images, another restricted to images segmented by both readers. Legend: GUI: Graphical user interface, RV: Right ventricle, LV: Left ventricle, ESV: End-systolic volume, EDV: End-diastolic volume, EF: Ejection fraction, LVM: Left ventricular mass, Dice: Dice similarity coefficient', 10, 245)
-
         except Exception as e:
             print(traceback.print_exc())
         try:
             ci_figure = SAXCINE_Confidence_Intervals_Tolerance_Ranges()
             ci_figure.visualize(ccs, True)
-            p = ci_figure.store(path)
-            
-            pdf.add_page()
-            pdf.prepare_pretty_format(icon_path)
-            pdf.set_title('Confidence Intervals')
-            pdf.set_chart(p, 20, 35, w=695/4, h=695/4)
-            pdf.set_text('Fig. 2 Confidence Intervals', 10, 205)
+            ci_p = ci_figure.store(path)
             
         except Exception as e:
             print(traceback.print_exc())
@@ -138,97 +124,81 @@ class SAX_CINE_View(View):
             table.store(os.path.join(path, 'metrics_table_by_contour_position.csv'))
             table.present_crs()
             table.store(os.path.join(path, 'crvs_and_metrics.csv'))
-            pdf.add_page()
-            pdf.prepare_pretty_format(icon_path)
-            # METRICS TABLE
-            data = [l[2:] for l in csv.reader(open(os.path.join(path, 'metrics_table_by_contour_position.csv')), delimiter=';')]
-            for i in range(len(data)):
-                for j in range(len(data[i])):
-                    try: data[i][j] = "{:10.2f}".format(float(data[i][j].replace(',','.')))
-                    except: data[i][j] = data[i][j]
-            # header
-            pdf.set_table(data[0:1], x=20, y=30, col_widths=[47.0]+[35 for i in range(len(data[0])-1)])
-            # basal
-            pdf.set_title('Metrics by Cardiac Location and Contour Type')
-            pdf.set_text('Basal Slices', 25, 50, size=12)
-            pdf.set_table(data[1:5], x=20, y=50, col_widths=[47.0]+[35 for i in range(len(data[0])-1)])
-            # midv
-            pdf.set_text('Midventricular Slices', 25, 95, size=12)
-            pdf.set_table(data[5:9], x=20, y=95, col_widths=[47.0]+[35 for i in range(len(data[0])-1)])
-            # apical
-            pdf.set_text('Apical Slices', 25, 140, size=12)
-            pdf.set_table(data[9:], x=20, y=140, col_widths=[47.0]+[35 for i in range(len(data[0])-1)])
-            pdf.set_text('Table. 1 Clinical Parameters and Metrics Table', 10, 205)
-            
-            # CRS AND METRICS TABLE
-            pdf.add_page()
-            pdf.prepare_pretty_format(icon_path)
-            data = [l[1:] for l in csv.reader(open(os.path.join(path, 'crvs_and_metrics.csv')), delimiter=';')]
-            for i in range(len(data)):
-                for j in range(len(data[i])):
-                    try: data[i][j] = "{:10.2f}".format(float(data[i][j].replace(',','.')))
-                    except: data[i][j] = data[i][j]
-            pdf.set_title('Clinical Parameters and Metrics Table')
-            pdf.set_table(data[0:], x=40, y=50, col_widths=[65.0]+[25 for i in range(len(data[0])-1)])
             
         except Exception as e:
             print(traceback.print_exc())
+            
+            
+        pdf = PDF(orientation='P', unit='mm', format='A4')
         
-        pdf.set_author('Thomas Hadler')
-        pdf.output(os.path.join(path, 'summary_PDF.pdf'))
-
-            
-            
-
-
-class PDF(FPDF):
-    def prepare_pretty_format(self, icon_path=None):
-        # Outside Rectangle
-        self.set_fill_color(132.0, 132.0, 132.0) # color for outer rectangle
-        self.rect(5.0, 5.0, 200.0, 287.0, 'DF')
-        self.set_fill_color(255, 255, 255)       # color for inner rectangle
-        self.rect(8.0, 8.0, 194.0, 281.0, 'FD')
-        # Hogwarts Image
-        try: 
-            self.set_xy(170.0, 9.0)
-            self.image(os.path.join(icon_path, 'HogwartsLineArt.png'),  link='', type='', w=2520/80, h=1920/80)
-        except Exception as e: print('no icon path: ', e)
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        pdf.set_title('Clinical Results Differences')
+        pdf.set_chart(cr_p, 20, 35, w=695/4, h=841/4)
+        pdf.set_text('Fig. 1 Clinical Parameter Bland-Altmans: Bland-Altman plots show clinical parameter averages and differences as points for all cases. Point size represents difference, the solid line marks the mean difference between readers, the dashed lines mark the mean differences ±1.96 standard deviations. The last plot offers two Dice boxplots per contour type, one for all images, another restricted to images segmented by both readers. Legend: GUI: Graphical user interface, RV: Right ventricle, LV: Left ventricle, ESV: End-systolic volume, EDV: End-diastolic volume, EF: Ejection fraction, LVM: Left ventricular mass, Dice: Dice similarity coefficient', 10, 242)
+        
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        pdf.set_title('Confidence Intervals')
+        pdf.set_chart(ci_p, 20, 35, w=695/4, h=695/4)
+        pdf.set_text('Fig. 2 Tolerance Ranges and Confidence Intervals: Each subfigure references a clinical parameter. Tolerance intervals are shown as gray bars and represent ±1.96 standard deviation of an expert intrareader deviation as derived in another publication (see below). The 95% confidence intervals of the mean value is represented as an error bar in red. Individual clinical parameter differences per case are plotted in blue. Legend: LV: Left ventricle, RV: Right ventricle, ESV: end-systolic volume, EDV: end-diastolic volume, EF: ejection fraction, LVM: Left ventricular myocardium.', 10, 210)
+        
+        pdf.set_text('Tolerance range paper: Zange L, Muehlberg F, Blaszczyk E, Schwenke S, Traber J, Funk S, et al. Quantification in cardiovascular magnetic resonance: agreement of software from three different vendors on assessment of left ventricular function, 2D flow and parametric mapping. J Cardiovasc Magn Reson. 2019 Dec;21(1):12.', 10, 235)
+        
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        # METRICS TABLE
+        data = [l[2:] for l in csv.reader(open(os.path.join(path, 'metrics_table_by_contour_position.csv')), delimiter=';')]
+        for i in range(len(data)):
+            for j in range(len(data[i])):
+                try: data[i][j] = "{:10.2f}".format(float(data[i][j].replace(',','.')))
+                except: data[i][j] = data[i][j]
+        # header
+        pdf.set_table(data[0:1], x=20, y=30, col_widths=[47.0]+[35 for i in range(len(data[0])-1)])
+        # basal
+        pdf.set_title('Metrics by Cardiac Location and Contour Type')
+        pdf.set_text('Basal Slices', 25, 50, size=12)
+        pdf.set_table(data[1:5], x=20, y=50, col_widths=[47.0]+[35 for i in range(len(data[0])-1)])
+        # midv
+        pdf.set_text('Midventricular Slices', 25, 95, size=12)
+        pdf.set_table(data[5:9], x=20, y=95, col_widths=[47.0]+[35 for i in range(len(data[0])-1)])
+        # apical
+        pdf.set_text('Apical Slices', 25, 140, size=12)
+        pdf.set_table(data[9:], x=20, y=140, col_widths=[47.0]+[35 for i in range(len(data[0])-1)])
+        pdf.set_text('Table. 1 Clinical Parameters and Metrics Table: The columnms are metric name, left ventricular endocardial contour, left ventricular myocardial contour, right ventricular endocardial contour. The table is divided into basal midventricular and apical slices. Basal slices are the most upper slice, apical the lowest slice (as defined by the first reader). Legend: LV left ventricular, RV: Right ventricular, Dice: Dice similarity coefficient, HD: Hausdorff distance, Abs. ml diff.: Absolute millilitre difference', 10, 185)
+        
+        # CRS AND METRICS TABLE
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        data = [l[1:] for l in csv.reader(open(os.path.join(path, 'crvs_and_metrics.csv')), delimiter=';')]
+        for i in range(len(data)):
+            for j in range(len(data[i])):
+                try: data[i][j] = "{:10.2f}".format(float(data[i][j].replace(',','.')))
+                except: data[i][j] = data[i][j]
+        pdf.set_title('Clinical Parameters and Metrics Table')
+        pdf.set_table(data[0:], x=40, y=30, col_widths=[65.0]+[25 for i in range(len(data[0])-1)])
+        pdf.set_text('Table. 2 Clinical Parameters and Metrics Table: The columns are Name (either clinical parameter or metric), Mean and Standard deviation (for difference if clinical parameter, or mean value for metric). Legend: LV: Left ventricle, RV: Right ventricle, EF: Ejection fraction, EDV: end-diastolic volume, ESV: end-systolic volume, Dice: Dice similarity coefficient, HD: Hausdorff distance', 10, 223)
+        
+        
+        # ADD the QUALITATIVE FIGURES
         try:
-            self.set_xy(195.0, 7.5)
-            self.image(os.path.join(icon_path, 'SlothLineArt.png'),  link='', type='', w=520/80, h=520/80)
-        except Exception as e: print('no icon path: ', e)
-        self.set_xy(173.5, 28.0)
-        self.set_font('Times', 'B', 10)
-        self.set_text_color(10, 10, 10)
-        self.cell(w=25.0, h=6.0, align='C', txt='Lazy        Luna', border=0)
+            overviewtab = findCCsOverviewTab()
+            view_name = overviewtab.view_combo.currentText()
+            overviewtab.qualitative_figures[view_name].append(['Title of the dumb image', '/Users/thomas/Desktop/Export_comparison_Gold_Unet/ECSPRESS173_059Y_3_SAX LVES_lv_endo.png', 'Comments on the dumb image...'])
+            for addable in overviewtab.qualitative_figures[view_name]:
+                pdf.add_page()
+                #pdf.prepare_pretty_format(icon_path)
+                img = PIL.Image.open(addable[1])
+                scale = img.height / img.width
+                pdf.set_title(addable[0])
+                pdf.set_chart(addable[1], 20, 35, w=695/4, h=695/4*scale)
+                pdf.set_text(addable[2], 10, 40 + 695/4*scale)
+            
+        except Exception as e:
+            print(traceback.print_exc())
+            pass
         
-    def set_title(self, text):
-        self.set_xy(0.0,0.0)
-        self.set_font('Arial', 'B', 16)
-        self.set_text_color(50, 50, 50)
-        self.cell(w=210.0, h=40.0, align='C', txt=text, border=0)
+        pdf.set_author('Luna Lovegood')
+        pdf.output(os.path.join(path, 'summary_PDF.pdf'))
         
-    def set_text(self, text, x=10.0, y=80.0, font='Arial', size=8):
-        self.set_xy(x, y)
-        self.set_text_color(70.0, 70.0, 70.0)
-        self.set_font(font, '', size)
-        self.multi_cell(0, 5, text)
-        
-    def set_chart(self, plot_path, x=30.0, y=30, w=695/4, h=695/4):
-        self.set_xy(x, y)
-        self.image(plot_path, link='', type='', w=w, h=h)
-        
-        
-    def set_table(self, data, spacing=1, fontsize=8, x=30.0, y=30, w=695/4, col_widths=None):
-        self.set_xy(x, y)
-        self.set_font('Arial', size=8)
-        if col_widths is None: col_widths = [w/4.5 for i in range(len(data[0]))]
-        else: pass
-        row_height = fontsize
-        for row in data:
-            self.ln(row_height*spacing)
-            curr_x = x
-            for j, item in enumerate(row):
-                self.set_x(curr_x)
-                self.cell(col_widths[j], row_height*spacing, txt=item, border=1)
-                curr_x += col_widths[j]
+            

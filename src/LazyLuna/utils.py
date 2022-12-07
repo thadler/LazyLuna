@@ -10,6 +10,9 @@ from PIL import Image, ImageDraw
 from descartes import PolygonPatch
 import matplotlib.pyplot as plt
 
+from PyQt5.QtWidgets import QMainWindow, QApplication
+from matplotlib.backends import backend_qt as mpl_backend
+
 
 ##################
 # Mask functions #
@@ -207,3 +210,29 @@ def transform_ics_to_rcs(dcm, arr_points=None):
     product = np.transpose(np.dot(matrix, np.transpose(vector))) # x y z 1
     product = np.add(product[:, 0:3], image_position.reshape((1, 3)))
     return product
+
+
+
+############################
+## PYQT5 Helper Functions ##
+############################
+
+def findMainWindow():
+    # Global function to find the (open) QMainWindow in application
+    app = QApplication.instance()
+    for widget in app.topLevelWidgets():
+        if isinstance(widget, QMainWindow) and not isinstance(widget, mpl_backend.MainWindow): 
+            return widget
+    return None
+
+
+def findCCsOverviewTab():
+    try:    from cmrCatchTools.Comparison_Tabs.CCs_Overview_Tab import CCs_Overview_Tab
+    except Exception as e: print(e); return None
+    mainWin = findMainWindow()
+    databasetab = mainWin.tab
+    tabs = databasetab.tabs
+    for i in range(tabs.count()):
+        tab = tabs.widget(i)
+        if isinstance(tab, CCs_Overview_Tab): return tab
+
