@@ -20,6 +20,8 @@ from LazyLuna.Metrics import *
 from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
+from LazyLuna.utils import findMainWindow, findCCsOverviewTab
+
         
 class Qualitative_Correlationplot(Visualization):
     def set_view(self, view):
@@ -98,58 +100,66 @@ class Qualitative_Correlationplot(Visualization):
         def onclick(event):
             vis = annot.get_visible()
             if event.inaxes==ax_corr:
-                cont, ind = ax_corr.collections[0].contains(event)
-                cc_info = df.iloc[ind['ind'][0]]
-                
-                case_name = cc_info['case']
-                cat_name  = cc_info['category']
-                slice_nr  = cc_info['slice']
-                dice      = cc_info['DSC']
-                mldiff    = cc_info['ml diff']
-                cont_type = cc_info['contour name']
-                
-                cc = [cc for cc in case_comparisons if cc.case1.case_name==case_name][0]
-                cat1, cat2 = [cat for cat in cc.case1.categories if cat_name==cat.name][0], [cat for cat in cc.case2.categories if cat_name==cat.name][0]
-                
-                tmp_img     = cat1.get_img(slice_nr, cat1.phase)
-                h,w         = tmp_img.shape
-                img1        = np.zeros((max(h,w),max(h,w)))
-                img1[:h,:w] = tmp_img
-                tmp_img     = cat2.get_img(slice_nr, cat2.phase)
-                h,w         = tmp_img.shape
-                img2        = np.zeros((max(h,w),max(h,w)))
-                img2[:h,:w] = tmp_img
-                h, w    = img1.shape
-                extent =(0, w, h, 0)
-                cont1  = cat1.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
-                cont2  = cat2.get_anno(slice_nr, cat2.phase).get_contour(cont_type)
-                axes = ax_comps[self.curr_fig]
-                for ax_i, ax in enumerate(axes):
-                    ax.clear()
-                    ax.axis('off')
-                    if ax_i!=2: ax.imshow(img1, cmap='gray', extent=extent)
-                    else:       ax.imshow(img2, cmap='gray', extent=extent)
-                axes[0].set_ylabel(case_name, rotation=90, labelpad=0.1)
-                axes[0].set_title('Phase: '+cat_name.replace('SAX ',''));   axes[1].set_title('Slice: '+str(slice_nr))
-                axes[2].set_title('ml Diff: {:.1f}'.format(mldiff)+'[ml]'); axes[3].set_title('Dice: {:.1f}'.format(dice)+'[%]')
-                    
-                if not cont1.is_empty: utils.plot_geo_face(axes[0], cont1, c='r')
-                if not cont1.is_empty or not cont2.is_empty: utils.plot_geo_face_comparison(axes[1], cont1, cont2)
-                if not cont2.is_empty: utils.plot_geo_face(axes[2], cont2, c='b')
-                pst = Polygon([[0,0],[1,1],[1,0]]) 
-                patches = [[PolygonPatch(pst, facecolor=c, edgecolor=c, alpha=0.4)] for c in ['red','green','blue']]
-                handles = [[cc.case1.reader_name], [cc.case1.reader_name+' & '+cc.case2.reader_name], [cc.case2.reader_name]]
-                for i in range(3): axes[i].legend(patches[i], handles[i])
-                
-                disconnect_zoom = zoom_factory(axes[0])
-                pan_handler = panhandler(self)
-                self.curr_fig = (self.curr_fig + 1)%3
-                self.canvas.draw()
+                try:
+                    cont, ind = ax_corr.collections[0].contains(event)
+                    cc_info = df.iloc[ind['ind'][0]]
+
+                    case_name = cc_info['case']
+                    cat_name  = cc_info['category']
+                    slice_nr  = cc_info['slice']
+                    dice      = cc_info['DSC']
+                    mldiff    = cc_info['ml diff']
+                    cont_type = cc_info['contour name']
+
+                    cc = [cc for cc in case_comparisons if cc.case1.case_name==case_name][0]
+                    cat1, cat2 = [cat for cat in cc.case1.categories if cat_name==cat.name][0], [cat for cat in cc.case2.categories if cat_name==cat.name][0]
+
+                    tmp_img     = cat1.get_img(slice_nr, cat1.phase)
+                    h,w         = tmp_img.shape
+                    img1        = np.zeros((max(h,w),max(h,w)))
+                    img1[:h,:w] = tmp_img
+                    tmp_img     = cat2.get_img(slice_nr, cat2.phase)
+                    h,w         = tmp_img.shape
+                    img2        = np.zeros((max(h,w),max(h,w)))
+                    img2[:h,:w] = tmp_img
+                    h, w    = img1.shape
+                    extent =(0, w, h, 0)
+                    cont1  = cat1.get_anno(slice_nr, cat1.phase).get_contour(cont_type)
+                    cont2  = cat2.get_anno(slice_nr, cat2.phase).get_contour(cont_type)
+                    axes = ax_comps[self.curr_fig]
+                    for ax_i, ax in enumerate(axes):
+                        ax.clear()
+                        ax.axis('off')
+                        if ax_i!=2: ax.imshow(img1, cmap='gray', extent=extent)
+                        else:       ax.imshow(img2, cmap='gray', extent=extent)
+                    axes[0].set_ylabel(case_name, rotation=90, labelpad=0.1)
+                    axes[0].set_title('Phase: '+cat_name.replace('SAX ',''));   axes[1].set_title('Slice: '+str(slice_nr))
+                    axes[2].set_title('ml Diff: {:.1f}'.format(mldiff)+'[ml]'); axes[3].set_title('Dice: {:.1f}'.format(dice)+'[%]')
+
+                    if not cont1.is_empty: utils.plot_geo_face(axes[0], cont1, c='r')
+                    if not cont1.is_empty or not cont2.is_empty: utils.plot_geo_face_comparison(axes[1], cont1, cont2)
+                    if not cont2.is_empty: utils.plot_geo_face(axes[2], cont2, c='b')
+                    pst = Polygon([[0,0],[1,1],[1,0]]) 
+                    patches = [[PolygonPatch(pst, facecolor=c, edgecolor=c, alpha=0.4)] for c in ['red','green','blue']]
+                    handles = [[cc.case1.reader_name], [cc.case1.reader_name+' & '+cc.case2.reader_name], [cc.case2.reader_name]]
+                    for i in range(3): axes[i].legend(patches[i], handles[i])
+
+                    disconnect_zoom = zoom_factory(axes[0])
+                    pan_handler = panhandler(self)
+                    self.curr_fig = (self.curr_fig + 1)%3
+                    self.canvas.draw()
+                except: pass
+            if event.dblclick:
+                try:
+                    overviewtab = findCCsOverviewTab()
+                    overviewtab.open_title_and_comments_popup(self, fig_name='qualitative_metrics_correlation_plot')
+                except: pass
         
         self.tight_layout()
         self.canvas.mpl_connect('button_press_event', onclick)
         self.canvas.draw()
     
-    def store(self, storepath, figurename='qualitative_correlationplot.png'):
-        self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
+    def store(self, storepath, figurename='qualitative_metrics_correlation_plot.png'):
+        self.tight_layout()
+        self.savefig(os.path.join(storepath, figurename), dpi=300, facecolor="#FFFFFF")
         return os.path.join(storepath, figurename)

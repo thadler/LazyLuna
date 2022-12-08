@@ -20,6 +20,7 @@ from LazyLuna.Metrics import *
 from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
+from LazyLuna.utils import findMainWindow, findCCsOverviewTab
 
 class Annotation_Comparison(Visualization):
     def set_values(self, view, cc, canvas):
@@ -73,6 +74,15 @@ class Annotation_Comparison(Visualization):
                    self.cc.case2.reader_name]
         ax4.legend(patches, handles)
         self.tight_layout()
+        
+        def onclick(event):
+            if event.dblclick:
+                try:
+                    overviewtab = findCCsOverviewTab()
+                    overviewtab.open_title_and_comments_popup(self, fig_name=self.cc.case1.case_name+' category: ' + cat1.name + ', slice: ' + str(slice_nr) + ' annotation comparison')
+                except: print(traceback.format_exc()); pass
+        self.canvas.mpl_connect('button_press_event', onclick)
+        
         self.canvas.draw()
         self.canvas.flush_events()
         if debug: print('Took: ', time()-st)
@@ -87,3 +97,11 @@ class Annotation_Comparison(Visualization):
         if event.key == 'left' : category = categories[(idx-1)%len(categories)]
         if event.key == 'right': category = categories[(idx+1)%len(categories)]
         self.visualize(slice_nr, category, contour_name)
+
+    
+    def store(self, storepath, figurename='_annotation_comparison.png'):
+        self.tight_layout()
+        figname = self.cc.case1.case_name+' Category: ' + self.category.name + ', slice: ' + str(self.slice_nr)+figurename
+        self.savefig(os.path.join(storepath, figname), dpi=300, facecolor="#FFFFFF")
+        return os.path.join(storepath, figname)
+    

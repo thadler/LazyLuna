@@ -111,19 +111,17 @@ class BlandAltman(Visualization):
                         except: pass
                 except: pass
             if event.dblclick:
-                overviewtab = findCCsOverviewTab()
-                print('OVERview tab: ', overviewtab)
-                view_name = overviewtab.view_combo.currentText()
-                print('View name: ', view_name)
-                overviewtab.qualitative_figures[view_name].append(['Title of the dumb image', '/Users/thomas/Desktop/Export_comparison_Gold_Unet/ECSPRESS173_059Y_3_SAX LVES_lv_endo.png', 'Comments on the dumb image...'])
-                print('Qual. figures: ', overviewtab.qualitative_figures)
-                
+                try:
+                    overviewtab = findCCsOverviewTab()
+                    overviewtab.open_title_and_comments_popup(self, fig_name=self.cr_name+'_bland_altman')
+                except: pass
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
         self.canvas.draw()
     
     def store(self, storepath, figurename='_bland_altman.png'):
-        self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=100, facecolor="#FFFFFF")
+        self.tight_layout()
+        self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=300, facecolor="#FFFFFF")
         return os.path.join(storepath, self.cr_name+figurename)
     

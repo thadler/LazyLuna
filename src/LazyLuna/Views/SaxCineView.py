@@ -10,6 +10,8 @@ import traceback
 import csv
 import PIL
 
+import time
+
 
 class SAX_CINE_View(View):
     def __init__(self):
@@ -83,6 +85,7 @@ class SAX_CINE_View(View):
         return case
     
     def store_information(self, ccs, path, icon_path):
+        st = time.time()
         try:
             cr_table = CCs_ClinicalResultsTable()
             cr_table.calculate(ccs)
@@ -112,9 +115,11 @@ class SAX_CINE_View(View):
         try:
             failed_segmentation_folder_path = os.path.join(path, 'Failed_Segmentations')
             if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
+            """
             failed_annotation_comparison = Failed_Annotation_Comparison_Yielder()
             failed_annotation_comparison.set_values(self, ccs)
             failed_annotation_comparison.store(failed_segmentation_folder_path)
+            """
         except Exception as e:
             print(traceback.print_exc())
         try:
@@ -128,6 +133,9 @@ class SAX_CINE_View(View):
         except Exception as e:
             print(traceback.print_exc())
             
+        print('Storing took: ', time.time()-st)
+        
+        st = time.time()
             
         pdf = PDF(orientation='P', unit='mm', format='A4')
         
@@ -179,24 +187,34 @@ class SAX_CINE_View(View):
         pdf.set_table(data[0:], x=40, y=30, col_widths=[65.0]+[25 for i in range(len(data[0])-1)])
         pdf.set_text('Table. 2 Clinical Parameters and Metrics Table: The columns are Name (either clinical parameter or metric), Mean and Standard deviation (for difference if clinical parameter, or mean value for metric). Legend: LV: Left ventricle, RV: Right ventricle, EF: Ejection fraction, EDV: end-diastolic volume, ESV: end-systolic volume, Dice: Dice similarity coefficient, HD: Hausdorff distance', 10, 223)
         
+        print('Time for stats in pdf took: ', time.time()-st)
         
+        st = time.time()
         # ADD the QUALITATIVE FIGURES
         try:
             overviewtab = findCCsOverviewTab()
             view_name = overviewtab.view_combo.currentText()
-            overviewtab.qualitative_figures[view_name].append(['Title of the dumb image', '/Users/thomas/Desktop/Export_comparison_Gold_Unet/ECSPRESS173_059Y_3_SAX LVES_lv_endo.png', 'Comments on the dumb image...'])
-            for addable in overviewtab.qualitative_figures[view_name]:
+            if len(overviewtab.qualitative_figures[view_name])!=0:
+                
                 pdf.add_page()
-                #pdf.prepare_pretty_format(icon_path)
-                img = PIL.Image.open(addable[1])
-                scale = img.height / img.width
-                pdf.set_title(addable[0])
-                pdf.set_chart(addable[1], 20, 35, w=695/4, h=695/4*scale)
-                pdf.set_text(addable[2], 10, 40 + 695/4*scale)
-            
+                pdf.prepare_pretty_format(icon_path)
+                pdf.set_title('Qualitative Figures added during Manual Inspection')
+                pdf.set_text('The following PDF pages reference figures, which were manually selected by the investigort and added to this report manually. Every figure has a title and comments that the investigator typed for elaboration.', 10, 50, size=12)
+                
+                for addable in overviewtab.qualitative_figures[view_name]:
+                    pdf.add_page()
+                    pdf.prepare_pretty_format()
+                    img = PIL.Image.open(addable[1])
+                    scale = img.height / img.width
+                    pdf.set_text('Title:    ' + addable[0], 10, 20, size=12)
+                    pdf.set_chart(addable[1], 20, 35, w=695/4, h=695/4*scale)
+                    pdf.set_text(addable[2], 10, 40 + 695/4*scale)
+        
         except Exception as e:
             print(traceback.print_exc())
             pass
+        
+        print('PDF TOOK: ', time.time()-st)
         
         pdf.set_author('Luna Lovegood')
         pdf.output(os.path.join(path, 'summary_PDF.pdf'))

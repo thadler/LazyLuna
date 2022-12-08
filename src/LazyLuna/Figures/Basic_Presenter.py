@@ -20,6 +20,8 @@ from LazyLuna.Metrics import *
 from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
+from LazyLuna.utils import findMainWindow, findCCsOverviewTab
+
 
 class Basic_Presenter(Visualization):
     def set_values(self, view, cc, canvas):
@@ -64,6 +66,14 @@ class Basic_Presenter(Visualization):
         for ax in [ax1, ax2]: ax.set_xticks([]); ax.set_yticks([])
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
         
+        def onclick(event):
+            if event.dblclick:
+                try:
+                    overviewtab = findCCsOverviewTab()
+                    overviewtab.open_title_and_comments_popup(self, fig_name=self.cc.case1.case_name+' category: ' + cat1.name + ', slice: ' + str(slice_nr) + ' annotation comparison')
+                except: print(traceback.format_exc()); pass
+        self.canvas.mpl_connect('button_press_event', onclick)
+        
         self.tight_layout()
         self.canvas.draw()
         self.canvas.flush_events()
@@ -80,3 +90,9 @@ class Basic_Presenter(Visualization):
         if event.key == 'right': category = categories[(idx+1)%len(categories)]
         #print('In key press: ', slice_nr, category)
         self.visualize(slice_nr, category)
+
+    def store(self, storepath, figurename='_basic_presentation.png'):
+        self.tight_layout()
+        figname = self.cc.case1.case_name+' Category: ' + self.category.name + ', slice: ' + str(self.slice_nr)+figurename
+        self.savefig(os.path.join(storepath, figname), dpi=300, facecolor="#FFFFFF")
+        return os.path.join(storepath, figname)

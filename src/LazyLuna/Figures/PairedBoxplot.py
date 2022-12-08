@@ -20,6 +20,7 @@ from LazyLuna.Metrics import *
 from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
+from LazyLuna.utils import findMainWindow, findCCsOverviewTab
 
 class PairedBoxplot(Visualization):
     def set_view(self, view):
@@ -121,18 +122,27 @@ class PairedBoxplot(Visualization):
         def onclick(event):
             vis = annot.get_visible()
             if event.inaxes==ax:
-                for i, collection in enumerate(ax.collections):
-                    cont, ind = collection.contains(event)
-                    if cont:
-                        cc = ccs[i][ind['ind'][0]]
-                        for tab_name, tab in self.view.case_tabs.items(): 
-                            t = tab()
-                            t.make_tab(self.gui, self.view, cc)
-                            self.gui.tabs.addTab(t, tab_name+': '+cc.case1.case_name)
-
+                try:
+                    for i, collection in enumerate(ax.collections):
+                        cont, ind = collection.contains(event)
+                        if cont:
+                            cc = ccs[i][ind['ind'][0]]
+                            for tab_name, tab in self.view.case_tabs.items(): 
+                                t = tab()
+                                t.make_tab(self.gui, self.view, cc)
+                                self.gui.tabs.addTab(t, tab_name+': '+cc.case1.case_name)
+                except: pass
+            if event.dblclick:
+                try:
+                    overviewtab = findCCsOverviewTab()
+                    overviewtab.open_title_and_comments_popup(self, fig_name=self.cr_name+'_paired_boxplot')
+                except: print(traceback.format_exc()); pass
+                            
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
         self.canvas.draw()
     
-    def store(self, storepath, figurename='_bland_altman.png'):
-        self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=100, facecolor="#FFFFFF")
+    def store(self, storepath, figurename='_paired_boxplot.png'):
+        self.tight_layout()
+        self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=300, facecolor="#FFFFFF")
+        return os.path.join(storepath, self.cr_name+figurename)

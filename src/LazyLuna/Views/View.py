@@ -70,19 +70,19 @@ class PDF(FPDF):
         self.rect(5.0, 5.0, 200.0, 287.0, 'DF')
         self.set_fill_color(255, 255, 255)       # color for inner rectangle
         self.rect(8.0, 8.0, 194.0, 281.0, 'FD')
-        # Hogwarts Image
-        try: 
-            self.set_xy(170.0, 9.0)
-            self.image(os.path.join(icon_path, 'HogwartsLineArt.png'),  link='', type='', w=2520/80, h=1920/80)
-        except Exception as e: print('no icon path: ', e)
-        try:
-            self.set_xy(195.0, 7.5)
-            self.image(os.path.join(icon_path, 'SlothLineArt.png'),  link='', type='', w=520/80, h=520/80)
-        except Exception as e: print('no icon path: ', e)
-        self.set_xy(173.5, 28.0)
-        self.set_font('Times', 'B', 10)
-        self.set_text_color(10, 10, 10)
-        self.cell(w=25.0, h=6.0, align='C', txt='Lazy        Luna', border=0)
+        if not icon_path is None:
+            try: 
+                self.set_xy(170.0, 9.0)
+                self.image(os.path.join(icon_path, 'HogwartsLineArt.png'),  link='', type='', w=2520/80, h=1920/80)
+            except Exception as e: print('no icon path: ', e)
+            try:
+                self.set_xy(195.0, 7.5)
+                self.image(os.path.join(icon_path, 'SlothLineArt.png'),  link='', type='', w=520/80, h=520/80)
+            except Exception as e: print('no icon path: ', e)
+            self.set_xy(173.5, 28.0)
+            self.set_font('Times', 'B', 10)
+            self.set_text_color(10, 10, 10)
+            self.cell(w=25.0, h=6.0, align='C', txt='Lazy        Luna', border=0)
         
     def set_title(self, text):
         self.set_xy(0.0,0.0)
