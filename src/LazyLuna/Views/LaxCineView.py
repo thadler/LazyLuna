@@ -1,11 +1,14 @@
 from LazyLuna.Categories import *
 from LazyLuna.ClinicalResults import *
-from LazyLuna.Views.View import View
+from LazyLuna.Views.View import *
 
 from LazyLuna.Tables  import *
 from LazyLuna.Figures import *
 
 import traceback
+
+import csv
+import PIL
 
 
 class LAX_CINE_View(View):
@@ -160,7 +163,7 @@ class LAX_CINE_View(View):
         if debug: print('Customization in LAX CINE view took: ', time()-st)
         return case
     
-    def store_information(self, ccs, path):
+    def store_information(self, ccs, path, icon_path):
         try:
             cr_table = CCs_ClinicalResultsTable()
             cr_table.calculate(ccs)
@@ -170,13 +173,13 @@ class LAX_CINE_View(View):
         try:
             cr_overview_figure = LAX_BlandAltman()
             cr_overview_figure.visualize(self, ccs)
-            cr_overview_figure.store(path)
+            cr_p = cr_overview_figure.store(path)
         except Exception as e:
             print(traceback.print_exc())
         try:
             cr_overview_figure = LAX_Volumes_BlandAltman()
             cr_overview_figure.visualize(self, ccs)
-            cr_overview_figure.store(path)
+            crvol_p = cr_overview_figure.store(path)
         except Exception as e:
             print(traceback.print_exc())
         try:
@@ -188,15 +191,68 @@ class LAX_CINE_View(View):
         try:
             failed_segmentation_folder_path = os.path.join(path, 'Failed_Segmentations')
             if not os.path.exists(failed_segmentation_folder_path): os.mkdir(failed_segmentation_folder_path)
+            """
             failed_annotation_comparison = Failed_Annotation_Comparison_Yielder()
             failed_annotation_comparison.set_values(self, ccs)
             failed_annotation_comparison.store(failed_segmentation_folder_path)
+            """
         except Exception as e:
             print(traceback.print_exc())
         try:
             conf_visualization = LAXCINE_Confidence_Intervals_Tolerance_Ranges()
             conf_visualization.visualize(ccs)
-            conf_visualization.store(path)
+            tol_p = conf_visualization.store(path)
         except Exception as e:
             print(traceback.print_exc())
-
+            
+        
+        pdf = PDF(orientation='P', unit='mm', format='A4')
+        
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        pdf.set_title('Atrial Area Differences')
+        pdf.set_chart(cr_p, 20, 35, w=695/4, h=841/4)
+        pdf.set_text('Fig. 1 Area Differences for LA & RA: The first row presents Bland-Altman plots for the 4CV RA areas in ES and ED. The second row shows BA plots for the 4CV LA areas. The third row shows 2CV LA areas. The last row contains Dice value boxplots per contour on the left and Hausdorff distance boxplots on the right. Legend: ES: End-systole, ED: End-diastole, CV: Chamber View, LA: Left Atrium, RA: Right Atrium, Dice: Dice similarity coefficient', 10, 242)
+        
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        pdf.set_title('Confidence Intervals and Tolerance Ranges')
+        img = PIL.Image.open(tol_p)
+        scale = img.height / img.width
+        pdf.set_chart(tol_p, 20, 35, w=695/4, h=695/4*scale)
+        pdf.set_text('Fig. 2 Confidence Intervals and Tolerance Ranges of Atria Areas: Each subfigure references an atrial area, from left to right, 4CV RA, 4CV LA, 2CV LA. Tolerance intervals are shown as gray bars and represent ±1.96 standard deviation of an expert intrareader deviation. The 95% confidence intervals of the mean area difference is represented as an error bar in red. Individual area differences per contour are plotted in blue. Legend: CV: Chamber view, RA: Right Atrium, LA: Left Atrium', 10, 40+695/4*scale)
+        
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        pdf.set_title('Atrial Volume Differences')
+        pdf.set_chart(crvol_p, 20, 35, w=695/4, h=841/4)
+        pdf.set_text('Fig. 3 Volume Differences for LA & RA: The first row presents Bland-Altman plots for the 4CV RA ESV and RA EDV. The second row shows BA plots for the 4CV LA ESV and EDV. The third row shows 2CV LA ESV and EDV. The last row contains Dice value boxplots per contour on the left and Hausdorff distance boxplots on the right. Legend: ESV: End-systolic volume, EDV: End-diastole volume, CV: Chamber View, LA: Left Atrium, RA: Right Atrium, Dice: Dice similarity coefficient', 10, 242)
+        
+        
+        # ADD the QUALITATIVE FIGURES
+        try:
+            overviewtab = findCCsOverviewTab()
+            view_name = overviewtab.view_combo.currentText()
+            if len(overviewtab.qualitative_figures[view_name])!=0:
+                
+                pdf.add_page()
+                pdf.prepare_pretty_format(icon_path)
+                pdf.set_title('Qualitative Figures added during Manual Inspection')
+                pdf.set_text('The following PDF pages reference figures, which were manually selected by the investigor and added to this report manually. Every figure has a title and comments that the investigator typed for elaboration.', 10, 50, size=12)
+                
+                for addable in overviewtab.qualitative_figures[view_name]:
+                    pdf.add_page()
+                    pdf.prepare_pretty_format()
+                    img = PIL.Image.open(addable[1])
+                    scale = img.height / img.width
+                    pdf.set_text('Title:    ' + addable[0], 10, 20, size=12)
+                    pdf.set_chart(addable[1], 20, 35, w=695/4, h=695/4*scale)
+                    pdf.set_text(addable[2], 10, 40 + 695/4*scale)
+        
+        except Exception as e:
+            print(traceback.print_exc())
+            pass
+        
+        pdf.set_author('Luna Lovegood')
+        pdf.output(os.path.join(path, 'summary_PDF.pdf'))
+        

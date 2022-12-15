@@ -1333,6 +1333,7 @@ class SAXMap_GLOBALT1(Clinical_Result):
         self.name = 'GLOBAL_T1'
         self.unit = '[ms]'
         self.cat  = self.case.categories[0]
+        self.tol_range = 24.5
         
     @CR_exception_handler
     def get_val(self, string=False):
@@ -1355,6 +1356,7 @@ class SAXMap_GLOBALT2(SAXMap_GLOBALT1):
         self.name = 'GLOBAL_T2'
         self.unit = '[ms]'
         self.cat  = self.case.categories[0]
+        self.tol_range = 3.2
 
 class SAXLGE_LVV(Clinical_Result):
     def __init__(self, case):

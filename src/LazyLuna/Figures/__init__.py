@@ -20,3 +20,5 @@ from LazyLuna.Figures.Statistical_T1_diff_bullseye_plot import *
 from LazyLuna.Figures.LAX_BlandAltman import *
 from LazyLuna.Figures.LAX_Volumes_BlandAltman import *
 from LazyLuna.Figures.Image_List_Presenter import *
+from LazyLuna.Figures.Mapping_Overview import *
+from LazyLuna.Figures.Reference_Point_Differences import *

@@ -27,11 +27,12 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
         ax.add_collection(collection, autolim=True)
         return collection
 
-    def write_val(self, ax, mean, std, x, y):
-        mean, std = '{:.1f}'.format(float(mean)), '({:.1f})'.format(float(std))
-        ax.annotate(mean + '\n' + str(std), xy = (x,y), xytext = (x,y), textcoords = 'data',
-                    bbox = dict(boxstyle='round', fc='w', edgecolor='w'), size = 10, 
+    def write_val(self, ax, mean, std, n, x, y):
+        mean, std = '{:.1f}'.format(float(mean)), '{:.1f}'.format(float(std))
+        ax.annotate(mean + ' ±\n' + std + ' (' + str(n) + ')', xy = (x,y), xytext = (x,y), textcoords = 'data',
+                    bbox = dict(boxstyle='round', fc='w', edgecolor='w'), size = 9, 
                     horizontalalignment = 'center', verticalalignment = 'center')
+        
         
     def segment(self, center, st_angle, end_angle, radius_st, radius_end, steps=500):
         def polar_p(op, a,  dist): # origin point, angle, distance
@@ -70,8 +71,9 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
             stds  = np.concatenate((stds1[0] -stds2[0],  stds1[1] -stds2[1],  stds1[2]-stds2[2]))
             collecting_means.append(means)
             collecting_stds.append(stds)
-        means = np.nanmean(np.asarray(collecting_means), axis=0)
-        stds  = np.nanmean(np.asarray(collecting_stds),  axis=0)
+        nonnans = np.count_nonzero(~np.isnan(collecting_means), axis=0)
+        means   = np.nanmean(np.asarray(collecting_means),      axis=0)
+        stds    = np.nanmean(np.asarray(collecting_stds),       axis=0)
         
         cmap = plt.cm.PRGn
         minv, maxv = min(np.min(means), -np.max(means)), max(-np.min(means), np.max(means))
@@ -92,11 +94,11 @@ class Statistical_T1_diff_bullseye_plot(Visualization):
         # write values onto segment patches # (basal, midv, apex)
         xs = [120,38,38,120,202,202, 120,63,63,120,178,178, 120,85,120,155]
         ys = [25,71,169,215,169,71,  55,90,150,185,150,90,  85,120,155,120]
-        for mean,std, x,y in zip(means, stds, xs,ys): self.write_val(ax, mean, std, x, y)
+        for mean,std,n, x,y in zip(means, stds, nonnans, xs,ys): self.write_val(ax, mean, std, n, x, y)
         
-        ax.set_title('Average Differences AHA Model [ms]: '+self.ccs[0].case1.reader_name+' - '+self.ccs[0].case2.reader_name)
+        ax.set_title(self.ccs[0].case1.reader_name+' - '+self.ccs[0].case2.reader_name+' Average Differences AHA Model (mean±std [ms] (n))')
         self.canvas.draw()
     
-    def store(self, storepath, figurename='Average_Differences_AHA_model.png'):
+    def store(self, storepath, figurename='_Average_Differences_AHA_model.png'):
         self.savefig(os.path.join(storepath, figurename), dpi=300, facecolor="#FFFFFF")
         return os.path.join(storepath, figurename)

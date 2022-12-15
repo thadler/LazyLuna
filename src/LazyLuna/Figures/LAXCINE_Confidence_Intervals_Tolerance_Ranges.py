@@ -57,5 +57,6 @@ class LAXCINE_Confidence_Intervals_Tolerance_Ranges(Visualization):
         self.tight_layout()
     
     def store(self, storepath, figurename='confidence_intervals_tolerance_ranges.png'):
-        self.savefig(os.path.join(storepath, figurename), dpi=300, facecolor="#FFFFFF")
+        self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
+        return os.path.join(storepath, figurename)
         

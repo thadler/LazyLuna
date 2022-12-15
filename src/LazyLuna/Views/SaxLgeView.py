@@ -1,11 +1,14 @@
 from LazyLuna.Categories import *
 from LazyLuna.ClinicalResults import *
-from LazyLuna.Views.View import View
+from LazyLuna.Views.View import *
 
 from LazyLuna.Tables  import *
 from LazyLuna.Figures import *
 
 import traceback
+
+import csv
+import PIL
 
 
 class SAX_LGE_View(View):

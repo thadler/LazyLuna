@@ -20,6 +20,8 @@ from LazyLuna.Metrics import *
 from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
+from LazyLuna.utils import findMainWindow, findCCsOverviewTab
+
 
 class Angle_Segment_Comparison(Visualization):
     def set_values(self, view, cc, canvas):
@@ -126,6 +128,14 @@ class Angle_Segment_Comparison(Visualization):
             elif byreader == 2:
                 for j in [0,2]: anno2.plot_points(axes[j], 'sax_ref')
         
+        def onclick(event):
+            if event.dblclick:
+                try:
+                    overviewtab = findCCsOverviewTab()
+                    overviewtab.open_title_and_comments_popup(self, fig_name='Case: ' + self.cc.case1.case_name + ', slice: ' + str(self.d))
+                except: print(traceback.format_exc()); pass
+        self.canvas.mpl_connect('button_press_event', onclick)
+        
         self.tight_layout()
         self.canvas.draw()
         self.canvas.flush_events()
@@ -142,3 +152,9 @@ class Angle_Segment_Comparison(Visualization):
         #print('In key press: ', d, category, self.nr_segments, self.byreader)
         self.visualize(d, category, self.nr_segments, self.byreader)
 
+
+    def store(self, storepath, figurename='_angle_segment_comparison.png'):
+        self.tight_layout()
+        figname = self.cc.case1.case_name + ', slice: ' + str(self.d) + '_img_' + str(self.switch_to_image) + figurename
+        self.savefig(os.path.join(storepath, figname), dpi=300, facecolor="#FFFFFF")
+        return os.path.join(storepath, figname)

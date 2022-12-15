@@ -199,7 +199,7 @@ class SAX_CINE_View(View):
                 pdf.add_page()
                 pdf.prepare_pretty_format(icon_path)
                 pdf.set_title('Qualitative Figures added during Manual Inspection')
-                pdf.set_text('The following PDF pages reference figures, which were manually selected by the investigort and added to this report manually. Every figure has a title and comments that the investigator typed for elaboration.', 10, 50, size=12)
+                pdf.set_text('The following PDF pages reference figures, which were manually selected by the investigor and added to this report manually. Every figure has a title and comments that the investigator typed for elaboration.', 10, 50, size=12)
                 
                 for addable in overviewtab.qualitative_figures[view_name]:
                     pdf.add_page()

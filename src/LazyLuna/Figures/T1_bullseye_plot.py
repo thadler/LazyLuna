@@ -86,3 +86,8 @@ class T1_bullseye_plot(Visualization):
         
         ax.set_title('AHA Model [ms]: '+self.case.reader_name)
         self.canvas.draw()
+        
+        
+    def store(self, storepath, figurename='_Mapping_Bullseye.png'):
+        self.savefig(os.path.join(storepath, self.case.reader_name+figurename), dpi=100, facecolor="#FFFFFF")
+        return os.path.join(storepath, figurename)

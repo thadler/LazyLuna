@@ -82,6 +82,38 @@ class DiceMetric(Metric):
         return "{:.2f}".format(m) if string else m
 
 
+class mmDistMetric(Metric):
+    """mm distance calculation
+
+    Attributes:
+        name (str): metric name for display
+        unit (str): unit name for display
+    """
+    def __init__(self):
+        super().__init__()
+
+    def set_information(self):
+        self.name = 'mmDiff'
+        self.unit = '[mm]'
+
+    @Metrics_exception_handler
+    def get_val(self, p1, p2, dcm=None, string=False):
+        """Returns millimeter distance of sax_ref points p1 and p2
+
+        Args:
+            p1 (Annotation): first point
+            p2 (Annotation): second point
+            string (bool):   return string of float with 2 decimal places
+            
+        Returns:
+            float | str: Millimeter distance of sax_ref points p1 and p2
+        """
+        pw, ph = dcm.PixelSpacing
+        dist = ph * p1.distance(p2)
+        return "{:.2f}".format(dist) if string else dist
+
+    
+    
 class AreaDiffMetric(Metric):
     """Area Difference calculation
 
@@ -327,6 +359,7 @@ class AngleDiffMetric(Metric):
         return "{:.2f}".format(angle) if string else angle
     
 
+    
 class T2AvgDiffMetric(T1AvgDiffMetric):
     """Average difference of T2 values of pixels in geometry
 

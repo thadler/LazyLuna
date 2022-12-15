@@ -58,6 +58,8 @@ class LAX_BlandAltman(Visualization):
                         size=np.abs(cr_table[y_name]), s=10, legend=False)
         mean = cr_table[y_name].mean()
         std = cr_table[y_name].std()
+        axes[0][0].set_xlabel(axes[0][0].xaxis.get_label().get_text() + ' [cm²]')
+        axes[0][0].set_ylabel(axes[0][0].yaxis.get_label().get_text() + ' [cm²]')
         axes[0][0].axhline(mean, ls="-", c=".2")
         axes[0][0].axhline(mean+1.96*std, ls=":", c=".2")
         axes[0][0].axhline(mean-1.96*std, ls=":", c=".2")
@@ -68,6 +70,8 @@ class LAX_BlandAltman(Visualization):
                         size=np.abs(cr_table[y_name]), s=10, legend=False)
         mean = cr_table[y_name].mean()
         std = cr_table[y_name].std()
+        axes[0][1].set_xlabel(axes[0][1].xaxis.get_label().get_text() + ' [cm²]')
+        axes[0][1].set_ylabel(axes[0][1].yaxis.get_label().get_text() + ' [cm²]')
         axes[0][1].axhline(mean, ls="-", c=".2")
         axes[0][1].axhline(mean+1.96*std, ls=":", c=".2")
         axes[0][1].axhline(mean-1.96*std, ls=":", c=".2")
@@ -78,6 +82,8 @@ class LAX_BlandAltman(Visualization):
                         size=np.abs(cr_table[y_name]), s=10, legend=False)
         mean = cr_table[y_name].mean()
         std = cr_table[y_name].std()
+        axes[1][0].set_xlabel(axes[1][0].xaxis.get_label().get_text() + ' [cm²]')
+        axes[1][0].set_ylabel(axes[1][0].yaxis.get_label().get_text() + ' [cm²]')
         axes[1][0].axhline(mean, ls="-", c=".2")
         axes[1][0].axhline(mean+1.96*std, ls=":", c=".2")
         axes[1][0].axhline(mean-1.96*std, ls=":", c=".2")
@@ -88,6 +94,8 @@ class LAX_BlandAltman(Visualization):
                         size=np.abs(cr_table[y_name]), s=10, legend=False)
         mean = cr_table[y_name].mean()
         std = cr_table[y_name].std()
+        axes[1][1].set_xlabel(axes[1][1].xaxis.get_label().get_text() + ' [cm²]')
+        axes[1][1].set_ylabel(axes[1][1].yaxis.get_label().get_text() + ' [cm²]')
         axes[1][1].axhline(mean, ls="-", c=".2")
         axes[1][1].axhline(mean+1.96*std, ls=":", c=".2")
         axes[1][1].axhline(mean-1.96*std, ls=":", c=".2")
@@ -98,6 +106,8 @@ class LAX_BlandAltman(Visualization):
                         size=np.abs(cr_table[y_name]), s=10, legend=False)
         mean = cr_table[y_name].mean()
         std = cr_table[y_name].std()
+        axes[2][0].set_xlabel(axes[2][0].xaxis.get_label().get_text() + ' [cm²]')
+        axes[2][0].set_ylabel(axes[2][0].yaxis.get_label().get_text() + ' [cm²]')
         axes[2][0].axhline(mean, ls="-", c=".2")
         axes[2][0].axhline(mean+1.96*std, ls=":", c=".2")
         axes[2][0].axhline(mean-1.96*std, ls=":", c=".2")
@@ -108,6 +118,8 @@ class LAX_BlandAltman(Visualization):
                         size=np.abs(cr_table[y_name]), s=10, legend=False)
         mean = cr_table[y_name].mean()
         std = cr_table[y_name].std()
+        axes[2][1].set_xlabel(axes[2][1].xaxis.get_label().get_text() + ' [cm²]')
+        axes[2][1].set_ylabel(axes[2][1].yaxis.get_label().get_text() + ' [cm²]')
         axes[2][1].axhline(mean, ls="-", c=".2")
         axes[2][1].axhline(mean+1.96*std, ls=":", c=".2")
         axes[2][1].axhline(mean-1.96*std, ls=":", c=".2")
@@ -147,7 +159,6 @@ class LAX_BlandAltman(Visualization):
         #fig.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.25)
     
     
-    def store(self, storepath, figurename='clinical_results_bland_altman.png'):
+    def store(self, storepath, figurename='lax_areas_bland_altman.png'):
         self.savefig(os.path.join(storepath, figurename), dpi=100, facecolor="#FFFFFF")
         return os.path.join(storepath, figurename)
-    

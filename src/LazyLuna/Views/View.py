@@ -48,7 +48,7 @@ class View:
         """
         pass
 
-    def store_information(self, ccs, path):
+    def store_information(self, ccs, path, icon_path):
         """Takes a list of LazyLuna.Containers.Case_Comparison objects and stores relevant information
         
         Note:
