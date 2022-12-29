@@ -587,37 +587,37 @@ class SAX_T1_Category(SAX_slice_phase_Category):
                 return pydicom.dcmread(self.case.all_imgs_sop2filepath[k][sop], stop_before_pixels=False)
             
     def get_slice_distances_to_extent_points(self):
-        if hasattr(self, 'mindists_slices_lax_extpoint'):
-            return self.mindists_slices_lax_extpoint
+        if hasattr(self, 'mindists_slices_lax_extpoint'): return self.mindists_slices_lax_extpoint
         if not hasattr(self, 'lax_sop_fps'): self.lax_points()
-        if not hasattr(self, 'lax_sop_fps'):
-            print('No extent points in lax images')
-            return None
-        lax_dcm      = self.lax_sop_fps[0][3]
-        lax_h, lax_w = lax_dcm.pixel_array.shape
-        lax_anno     = self.lax_sop_fps[0][2]
-        p1, p2, p3 = [[lax_anno.get_point('lv_extent')[i].y, lax_anno.get_point('lv_extent')[i].x] for i in range(3)]
-        extpoints_rcs = utils.transform_ics_to_rcs(lax_dcm, np.array([p1, p2, p3]))
-        ext_st  = (extpoints_rcs[0] + extpoints_rcs[1])/2.0
-        ext_end = extpoints_rcs[2]
-        base_center = ext_st + 1/6 * (ext_end - ext_st)
-        midv_center = ext_st + 3/6 * (ext_end - ext_st)
-        apex_center = ext_st + 5/6 * (ext_end - ext_st)
-        minimal_distances = []
-        for d in range(self.nr_slices):
-            dcm    = self.get_dcm(d,0)
-            img    = self.get_img(d,0,True,True)
-            h, w   = img.shape
-            mesh   = np.meshgrid(np.arange(w), np.arange(h))
-            idxs   = np.stack((mesh[0].flatten(), mesh[1].flatten())).T
-            points = utils.transform_ics_to_rcs(dcm, idxs)
-            dists_base = np.linalg.norm(np.subtract(points, base_center), axis=1)
-            dists_midv = np.linalg.norm(np.subtract(points, midv_center), axis=1)
-            dists_apex = np.linalg.norm(np.subtract(points, apex_center), axis=1)
-            minimal_distances.append([np.min(dists_base), np.min(dists_midv), 
-                                      np.min(dists_apex)])
-        self.mindists_slices_lax_extpoint = np.asarray(minimal_distances)
-        return self.mindists_slices_lax_extpoint
+        if not hasattr(self, 'lax_sop_fps'): print('No extent points in lax images'); return None
+        try: lax_dcm      = self.lax_sop_fps[0][3]
+        except: print(self.case.case_name, traceback.format_exc()); return None
+        try:
+            lax_h, lax_w = lax_dcm.pixel_array.shape
+            lax_anno     = self.lax_sop_fps[0][2]
+            p1, p2, p3 = [[lax_anno.get_point('lv_extent')[i].y, lax_anno.get_point('lv_extent')[i].x] for i in range(3)]
+            extpoints_rcs = utils.transform_ics_to_rcs(lax_dcm, np.array([p1, p2, p3]))
+            ext_st  = (extpoints_rcs[0] + extpoints_rcs[1])/2.0
+            ext_end = extpoints_rcs[2]
+            base_center = ext_st + 1/6 * (ext_end - ext_st)
+            midv_center = ext_st + 3/6 * (ext_end - ext_st)
+            apex_center = ext_st + 5/6 * (ext_end - ext_st)
+            minimal_distances = []
+            for d in range(self.nr_slices):
+                dcm    = self.get_dcm(d,0)
+                img    = self.get_img(d,0,True,True)
+                h, w   = img.shape
+                mesh   = np.meshgrid(np.arange(w), np.arange(h))
+                idxs   = np.stack((mesh[0].flatten(), mesh[1].flatten())).T
+                points = utils.transform_ics_to_rcs(dcm, idxs)
+                dists_base = np.linalg.norm(np.subtract(points, base_center), axis=1)
+                dists_midv = np.linalg.norm(np.subtract(points, midv_center), axis=1)
+                dists_apex = np.linalg.norm(np.subtract(points, apex_center), axis=1)
+                minimal_distances.append([np.min(dists_base), np.min(dists_midv), 
+                                          np.min(dists_apex)])
+            self.mindists_slices_lax_extpoint = np.asarray(minimal_distances)
+            return self.mindists_slices_lax_extpoint
+        except: print(self.case.case_name, traceback.format_exc()); return None
     
     def calc_mapping_aha_model(self):
         # returns means and stds
@@ -625,8 +625,8 @@ class SAX_T1_Category(SAX_slice_phase_Category):
             print('AHA assuming single midv slice.')
             img, anno = self.get_img(0,0,True,False), self.get_anno(0,0)
             m = anno.get_myo_mask_by_angles(img, nr_bins=6)
-            m_m = np.asarray([np.mean(v) for v in b.values()])
-            m_s = np.asarray([np.std(v) for v in b.values()])
+            m_m = np.asarray([np.mean(v) for v in m.values()])
+            m_s = np.asarray([np.std(v) for v in m.values()])
             return ([np.full(6,np.nan), np.roll(m_m,1), np.full(4,np.nan)],
                     [np.full(6,np.nan), np.roll(m_s,1), np.full(4,np.nan)])
         
@@ -664,7 +664,8 @@ class SAX_T1_Category(SAX_slice_phase_Category):
         min_dists = self.get_slice_distances_to_extent_points()
         if min_dists is None: 
             print('No extent & apical points in long axis views. No AHA possible.')
-            return [np.full(6,np.nan), np.full(6,np.nan), np.full(4,np.nan)]
+            return ([np.full(6,np.nan), np.full(6,np.nan), np.full(4,np.nan)], 
+                    [np.full(6,np.nan), np.full(6,np.nan), np.full(4,np.nan)])
         idxs      = np.argmin(min_dists, axis=1)
         weights   = [1/x if x!=0 else np.nan for x in np.bincount(idxs)]
         means = [np.zeros(6) if 0 in idxs else np.full(6,np.nan),

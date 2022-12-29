@@ -23,9 +23,20 @@ class SAX_T2_View(View):
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab as tab2
         import LazyLuna.Guis.Addable_Tabs.CC_Angle_Segments_Tab   as tab3
         import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
+        import LazyLuna.Guis.Addable_Tabs.CC_AHA_Tab              as tab5
+        import LazyLuna.Guis.Addable_Tabs.CC_AHA_Diff_Tab         as tab6
+        import LazyLuna.Guis.Addable_Tabs.CCs_AHA_Tab             as tab7
+        import LazyLuna.Guis.Addable_Tabs.CCs_AHA_Diff_Tab        as tab8
         
-        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 'T2 Angle Comparison': tab3.CC_Angle_Segments_Tab}
-        self.stats_tabs = {'Clinical Results'  : tab2.CCs_ClinicalResults_Tab}
+        self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 
+                           'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 
+                           'T2 Angle Comparison': tab3.CC_Angle_Segments_Tab, 
+                           'AHA Model' : tab5.CC_AHA_Tab, 
+                           'AHA Diff Model' : tab6.CC_AHA_Diff_Tab
+                          }
+        self.stats_tabs = {'Clinical Results' : tab2.CCs_ClinicalResults_Tab,
+                           'Averaged AHA Tab' : tab7.CCs_AHA_Tab,
+                           'Averaged AHA Diff Tab' : tab8.CCs_AHA_Diff_Tab}
         
     def load_categories(self):
         self.all = [SAX_T2_Category]

@@ -22,3 +22,9 @@ from LazyLuna.Figures.LAX_Volumes_BlandAltman import *
 from LazyLuna.Figures.Image_List_Presenter import *
 from LazyLuna.Figures.Mapping_Overview import *
 from LazyLuna.Figures.Reference_Point_Differences import *
+from LazyLuna.Figures.DCMs_list_Annos_Presenter import *
+from LazyLuna.Figures.Mapping_Slice_Average_BlandAltman import *
+from LazyLuna.Figures.Mapping_Slice_Average_PairedBoxplot import *
+from LazyLuna.Figures.Mapping_ReferencePointAngleDiff_Boxplot import *
+from LazyLuna.Figures.Mapping_ReferencePointDistance_Boxplot import *
+from LazyLuna.Figures.Mapping_DiceBySlice import *

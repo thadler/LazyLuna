@@ -212,6 +212,23 @@ def transform_ics_to_rcs(dcm, arr_points=None):
     return product
 
 
+def sort_dcms(dcms):
+    # attempt at sorting
+    try:
+        sortable = sorted([[dcm, dcm.SliceLocation] for dcm in dcms], key=lambda x: x[1])
+        dcms = [a[0] for a in sortable]
+    except: pass
+    try:
+        sortable = sorted([[dcm, dcm.InstanceNumber] for dcm in dcms], key=lambda x: x[1])
+        dcms = [a[0] for a in sortable]
+    except: pass
+    try:
+        sortable = sorted([[dcm, dcm.SliceLocation, dcm.InstanceNumber] for dcm in dcms], key=lambda x: (x[1],x[2]))
+        dcms = [a[0] for a in sortable]
+    except: pass
+    return dcms
+
+
 
 ############################
 ## PYQT5 Helper Functions ##
