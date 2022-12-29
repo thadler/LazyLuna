@@ -41,11 +41,11 @@ class Dicom_Organizer:
                 break
             except: continue
         return os.path.join(self.reader_folder_path, study_uid)
-            
+    
     def load_images_and_annos(self):
         # GET ANNOS
         self.annos = dict()
-        if self.anno_folder_path is not None:
+        if self.anno_folder_path is not None and os.path.exists(self.anno_folder_path):
             paths = [f for f in os.listdir(self.anno_folder_path) if 'case' not in f]
             for p in paths: 
                 self.annos[p.replace('.pickle','')] = os.path.join(self.anno_folder_path, p)
@@ -132,9 +132,39 @@ class Dicom_Organizer:
         keys = self.get_section_keys()
         ret = []
         for k in keys:
+            print(k)
             fpath, has_anno, nr = self.get_firstpath_hasanno_nr(k)
             ret.append((k, fpath, has_anno, nr))
         return ret
+    
+    def set_lltag_for_dcms(self, dcm_paths, old_lltags, new_lltags):
+        # dcm_paths  = list of dcm_paths
+        # old_lltags = list of lltags per dcm_path as currently in dicom_organizer
+        # new_lltags = list of lltags per dcm_path
+        old_sections, new_sections = [], []
+        for p, ol, nl in zip(dcm_paths, old_lltags, new_lltags):
+            if ol==nl: continue
+            dcm = pydicom.dcmread(p, stop_before_pixels=True)
+            seriessdescr = dcm.SeriesDescription
+            series_uid   = dcm.SeriesInstanceUID
+            # remove from old key's list
+            old_key = (ol, seriessdescr, series_uid)
+            self.dcms[ol][seriessdescr][series_uid].remove(p)
+            # add to new key's list
+            new_key = (nl, seriessdescr, series_uid)
+            self.make_section_ifnotexists(new_key)
+            self.dcms[nl][seriessdescr][series_uid].append(p)
+            old_sections.append(old_key)
+            new_sections.append(new_key)
+        for key in set(old_sections):
+            print('old key: ', key)
+            if len(self.get_section(key))==0: print('deleting key: ', key); self.delete_section(key); continue
+            ol, seriessdescr, series_uid = key
+            self.has_annotations[ol][seriessdescr][series_uid] = self.section_has_annotations(key)
+        for key in set(new_sections):
+            nl, seriessdescr, series_uid = key
+            self.has_annotations[nl][seriessdescr][series_uid] = self.section_has_annotations(key)
+            
     
     def set_lltag_for_section(self, origin_key, lltag):
         if origin_key[0]==lltag: return # no change
@@ -146,7 +176,6 @@ class Dicom_Organizer:
         # Delete former section
         self.delete_section(origin_key)
     
-    
     def insert_section(self, destination_key, origin_key):
         paths = self.get_paths_from_section(origin_key)
         lltag = destination_key[0]
@@ -155,8 +184,7 @@ class Dicom_Organizer:
             seriesdescr = dcm.SeriesDescription
             series_uid  = dcm.SeriesInstanceUID
             self.dcms[lltag][seriesdescr][series_uid].append(p)
-            self.has_annotations[lltag][seriesdescr][series_uid] = True
-        
+            self.has_annotations[lltag][seriesdescr][series_uid] = True # is this sensible??? shouldn't it be recalculated?
         
     def make_destination_from_origin_ifnotexists(self, destination_key, origin_key):
         assert len(destination_key)==len(origin_key), print("Failed in Make Destination")
@@ -212,6 +240,17 @@ class Dicom_Organizer:
             for p in paths:
                 dcm = pydicom.dcmread(p, stop_before_pixels=False)
                 add_LL_tag(p, dcm, lltag)
+        
+    def make_section_ifnotexists(self, key):
+        if len(key)>0 and key[0] not in self.dcms.keys():                 self.dcms[key[0]] = dict()
+        if len(key)>1 and key[1] not in self.dcms[key[0]].keys():         self.dcms[key[0]][key[1]] = dict()
+        if len(key)>2 and key[2] not in self.dcms[key[0]][key[1]].keys(): self.dcms[key[0]][key[1]][key[2]] = []
+        if len(key)>0 and key[0] not in self.has_annotations.keys():      
+            self.has_annotations[key[0]] = dict()
+        if len(key)>1 and key[1] not in self.has_annotations[key[0]].keys():
+            self.has_annotations[key[0]][key[1]] = dict()
+        if len(key)>2 and key[2] not in self.has_annotations[key[0]][key[1]].keys():
+            self.has_annotations[key[0]][key[1]][key[2]] = False
         
         
     
