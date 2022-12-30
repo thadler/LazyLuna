@@ -138,33 +138,28 @@ class Dicom_Organizer:
         return ret
     
     def set_lltag_for_dcms(self, dcm_paths, old_lltags, new_lltags):
-        # dcm_paths  = list of dcm_paths
-        # old_lltags = list of lltags per dcm_path as currently in dicom_organizer
-        # new_lltags = list of lltags per dcm_path
         old_sections, new_sections = [], []
         for p, ol, nl in zip(dcm_paths, old_lltags, new_lltags):
             if ol==nl: continue
             dcm = pydicom.dcmread(p, stop_before_pixels=True)
-            seriessdescr = dcm.SeriesDescription
-            series_uid   = dcm.SeriesInstanceUID
+            seriesdescr = dcm.SeriesDescription
+            series_uid  = dcm.SeriesInstanceUID
             # remove from old key's list
-            old_key = (ol, seriessdescr, series_uid)
-            self.dcms[ol][seriessdescr][series_uid].remove(p)
+            old_key = (ol, seriesdescr, series_uid)
+            self.dcms[ol][seriesdescr][series_uid].remove(p)
             # add to new key's list
-            new_key = (nl, seriessdescr, series_uid)
+            new_key = (nl, seriesdescr, series_uid)
             self.make_section_ifnotexists(new_key)
-            self.dcms[nl][seriessdescr][series_uid].append(p)
+            self.dcms[nl][seriesdescr][series_uid].append(p)
             old_sections.append(old_key)
             new_sections.append(new_key)
         for key in set(old_sections):
-            print('old key: ', key)
-            if len(self.get_section(key))==0: print('deleting key: ', key); self.delete_section(key); continue
-            ol, seriessdescr, series_uid = key
-            self.has_annotations[ol][seriessdescr][series_uid] = self.section_has_annotations(key)
+            if len(self.get_section(key))==0: self.delete_section(key); continue
+            ol, seriesdescr, series_uid = key
+            self.has_annotations[ol][seriesdescr][series_uid] = self.section_has_annotations(key)
         for key in set(new_sections):
-            nl, seriessdescr, series_uid = key
-            self.has_annotations[nl][seriessdescr][series_uid] = self.section_has_annotations(key)
-            
+            nl, seriesdescr, series_uid = key
+            self.has_annotations[nl][seriesdescr][series_uid] = self.section_has_annotations(key)
     
     def set_lltag_for_section(self, origin_key, lltag):
         if origin_key[0]==lltag: return # no change
@@ -211,9 +206,14 @@ class Dicom_Organizer:
                 self.make_destination_from_origin_ifnotexists(dk, ok)
     
     def delete_section(self, k):
-        if len(k)==3: del self.dcms[k[0]][k[1]][k[2]]; del self.has_annotations[k[0]][k[1]][k[2]]
-        if len(k)==2: del self.dcms[k[0]][k[1]];       del self.has_annotations[k[0]][k[1]]
-        if len(k)==1: del self.dcms[k[0]];             del self.has_annotations[k[0]]
+        if len(k)==3: 
+            del self.dcms[k[0]][k[1]][k[2]]; del self.has_annotations[k[0]][k[1]][k[2]]
+            if len(self.dcms[k[0]][k[1]])==0: self.delete_section((k[0],k[1]))
+        if len(k)==2: 
+            del self.dcms[k[0]][k[1]]; del self.has_annotations[k[0]][k[1]]
+            if len(self.dcms[k[0]])==0: self.delete_section((k[0],))
+        if len(k)==1: 
+            del self.dcms[k[0]]; del self.has_annotations[k[0]]
     
     def section_has_annotations(self, key):
         anno_section = reduce(getitem, key, self.has_annotations)
@@ -252,7 +252,16 @@ class Dicom_Organizer:
         if len(key)>2 and key[2] not in self.has_annotations[key[0]][key[1]].keys():
             self.has_annotations[key[0]][key[1]][key[2]] = False
         
-        
+    def __str__(self):
+        string = 'DCMS Dictionary\n'
+        for lltag in self.dcms.keys():
+            string += lltag+'\n'
+            for seriesdescr in self.dcms[lltag].keys():
+                string += '\t' + seriesdescr + '\n'
+                for seriesuid in self.dcms[lltag][seriesdescr].keys():
+                    string += '\t\t' + seriesuid + ' nr imgs: ' + str(len(self.dcms[lltag][seriesdescr][seriesuid])) 
+                    string += ' has anno: '+str(self.has_annotations[lltag][seriesdescr][seriesuid])+'\n'
+        return string
     
 if __name__=="__main__":
     dcm_path  = '/Users/dietrichhadler/Desktop/Daten/Atria_Intra/Imgs/Atria_COV_34_'
