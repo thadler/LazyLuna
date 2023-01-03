@@ -19,14 +19,15 @@ class SAX_T2_View(View):
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
         
         # register tabs here:
-        import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab          as tab1
-        import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab as tab2
-        import LazyLuna.Guis.Addable_Tabs.CC_Angle_Segments_Tab   as tab3
-        import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab         as tab4
-        import LazyLuna.Guis.Addable_Tabs.CC_AHA_Tab              as tab5
-        import LazyLuna.Guis.Addable_Tabs.CC_AHA_Diff_Tab         as tab6
-        import LazyLuna.Guis.Addable_Tabs.CCs_AHA_Tab             as tab7
-        import LazyLuna.Guis.Addable_Tabs.CCs_AHA_Diff_Tab        as tab8
+        import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab               as tab1
+        import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab      as tab2
+        import LazyLuna.Guis.Addable_Tabs.CC_Angle_Segments_Tab        as tab3
+        import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab              as tab4
+        import LazyLuna.Guis.Addable_Tabs.CC_AHA_Tab                   as tab5
+        import LazyLuna.Guis.Addable_Tabs.CC_AHA_Diff_Tab              as tab6
+        import LazyLuna.Guis.Addable_Tabs.CCs_AHA_Tab                  as tab7
+        import LazyLuna.Guis.Addable_Tabs.CCs_AHA_Diff_Tab             as tab8
+        import LazyLuna.Guis.Addable_Tabs.CCs_Mapping_Slice_Analysis   as tab9
         
         self.case_tabs  = {'Metrics and Figure': tab1.CC_Metrics_Tab, 
                            'Clinical Results and Images': tab4.CC_CRs_Images_Tab, 
@@ -36,7 +37,8 @@ class SAX_T2_View(View):
                           }
         self.stats_tabs = {'Clinical Results' : tab2.CCs_ClinicalResults_Tab,
                            'Averaged AHA Tab' : tab7.CCs_AHA_Tab,
-                           'Averaged AHA Diff Tab' : tab8.CCs_AHA_Diff_Tab}
+                           'Averaged AHA Diff Tab' : tab8.CCs_AHA_Diff_Tab, 
+                           'Mapping Slice Analysis' : tab9.CCs_MappingSliceAnalysis_Tab}
         
     def load_categories(self):
         self.all = [SAX_T2_Category]

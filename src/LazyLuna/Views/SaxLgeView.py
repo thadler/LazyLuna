@@ -77,13 +77,81 @@ class SAX_LGE_View(View):
             else: case.attach_categories([SAX_LGE_Category])
         if debug: print('Case categories are: ', case.categories)
         # attach CRs
-        case.attach_clinical_results([SAXLGE_LVV,       SAXLGE_LVMYOV, 
-                                      SAXLGE_LVMYOMASS, SAXLGE_SCARVOL,
-                                      SAXLGE_SCARMASS,  SAXLGE_SCARF,
-                                      SAXLGE_EXCLVOL,   SAXLGE_EXCLMASS,
-                                      SAXLGE_NOREFLOWVOL])
+        case.attach_clinical_results([SAXLGE_LVV,         SAXLGE_LVMYOV, 
+                                      SAXLGE_LVMYOMASS,   SAXLGE_SCARVOL,
+                                      SAXLGE_SCARMASS,    SAXLGE_SCARF,
+                                      SAXLGE_EXCLVOL,     SAXLGE_EXCLMASS,
+                                      SAXLGE_NOREFLOWVOL, SAXLGE_NOREFLOWF])
         # set new type
         case.type = 'SAX LGE'
         if debug: print('Customization in SAX LGE view took: ', time()-st)
         return case
 
+
+    def store_information(self, ccs, path, icon_path):
+        try:
+            overview_fig = LGE_Overview()
+            overview_fig.visualize(ccs)
+            ov_p = overview_fig.store(os.path.join(path))
+        except Exception as e:
+            print('Mapping Overview store exeption: ', traceback.print_exc())
+        try:
+            overview_fig = LGE_Overview_BySlice()
+            overview_fig.visualize(ccs)
+            ovbs_p = overview_fig.store(os.path.join(path))
+        except Exception as e:
+            print('Mapping Overview By Slice store exeption: ', traceback.print_exc())
+        try:
+            cr_table = CCs_ClinicalResultsTable()
+            cr_table.calculate(ccs)
+            cr_table.store(os.path.join(path, 'clinical_results.csv'))
+        except Exception as e:
+            print('CR Table store exeption: ', traceback.print_exc())
+        try:
+            metrics_table = T1_CCs_MetricsTable()
+            metrics_table.calculate(self, ccs)
+            metrics_table.store(os.path.join(path, 'metrics_phase_slice_table.csv'))
+        except Exception as e:
+            print('Metrics Table store exeption: ', traceback.print_exc())
+        
+            
+        pdf = PDF(orientation='P', unit='mm', format='A4')
+        
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        pdf.set_title('Overview Assessment')
+        pdf.set_chart(ov_p, 20, 35, w=695/4, h=630/4)
+        pdf.set_text("Fig. 1 Overview of Clinical Parameters: Upper left a Bland-Altman for the scar mass, upper right for the scar fraction defined as the volume of scar tissue divided by the volume of the left ventricular myocardium, middle left the mass of no reflow tissue, middle right the fraction of no reflow tissue defined as the volume of no reflow tissue divided by the volume of the left ventricular myocardium, the bottom left shows the left ventricular volume, and the left ventricle's myocardial mass on the botton right. Legend: Dice: Dice similarity coefficient, HD: Hausdorff distance", 10, 200, size=7)
+        
+        pdf.add_page()
+        pdf.prepare_pretty_format(icon_path)
+        pdf.set_title('Overview Assessment')
+        pdf.set_chart(ovbs_p, 20, 35, w=695/4, h=630/4)
+        pdf.set_text('Fig. 2 Slice-based Overview of LGE values and Metrics as Scatter- ontop of Boxplots: Top left shows the scar area differences of all slices, top right the noreflow area differences, middle left the Dice of the LVM, middle right, the Dice of the scar contours, bottom left the Dice of no reflow contours, and the bottom right the distance of the reference points selected by the readers for individual slices. Legend: Dice: Dice similarity coefficient, LVM: Left ventricular myocardium', 10, 200, size=7)
+        
+        try:
+            overviewtab = findCCsOverviewTab()
+            view_name = overviewtab.view_combo.currentText()
+            if len(overviewtab.qualitative_figures[view_name])!=0:
+                
+                pdf.add_page()
+                pdf.prepare_pretty_format(icon_path)
+                pdf.set_title('Qualitative Figures added during Manual Inspection')
+                pdf.set_text('The following PDF pages reference figures, which were manually selected by the investigor and added to this report manually. Every figure has a title and comments that the investigator typed for elaboration.', 10, 50, size=12)
+                
+                for addable in overviewtab.qualitative_figures[view_name]:
+                    pdf.add_page()
+                    pdf.prepare_pretty_format()
+                    img = PIL.Image.open(addable[1])
+                    scale = img.height / img.width
+                    pdf.set_text('Title:    ' + addable[0], 10, 20, size=12)
+                    pdf.set_chart(addable[1], 20, 35, w=695/4, h=695/4*scale)
+                    pdf.set_text(addable[2], 10, 40 + 695/4*scale)
+        
+        except Exception as e:
+            print(traceback.print_exc())
+            pass
+        
+        pdf.set_author('Luna Lovegood')
+        pdf.output(os.path.join(path, 'summary_PDF.pdf'))
+        

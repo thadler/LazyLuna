@@ -28,3 +28,5 @@ from LazyLuna.Figures.Mapping_Slice_Average_PairedBoxplot import *
 from LazyLuna.Figures.Mapping_ReferencePointAngleDiff_Boxplot import *
 from LazyLuna.Figures.Mapping_ReferencePointDistance_Boxplot import *
 from LazyLuna.Figures.Mapping_DiceBySlice import *
+from LazyLuna.Figures.LGE_Overview import *
+from LazyLuna.Figures.LGE_Overview_BySlice import *

@@ -1366,7 +1366,6 @@ class SAXLGE_LVV(Clinical_Result):
     def set_CR_information(self):
         self.name = 'LVV'
         self.unit = '[ml]'
-        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
     
     @CR_exception_handler
@@ -1473,7 +1472,6 @@ class SAXLGE_SCARF(Clinical_Result):
         
     @CR_exception_handler
     def get_val(self, contname='scar', string=False):
-        #scar = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
         scar = self.cat.get_volume(contname)
         lvm  = self.cat.get_volume('lv_myo')
         cr = 100.0 * (scar/(lvm+10**-9))
@@ -1496,8 +1494,6 @@ class SAXLGE_EXCLMASS(Clinical_Result):
         
     @CR_exception_handler
     def get_val(self, string=False):
-        #scar_excl = self.cat.get_volume('scar_fwhm_res_8_excluded_area')
-        #scar      = self.cat.get_volume('scar_fwhm_res_8')
         scar_excl = self.cat.get_volume('scar_fwhm_excluded_area')
         scar      = self.cat.get_volume('scar_fwhm')
         cr = 1.05 * (scar - scar_excl)
@@ -1545,6 +1541,29 @@ class SAXLGE_NOREFLOWVOL(Clinical_Result):
     @CR_exception_handler
     def get_val(self, string=False):
         cr = self.cat.get_volume('noreflow')
+        return "{:.2f}".format(cr) if string else cr
+    
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+    
+class SAXLGE_NOREFLOWF(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+        
+    def set_CR_information(self):
+        self.name = 'NOREFLOWF'
+        self.unit = '[%]'
+        #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
+        self.cat  = self.case.categories[0]
+        
+    @CR_exception_handler
+    def get_val(self, contname='noreflow', string=False):
+        scar = self.cat.get_volume(contname)
+        lvm  = self.cat.get_volume('lv_myo')
+        cr = 100.0 * (scar/(lvm+10**-9))
         return "{:.2f}".format(cr) if string else cr
     
     def get_val_diff(self, other, string=False):
