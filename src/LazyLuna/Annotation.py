@@ -1,8 +1,8 @@
 import pickle
 import numpy as np
 from shapely.geometry import Polygon, MultiPolygon, Point, MultiPoint
-from LazyLuna import utils
 from shapely.affinity import scale
+from LazyLuna import utils
 
 
 class Annotation:

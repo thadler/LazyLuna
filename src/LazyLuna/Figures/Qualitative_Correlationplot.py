@@ -10,7 +10,6 @@ import seaborn as sns
 
 import shapely
 from shapely.geometry import Polygon
-from descartes import PolygonPatch
 from scipy.stats import probplot
 import numpy as np
 import pandas
@@ -20,7 +19,7 @@ from LazyLuna.Metrics import *
 from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
-from LazyLuna.utils import findMainWindow, findCCsOverviewTab
+from LazyLuna.utils import findMainWindow, findCCsOverviewTab, PolygonPatch
 
         
 class Qualitative_Correlationplot(Visualization):
@@ -140,7 +139,7 @@ class Qualitative_Correlationplot(Visualization):
                     if not cont1.is_empty or not cont2.is_empty: utils.plot_geo_face_comparison(axes[1], cont1, cont2)
                     if not cont2.is_empty: utils.plot_geo_face(axes[2], cont2, c='b')
                     pst = Polygon([[0,0],[1,1],[1,0]]) 
-                    patches = [[PolygonPatch(pst, facecolor=c, edgecolor=c, alpha=0.4)] for c in ['red','green','blue']]
+                    patches = [[PolygonPatch(pst, c=c, alpha=0.4)] for c in ['red','green','blue']]
                     handles = [[cc.case1.reader_name], [cc.case1.reader_name+' & '+cc.case2.reader_name], [cc.case2.reader_name]]
                     for i in range(3): axes[i].legend(patches[i], handles[i])
 

@@ -14,7 +14,6 @@ from matplotlib.path import Path
 
 import shapely
 from shapely.geometry import Polygon
-#from descartes import PolygonPatch
 from scipy.stats import probplot
 import numpy as np
 import pandas
@@ -25,11 +24,6 @@ from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
 from LazyLuna.utils import findMainWindow, findCCsOverviewTab, PolygonPatch
-
-"""
-def new_PolygonPatch(polygon, facecolor, edgecolor,  alpha):
-    return PathPatch(matplotlib.path.Path.make_compound_path(matplotlib.path.Path(np.asarray(polygon.exterior.coords)[:,:2]), *[matplotlib.path.Path(np.asarray(ring.coords)[:,:2]) for ring in polygon.interiors]), fc=facecolor, ec=edgecolor, alpha=alpha)
-"""
     
 
 class Annotation_Comparison(Visualization):

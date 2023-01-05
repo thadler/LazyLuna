@@ -30,8 +30,8 @@ class T1_diff_bullseye_plot(Visualization):
         return collection
 
     def write_val(self, ax, mean, std, x, y):
-        mean, std = '{:.1f}'.format(float(mean)), '({:.1f})'.format(float(std))
-        ax.annotate(mean + '\n' + str(std), xy = (x,y), xytext = (x,y), textcoords = 'data',
+        mean, std = '{:.1f}'.format(float(mean)), '{:.1f}'.format(float(std))
+        ax.annotate(mean + '±\n' + str(std), xy = (x,y), xytext = (x,y), textcoords = 'data',
                     bbox = dict(boxstyle='round', fc='w', edgecolor='w'), size = 10, 
                     horizontalalignment = 'center', verticalalignment = 'center')
         

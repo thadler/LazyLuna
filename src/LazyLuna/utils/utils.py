@@ -7,7 +7,6 @@ from skimage.measure import find_contours
 from rasterio import features
 
 from PIL import Image, ImageDraw
-#from descartes import PolygonPatch
 from matplotlib.patches import PathPatch
 import matplotlib
 import matplotlib.pyplot as plt
@@ -178,8 +177,9 @@ def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'], alpha=0.4):
     
 def plot_geo_face(ax, geo, c='r', alpha=0.4):
     """plots geometry surface onto matplotlib.pyplot.axis"""
-    # buffer is a hack, make sure contours are in clockwise or counter cw direction
-    ax.add_patch(PolygonPatch(geo.buffer(0), c=c, alpha=alpha))
+    if geo.geom_type=='Polygon': ax.add_patch(PolygonPatch(geo, c=c, alpha=alpha))
+    if geo.geom_type=='MultiPolygon':
+        for p in geo.geoms:      ax.add_patch(PolygonPatch(p,   c=c, alpha=alpha))
         
 def plot_points(ax, points, c='w', marker='x', s=None):
     """plots points onto matplotlib.pyplot.axis"""

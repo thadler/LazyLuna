@@ -10,7 +10,6 @@ import seaborn as sns
 
 import shapely
 from shapely.geometry import Polygon
-from descartes import PolygonPatch
 from scipy.stats import probplot
 import numpy as np
 import pandas

@@ -10,7 +10,6 @@ import seaborn as sns
 
 import shapely
 from shapely.geometry import Polygon
-from descartes import PolygonPatch
 from scipy.stats import probplot
 import numpy as np
 import pandas
@@ -20,6 +19,7 @@ from LazyLuna.Metrics import *
 from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
+from LazyLuna.utils import PolygonPatch
 
 
 class Failed_Annotation_Comparison_Yielder(Visualization):
@@ -65,7 +65,7 @@ class Failed_Annotation_Comparison_Yielder(Visualization):
             anno2.plot_face   (axes[2],        contour_name, alpha=0.4, c='b')
         for ax in axes: ax.set_xticks([]); ax.set_yticks([])
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
-        patches = [PolygonPatch(d,facecolor=c, edgecolor=c,  alpha=0.4) for c in ['red', 'green', 'blue']]
+        patches = [PolygonPatch(d, c=c, alpha=0.4) for c in ['red', 'green', 'blue']]
         handles = [self.cc.case1.reader_name,
                    self.cc.case1.reader_name+' & '+self.cc.case2.reader_name,
                    self.cc.case2.reader_name]
