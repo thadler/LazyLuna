@@ -349,8 +349,10 @@ class AngleDiffMetric(Metric):
         lv_mid1 = anno1.get_contour('lv_endo').centroid
         ext2    = anno2.get_point('sax_ref')
         lv_mid2 = anno2.get_contour('lv_endo').centroid
-        v1 = np.array(ext1 - lv_mid1)
-        v2 = np.array(ext2 - lv_mid2)
+        v1 = ext1 - lv_mid1
+        v2 = ext2 - lv_mid2
+        v1 = np.array([v1.x, v1.y])
+        v2 = np.array([v2.x, v2.y])
         v1_u = v1 / np.linalg.norm(v1)
         v2_u = v2 / np.linalg.norm(v2)
         if len(v1_u)!=len(v2_u):    return 'nan' if string else np.nan

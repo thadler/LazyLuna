@@ -8,9 +8,13 @@ from mpl_interactions import ioff, panhandler, zoom_factory
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+import matplotlib
+from matplotlib.patches import PathPatch
+from matplotlib.path import Path
+
 import shapely
 from shapely.geometry import Polygon
-from descartes import PolygonPatch
+#from descartes import PolygonPatch
 from scipy.stats import probplot
 import numpy as np
 import pandas
@@ -20,7 +24,13 @@ from LazyLuna.Metrics import *
 from LazyLuna import utils
 from LazyLuna.Figures.Visualization import *
 
-from LazyLuna.utils import findMainWindow, findCCsOverviewTab
+from LazyLuna.utils import findMainWindow, findCCsOverviewTab, PolygonPatch
+
+"""
+def new_PolygonPatch(polygon, facecolor, edgecolor,  alpha):
+    return PathPatch(matplotlib.path.Path.make_compound_path(matplotlib.path.Path(np.asarray(polygon.exterior.coords)[:,:2]), *[matplotlib.path.Path(np.asarray(ring.coords)[:,:2]) for ring in polygon.interiors]), fc=facecolor, ec=edgecolor, alpha=alpha)
+"""
+    
 
 class Annotation_Comparison(Visualization):
     def set_values(self, view, cc, canvas):
@@ -66,9 +76,9 @@ class Annotation_Comparison(Visualization):
             anno1.plot_points(ax1)
             anno2.plot_points(ax3)
         for ax in [ax1, ax2, ax3]: ax.set_xticks([]); ax.set_yticks([])
-        d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
         
-        patches = [PolygonPatch(d,facecolor=c, edgecolor=c,  alpha=0.4) for c in ['red', 'green', 'blue']]
+        d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
+        patches = [PolygonPatch(d, c=c, alpha=0.4) for c in ['red', 'green', 'blue']]
         handles = [self.cc.case1.reader_name,
                    self.cc.case1.reader_name+' & '+self.cc.case2.reader_name,
                    self.cc.case2.reader_name]
@@ -101,7 +111,7 @@ class Annotation_Comparison(Visualization):
     
     def store(self, storepath, figurename='_annotation_comparison.png'):
         self.tight_layout()
-        figname = self.cc.case1.case_name+' Category: ' + self.category.name + ', slice: ' + str(self.slice_nr)+figurename
+        figname = self.cc.case1.case_name+'_Category_' + self.category.name + '_slice_' + str(self.slice_nr)+figurename
         self.savefig(os.path.join(storepath, figname), dpi=300, facecolor="#FFFFFF")
         return os.path.join(storepath, figname)
     

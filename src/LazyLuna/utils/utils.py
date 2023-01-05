@@ -7,7 +7,9 @@ from skimage.measure import find_contours
 from rasterio import features
 
 from PIL import Image, ImageDraw
-from descartes import PolygonPatch
+#from descartes import PolygonPatch
+from matplotlib.patches import PathPatch
+import matplotlib
 import matplotlib.pyplot as plt
 
 from PyQt5.QtWidgets import QMainWindow, QApplication
@@ -141,12 +143,25 @@ def get_geometry_comparison(geo1, geo2):
 #####################
 # plotting funtions #
 #####################
-def plot_outlines(ax, geo, edge_c=(1,1,1,1.0)):
+
+def PolygonPatch_Outline(polygon, c=(1,1,1,1.0), alpha=1.0):
+    return PathPatch(matplotlib.path.Path.make_compound_path(matplotlib.path.Path(np.asarray(polygon.exterior.coords)[:,:2]), *[matplotlib.path.Path(np.asarray(ring.coords)[:,:2]) for ring in polygon.interiors]), ec=c, alpha=alpha, fill=False)
+
+def PolygonPatch(polygon, c=None, alpha=1.0):
+    return PathPatch(matplotlib.path.Path.make_compound_path(
+        matplotlib.path.Path(np.asarray(polygon.exterior.coords)[:, :2]),
+        *[matplotlib.path.Path(np.asarray(ring.coords)[:, :2]) for ring in polygon.interiors]
+    ), fc=c, linewidth=0, alpha=alpha, zorder=1)
+
+
+def plot_outlines(ax, geo, c=(1,1,1,1.0)):
     """plots geometry outlines onto matplotlib.pyplot.axis"""
-    patch = PolygonPatch(geo, facecolor=(0,0,0,0.0), edgecolor=edge_c)
-    ax.add_patch(patch)
+    if geo.geom_type=='Polygon': ax.add_patch(PolygonPatch_Outline(geo, c=c))
+    if geo.geom_type=='MultiPolygon':
+        for p in geo.geoms:      ax.add_patch(PolygonPatch_Outline(p,   c=c))
         
-def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'],alpha=0.4):
+        
+def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'], alpha=0.4):
     """plots geometry surface comparison onto matplotlib.pyplot.axis"""
     agreed, diff1, diff2 = get_geometry_comparison(geo1, geo2)
     if agreed.geom_type=='GeometryCollection' and not agreed.is_empty:
@@ -157,12 +172,14 @@ def plot_geo_face_comparison(ax, geo1, geo2, colors=['g','r','b'],alpha=0.4):
         diff2 = MultiPolygon([g for g in diff2.geoms if g.area!=0])
     for i, thing in enumerate([agreed, diff1, diff2]):
         if not thing.is_empty:
-            ax.add_patch(PolygonPatch(thing.buffer(0), color=colors[i], alpha=alpha))
+            if thing.geom_type=='Polygon': ax.add_patch(PolygonPatch(thing, c=colors[i], alpha=alpha))
+            if thing.geom_type=='MultiPolygon':
+                for p in thing.geoms:      ax.add_patch(PolygonPatch(p,     c=colors[i], alpha=alpha))
     
-def plot_geo_face(ax, geo, c='r', ec=None, alpha=0.4):
+def plot_geo_face(ax, geo, c='r', alpha=0.4):
     """plots geometry surface onto matplotlib.pyplot.axis"""
     # buffer is a hack, make sure contours are in clockwise or counter cw direction
-    ax.add_patch(PolygonPatch(geo.buffer(0), color=c, ec=ec, alpha=alpha))
+    ax.add_patch(PolygonPatch(geo.buffer(0), c=c, alpha=alpha))
         
 def plot_points(ax, points, c='w', marker='x', s=None):
     """plots points onto matplotlib.pyplot.axis"""

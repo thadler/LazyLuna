@@ -93,6 +93,6 @@ class Basic_Presenter(Visualization):
 
     def store(self, storepath, figurename='_basic_presentation.png'):
         self.tight_layout()
-        figname = self.cc.case1.case_name+' Category: ' + self.category.name + ', slice: ' + str(self.slice_nr)+figurename
+        figname = self.cc.case1.case_name+'_Category_' + self.category.name + '_slice_' + str(self.slice_nr)+figurename
         self.savefig(os.path.join(storepath, figname), dpi=300, facecolor="#FFFFFF")
         return os.path.join(storepath, figname)

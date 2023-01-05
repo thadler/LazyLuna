@@ -110,6 +110,6 @@ class QQPlot(Visualization):
         self.canvas.draw()
         #self.tight_layout()
     
-    def store(self, storepath, figurename='_bland_altman.png'):
+    def store(self, storepath, figurename='_qq_plot.png'):
         self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=100, facecolor="#FFFFFF")
         

@@ -45,9 +45,9 @@ class Annotation:
             c (str): contour color
         """
         if cont_name not in ['all', None]: 
-            if self.has_contour(cont_name): utils.plot_outlines(ax, self.get_contour(cont_name), edge_c=c)
+            if self.has_contour(cont_name): utils.plot_outlines(ax, self.get_contour(cont_name), c=c)
         else:
-            for cname in self.available_contour_names(): utils.plot_outlines(ax, self.get_contour(cname), edge_c=c)
+            for cname in self.available_contour_names(): utils.plot_outlines(ax, self.get_contour(cname), c=c)
 
     def plot_points(self, ax, point_name='all', c='w', marker='x', s=None):
         """Plots points on matplotlib axis
@@ -72,7 +72,7 @@ class Annotation:
             c (str): surface color
         """
         if not self.has_contour(cont_name): return
-        utils.plot_geo_face(ax, self.get_contour(cont_name), c=c, ec=c, alpha=alpha)
+        utils.plot_geo_face(ax, self.get_contour(cont_name), c=c, alpha=alpha)
 
     def plot_cont_comparison(self, ax, other_anno, cont_name, colors=['g','r','b'], alpha=0.4):
         """Plots contour comparison on matplotlib axis
@@ -204,7 +204,7 @@ class Annotation:
         if not self.has_point('lv_extent'): return np.nan
         extent = self.get_point('lv_extent')
         pw, ph = self.ph, self.pw
-        lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph)
+        lv_ext1, lv_ext2, apex = scale(extent, xfact=pw, yfact=ph).geoms
         mitral = MultiPoint([lv_ext1, lv_ext2]).centroid
         dist = mitral.distance(apex)
         return dist
@@ -218,7 +218,7 @@ class Annotation:
         if not self.has_point('la_extent'): return np.nan
         extent = self.get_point('la_extent')
         pw, ph = self.ph, self.pw
-        la_ext1, la_ext2, ceil = scale(extent, xfact=pw, yfact=ph)
+        la_ext1, la_ext2, ceil = scale(extent, xfact=pw, yfact=ph).geoms
         mitral = MultiPoint([la_ext1, la_ext2]).centroid
         dist = mitral.distance(ceil)
         return dist
@@ -232,7 +232,7 @@ class Annotation:
         if not self.has_point('ra_extent'): return np.nan
         extent = self.get_point('ra_extent')
         pw, ph = self.ph, self.pw
-        ra_ext1, ra_ext2, ceil = scale(extent, xfact=pw, yfact=ph)
+        ra_ext1, ra_ext2, ceil = scale(extent, xfact=pw, yfact=ph).geoms
         mitral = MultiPoint([ra_ext1, ra_ext2]).centroid
         dist = mitral.distance(ceil)
         return dist

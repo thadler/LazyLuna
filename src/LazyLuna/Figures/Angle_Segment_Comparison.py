@@ -155,6 +155,6 @@ class Angle_Segment_Comparison(Visualization):
 
     def store(self, storepath, figurename='_angle_segment_comparison.png'):
         self.tight_layout()
-        figname = self.cc.case1.case_name + ', slice: ' + str(self.d) + '_img_' + str(self.switch_to_image) + figurename
+        figname = self.cc.case1.case_name + '_slice_' + str(self.d) + '_img_' + str(self.switch_to_image) + figurename
         self.savefig(os.path.join(storepath, figname), dpi=300, facecolor="#FFFFFF")
         return os.path.join(storepath, figname)
