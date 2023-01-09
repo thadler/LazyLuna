@@ -189,7 +189,7 @@ class SAX_T2_View(View):
         
         try:
             overviewtab = findCCsOverviewTab()
-            view_name = overviewtab.view_combo.currentText()
+            view_name = type(self).__name__
             if len(overviewtab.qualitative_figures[view_name])!=0:
                 
                 pdf.add_page()
