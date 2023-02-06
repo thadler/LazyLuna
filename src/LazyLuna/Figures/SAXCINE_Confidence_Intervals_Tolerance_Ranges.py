@@ -48,10 +48,10 @@ class SAXCINE_Confidence_Intervals_Tolerance_Ranges(Visualization):
                 alpha = 0.5 if with_swarmplot else 0.0
                 sns.swarmplot(ax=ax, y=vals[name], palette=sns.color_palette("Blues")[4:], 
                               dodge=True, size=5, alpha=alpha)
-                ci = 1.96 * np.std(vals[name]) / np.sqrt(len(vals[name]))
-                ax.errorbar([name], [np.mean(vals[name])], yerr=ci, fmt ='o', c='r')
-                maxx = np.max([np.abs(np.min(vals[name])), np.abs(np.max(vals[name])),
-                               np.abs(np.mean(vals[name])-ci), np.abs(np.mean(vals[name])+ci), 
+                ci = 1.96 * np.nanstd(vals[name]) / np.sqrt(len(vals[name]))
+                ax.errorbar([name], [np.nanmean(vals[name])], yerr=ci, fmt ='o', c='r')
+                maxx = np.max([np.abs(np.nanmin(vals[name])), np.abs(np.nanmax(vals[name])),
+                               np.abs(np.nanmean(vals[name])-ci), np.abs(np.nanmean(vals[name])+ci), 
                                cr.tol_range])
                 ax.set_ylim(ymin=-maxx-2, ymax=maxx+2)
                 ax.set_ylabel(name + ' ' + cr.unit)

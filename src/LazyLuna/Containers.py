@@ -139,6 +139,10 @@ class Case:
             str: storage_path
         """
         if not os.path.isdir(storage_dir): print('Storage failed. Must specify a directory.'); return
+        print(storage_dir)
+        print(self.reader_name)
+        print(self.case_name)
+        print(self.studyinstanceuid)
         storage_path = os.path.join(storage_dir, self.reader_name+'_'+self.case_name+'_'+self.studyinstanceuid+'_LL_case.pickle')
         f = open(storage_path, 'wb'); pickle.dump(self, f); f.close()
         return storage_path

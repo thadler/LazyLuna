@@ -45,7 +45,8 @@ class CCs_MappingSliceAnalysis_Tab(QWidget):
         self.canvas1.setFocusPolicy(Qt.Qt.ClickFocus)
         self.canvas1.setFocus()
         self.toolbar1 = NavigationToolbar(self.canvas1, gui)
-        self.fig1.visualize(self.ccs, mapping_type='T1')
+        try: self.fig1.visualize(self.ccs, mapping_type='T1')
+        except: print(traceback.format_exc())
         layout.addWidget(self.canvas1,  2,0, 1,1)
         layout.addWidget(self.toolbar1, 3,0, 1,1)
         
@@ -55,7 +56,8 @@ class CCs_MappingSliceAnalysis_Tab(QWidget):
         self.canvas2.setFocusPolicy(Qt.Qt.ClickFocus)
         self.canvas2.setFocus()
         self.toolbar2 = NavigationToolbar(self.canvas2, gui)
-        self.fig2.visualize(self.ccs, mapping_type='T1')
+        try: self.fig2.visualize(self.ccs, mapping_type='T1')
+        except: print(traceback.format_exc())
         layout.addWidget(self.canvas2,  2,1, 1,1)
         layout.addWidget(self.toolbar2, 3,1, 1,1)
         
@@ -65,7 +67,8 @@ class CCs_MappingSliceAnalysis_Tab(QWidget):
         self.canvas3.setFocusPolicy(Qt.Qt.ClickFocus)
         self.canvas3.setFocus()
         self.toolbar3 = NavigationToolbar(self.canvas3, gui)
-        self.fig3.visualize(self.ccs)
+        try: self.fig3.visualize(self.ccs)
+        except: print(traceback.format_exc())
         layout.addWidget(self.canvas3,  4,0, 1,1)
         layout.addWidget(self.toolbar3, 5,0, 1,1)
         
@@ -75,7 +78,8 @@ class CCs_MappingSliceAnalysis_Tab(QWidget):
         self.canvas4.setFocusPolicy(Qt.Qt.ClickFocus)
         self.canvas4.setFocus()
         self.toolbar4 = NavigationToolbar(self.canvas4, gui)
-        self.fig4.visualize(self.ccs)
+        try: self.fig4.visualize(self.ccs)
+        except: print(traceback.format_exc())
         layout.addWidget(self.canvas4,  4,1, 1,1)
         layout.addWidget(self.toolbar4, 5,1, 1,1)
         

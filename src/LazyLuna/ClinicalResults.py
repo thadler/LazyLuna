@@ -284,7 +284,9 @@ class RVSAX_EF(Clinical_Result):
     @CR_exception_handler
     def get_val(self, string=False):
         esv = self.cat_es.get_volume('rv_endo', self.cat_es.phase)
-        edv = self.cat_ed.get_volume('rv_endo', self.cat_ed.phase) + 10**-9
+        edv = self.cat_ed.get_volume('rv_endo', self.cat_ed.phase)
+        if esv==0: raise Exception('RVESV volume is 0')
+        edv += 10**-9
         return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
 
     def get_val_diff(self, other, string=False):
@@ -328,7 +330,9 @@ class LVSAX_EF(Clinical_Result):
     @CR_exception_handler
     def get_val(self, string=False):
         esv = self.cat_es.get_volume('lv_endo', self.cat_es.phase)
-        edv = self.cat_ed.get_volume('lv_endo', self.cat_ed.phase) + 10**-9
+        edv = self.cat_ed.get_volume('lv_endo', self.cat_ed.phase)
+        if esv==0: raise Exception('LVESV volume is 0')
+        edv += 10**-9
         return "{:.2f}".format(100.0*(edv-esv)/edv) if string else 100.0*(edv-esv)/edv
 
     def get_val_diff(self, other, string=False):

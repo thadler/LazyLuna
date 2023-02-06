@@ -5,6 +5,7 @@ import pydicom
 from time import time
 import pandas
 import numpy as np
+import traceback
 
 def get_study_uid(imgs_path):
     """Returns StudyInstanceUID for Dicom folder
@@ -352,7 +353,8 @@ def get_imgs_and_annotation_paths(bp_imgs, bp_annos):
     for i, img_f in enumerate(img_folders):
         case_path = os.path.join(bp_imgs, img_f)
         for p in Path(case_path).glob('**/*.dcm'):
-            dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
+            try: dcm = pydicom.dcmread(str(p), stop_before_pixels=True)
+            except Exception as e: print(traceback.format_exc()); continue
             if not hasattr(dcm, 'StudyInstanceUID'): continue
             imgpaths_annopaths_tuples += [(os.path.normpath(case_path), os.path.normpath(os.path.join(bp_annos, dcm.StudyInstanceUID)))]
             break

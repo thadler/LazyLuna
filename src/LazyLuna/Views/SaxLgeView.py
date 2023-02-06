@@ -117,17 +117,21 @@ class SAX_LGE_View(View):
             
         pdf = PDF(orientation='P', unit='mm', format='A4')
         
-        pdf.add_page()
-        pdf.prepare_pretty_format(icon_path)
-        pdf.set_title('Overview Assessment')
-        pdf.set_chart(ov_p, 20, 35, w=695/4, h=630/4)
-        pdf.set_text("Fig. 1 Overview of Clinical Parameters: Upper left a Bland-Altman for the scar mass, upper right for the scar fraction defined as the volume of scar tissue divided by the volume of the left ventricular myocardium, middle left the mass of no reflow tissue, middle right the fraction of no reflow tissue defined as the volume of no reflow tissue divided by the volume of the left ventricular myocardium, the bottom left shows the left ventricular volume, and the left ventricle's myocardial mass on the botton right. Legend: Dice: Dice similarity coefficient, HD: Hausdorff distance", 10, 200, size=7)
+        try:
+            pdf.add_page()
+            pdf.prepare_pretty_format(icon_path)
+            pdf.set_title('Overview Assessment')
+            pdf.set_chart(ov_p, 20, 35, w=695/4, h=630/4)
+            pdf.set_text("Fig. 1 Overview of Clinical Parameters: Upper left a Bland-Altman for the scar mass, upper right for the scar fraction defined as the volume of scar tissue divided by the volume of the left ventricular myocardium, middle left the mass of no reflow tissue, middle right the fraction of no reflow tissue defined as the volume of no reflow tissue divided by the volume of the left ventricular myocardium, the bottom left shows the left ventricular volume, and the left ventricle's myocardial mass on the botton right. Legend: Dice: Dice similarity coefficient, HD: Hausdorff distance", 10, 200, size=7)
+        except: print(traceback.print_exc())
         
-        pdf.add_page()
-        pdf.prepare_pretty_format(icon_path)
-        pdf.set_title('Overview Assessment')
-        pdf.set_chart(ovbs_p, 20, 35, w=695/4, h=630/4)
-        pdf.set_text('Fig. 2 Slice-based Overview of LGE values and Metrics as Scatter- ontop of Boxplots: Top left shows the scar area differences of all slices, top right the noreflow area differences, middle left the Dice of the LVM, middle right, the Dice of the scar contours, bottom left the Dice of no reflow contours, and the bottom right the distance of the reference points selected by the readers for individual slices. Legend: Dice: Dice similarity coefficient, LVM: Left ventricular myocardium', 10, 200, size=7)
+        try:
+            pdf.add_page()
+            pdf.prepare_pretty_format(icon_path)
+            pdf.set_title('Overview Assessment')
+            pdf.set_chart(ovbs_p, 20, 35, w=695/4, h=630/4)
+            pdf.set_text('Fig. 2 Slice-based Overview of LGE values and Metrics as Scatter- ontop of Boxplots: Top left shows the scar area differences of all slices, top right the noreflow area differences, middle left the Dice of the LVM, middle right, the Dice of the scar contours, bottom left the Dice of no reflow contours, and the bottom right the distance of the reference points selected by the readers for individual slices. Legend: Dice: Dice similarity coefficient, LVM: Left ventricular myocardium', 10, 200, size=7)
+        except: print(traceback.print_exc())
         
         try:
             overviewtab = findCCsOverviewTab()

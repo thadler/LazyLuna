@@ -102,7 +102,6 @@ class CCs_ClinicalResults_Tab(QWidget):
         self.crs_TableView.setModel(self.crs_table.to_pyqt5_table_model())
         self.crs_TableView.selectionModel().selectionChanged.connect(self.update_figures)
         self.crs_TableView.resizeColumnsToContents()
-        return
 
         
 class CR_Results_Worker(QThread):
