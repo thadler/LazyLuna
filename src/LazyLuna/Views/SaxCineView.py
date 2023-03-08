@@ -76,7 +76,7 @@ class SAX_CINE_View(View):
         # attach CRs
         case.attach_clinical_results([LVSAX_ESV, LVSAX_EDV, RVSAX_ESV, RVSAX_EDV,
                                       LVSAX_SV, LVSAX_EF, RVSAX_SV, RVSAX_EF,
-                                      LVSAX_MYO, RVSAX_MYO,
+                                      LVSAX_MYO, RVSAX_MYO, LVSAX_ESPAMUM, LVSAX_EDPAMUM,
                                       LVSAX_ESPHASE, RVSAX_ESPHASE, LVSAX_EDPHASE, RVSAX_EDPHASE,
                                       NR_SLICES])
         # set new type
@@ -148,8 +148,8 @@ class SAX_CINE_View(View):
                         except: data[i][j] = data[i][j]
                 pdf.set_title('Clinical Parameter Means and Tolerance Ranges')
                 pdf.set_table(data[0:], x=15, y=30, col_widths=[40.0]+[30 for i in range(len(data[0])-2)]+[40.0])
-                pdf.set_text("Table. 1 This table shows the clinical parameter names in the first column. The other columns show statistics concerning the parameters. The first and second readers' means (stds) are shown in the second and third column, respectively. The mean and std of the differences between both readers is presented in the fourth column. The mean difference of both readers ± 95% confidence intervals are shown in parentheses with ±tolerance ranges thereafter. This provides information on whether the 95% estimate of the mean difference between both readers is within an acceptable limit.", 10, 172)
-                pdf.set_text('Tolerance range paper: Zange L, Muehlberg F, Blaszczyk E, Schwenke S, Traber J, Funk S, et al. Quantification in cardiovascular magnetic resonance: agreement of software from three different vendors on assessment of left ventricular function, 2D flow and parametric mapping. J Cardiovasc Magn Reson. 2019 Dec;21(1):12.', 10, 195)
+                pdf.set_text("Table. 1 This table shows the clinical parameter names in the first column. The other columns show statistics concerning the parameters. The first and second readers' means (stds) are shown in the second and third column, respectively. The mean and std of the differences between both readers is presented in the fourth column. The mean difference of both readers ± 95% confidence intervals are shown in parentheses with ±tolerance ranges thereafter. This provides information on whether the 95% estimate of the mean difference between both readers is within an acceptable limit.", 10, 192)
+                pdf.set_text('Tolerance range paper: Zange L, Muehlberg F, Blaszczyk E, Schwenke S, Traber J, Funk S, et al. Quantification in cardiovascular magnetic resonance: agreement of software from three different vendors on assessment of left ventricular function, 2D flow and parametric mapping. J Cardiovasc Magn Reson. 2019 Dec;21(1):12.', 10, 215)
             except: print(traceback.print_exc())
         
         if storage_version>=0:
@@ -238,6 +238,6 @@ class SAX_CINE_View(View):
         print('PDF TOOK: ', time.time()-st)
         
         pdf.set_author('Luna Lovegood')
-        pdf.output(os.path.join(path, 'summary_PDF.pdf'))
+        pdf.output(os.path.join(path, view_name+'_summary_PDF.pdf'))
         
             

@@ -73,7 +73,7 @@ class LVSAX_ESV(Clinical_Result):
 
     @CR_exception_handler
     def get_val(self, string=False):
-        cr = self.cat.get_volume('lv_endo', self.cat.phase)
+        cr = self.cat.get_volume('lv_endo', self.cat.phase) - self.cat.get_volume('lv_pamu', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
 
     def get_val_diff(self, other, string=False):
@@ -93,7 +93,7 @@ class LVSAX_EDV(Clinical_Result):
 
     @CR_exception_handler
     def get_val(self, string=False):
-        cr = self.cat.get_volume('lv_endo', self.cat.phase)
+        cr = self.cat.get_volume('lv_endo', self.cat.phase) - self.cat.get_volume('lv_pamu', self.cat.phase)
         return "{:.2f}".format(cr) if string else cr
     
     def get_val_diff(self, other, string=False):
@@ -339,6 +339,51 @@ class LVSAX_EF(Clinical_Result):
         cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
+
+
+class LVSAX_ESPAMUM(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+        self.tol_range = np.nan
+
+    def set_CR_information(self):
+        self.name = 'LVESPAMUM'
+        self.unit = '[g]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ES_Category)][0]
+
+    @CR_exception_handler
+    def get_val(self, string=False):
+        cr = self.cat.get_volume('lv_pamu', self.cat.phase)*1.05
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+
+    
+class LVSAX_EDPAMUM(Clinical_Result):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+        self.tol_range = np.nan
+
+    def set_CR_information(self):
+        self.name = 'LVEDPAMUM'
+        self.unit = '[g]'
+        self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
+
+    @CR_exception_handler
+    def get_val(self, string=False):
+        cr = self.cat.get_volume('lv_pamu', self.cat.phase)*1.05
+        return "{:.2f}".format(cr) if string else cr
+
+    def get_val_diff(self, other, string=False):
+        cr_diff = self.get_val()-other.get_val()
+        return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+
+    
 ###########
 # LAX CRs #
 ###########

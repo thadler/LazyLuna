@@ -37,7 +37,7 @@ class SAX_LGE_View(View):
         cats  = [c for c in case.categories if type(c) in types]
         return cats
 
-    def initialize_case(self, case, cvi_preprocess=True, debug=False):
+    def initialize_case(self, case, cvi_preprocess=False, debug=False):
         if debug: st=time()
         # switch images
         case.imgs_sop2filepath = case.all_imgs_sop2filepath['SAX LGE']
@@ -157,5 +157,5 @@ class SAX_LGE_View(View):
             pass
         
         pdf.set_author('Luna Lovegood')
-        pdf.output(os.path.join(path, 'summary_PDF.pdf'))
+        pdf.output(os.path.join(path, view_name+'_summary_PDF.pdf'))
         

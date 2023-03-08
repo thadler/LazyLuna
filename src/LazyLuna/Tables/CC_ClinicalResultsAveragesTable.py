@@ -21,7 +21,8 @@ class CC_ClinicalResultsAveragesTable(Table):
         """
         rows = []
         case1, case2 = case_comparisons[0].case1, case_comparisons[0].case2
-        columns=['Clinical Result (mean±std)', case1.reader_name, case2.reader_name, 'Diff('+case1.reader_name+', '+case2.reader_name+')', '(Mean Diff±CI), ±Tol range']
+        #columns=['Clinical Result (mean±std)', case1.reader_name, case2.reader_name, 'Diff('+case1.reader_name+', '+case2.reader_name+')', '(Mean Diff±CI), ±Tol range']
+        columns=['Clinical Result (mean±std)', case1.reader_name, case2.reader_name, 'Difference', '±Tolerance range']
         
         cr_dict1 = {cr.name+' '+cr.unit:[] for cr in case1.crs}
         cr_dict2 = {cr.name+' '+cr.unit:[] for cr in case1.crs}

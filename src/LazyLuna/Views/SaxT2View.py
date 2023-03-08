@@ -248,5 +248,5 @@ class SAX_T2_View(View):
             pass
         
         pdf.set_author('Luna Lovegood')
-        pdf.output(os.path.join(path, 'summary_PDF.pdf'))
+        pdf.output(os.path.join(path, view_name+'_summary_PDF.pdf'))
         
