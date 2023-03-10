@@ -223,6 +223,12 @@ class CCs_Overview_Tab(QWidget):
     
     def get_view_names(self):
         v_names = [c[0] for c in inspect.getmembers(Views, inspect.isclass) if issubclass(c[1], Views.View) if c[0]!='View']
+        v_names = [v.replace('_View','').replace('_',' ') for v in v_names]
+        nr_ccs_per_view = {v:0 for v in v_names}
+        for cc in self.all_case_comparisons:
+            for v in v_names:
+                nr_ccs_per_view[v] += int(v in cc.case1.available_types and v in cc.case2.available_types)
+        v_names = [v+' ('+str(nr_ccs_per_view[v])+')' for v in v_names]
         return v_names
     
     def select_view(self):

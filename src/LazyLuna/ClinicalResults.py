@@ -1373,7 +1373,7 @@ class LAX_BIPLANAR_LAEDV(Clinical_Result):
 ###############
 # CRs Mapping #
 ###############
-class SAXMap_GLOBALT1(Clinical_Result):
+class SAXMap_GLOBALT1_PRE(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
@@ -1396,8 +1396,19 @@ class SAXMap_GLOBALT1(Clinical_Result):
     def get_val_diff(self, other, string=False):
         cr_diff = self.get_val()-other.get_val()
         return "{:.2f}".format(cr_diff) if string else cr_diff
+    
+class SAXMap_GLOBALT1_POST(SAXMap_GLOBALT1_PRE):
+    def __init__(self, case):
+        self.case = case
+        self.set_CR_information()
+        
+    def set_CR_information(self):
+        self.name = 'GLOBAL_T1'
+        self.unit = '[ms]'
+        self.cat  = self.case.categories[0]
+        self.tol_range = 6.2
 
-class SAXMap_GLOBALT2(SAXMap_GLOBALT1):
+class SAXMap_GLOBALT2(SAXMap_GLOBALT1_PRE):
     def __init__(self, case):
         super().__init__(case)
         

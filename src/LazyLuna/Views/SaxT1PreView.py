@@ -84,7 +84,7 @@ class SAX_T1_PRE_View(View):
             else: case.attach_categories([SAX_T1_Category])
         if debug: print('Case categories are: ', case.categories)
         # attach CRs
-        case.attach_clinical_results([SAXMap_GLOBALT1, NR_SLICES])
+        case.attach_clinical_results([SAXMap_GLOBALT1_PRE, NR_SLICES])
         # set new type
         case.type = self.ll_tag
         if debug: 
