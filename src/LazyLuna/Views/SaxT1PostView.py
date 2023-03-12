@@ -11,6 +11,7 @@ import traceback
 class SAX_T1_POST_View(SAX_T1_PRE_View):
     def __init__(self):
         super().__init__()
+        self.name   = 'SAX T1 POST'
         self.ll_tag = 'SAX T1 POST'
     
     def customize_case(self, case, debug=False):

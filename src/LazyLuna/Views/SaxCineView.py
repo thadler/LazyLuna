@@ -15,6 +15,7 @@ import time
 
 class SAX_CINE_View(View):
     def __init__(self):
+        self.name = 'SAX CINE'
         self.load_categories()
         self.contour2categorytype = {None      : self.all,    'lv_endo' : self.lvcats,  'lv_epi'  : self.myocats,
                                      'lv_pamu' : self.lvcats, 'lv_myo'  : self.myocats, 'rv_endo' : self.rvcats,

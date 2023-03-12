@@ -13,6 +13,7 @@ import PIL
 
 class LAX_CINE_View(View):
     def __init__(self):
+        self.name = 'LAX CINE'
         self.load_categories()
         """
         self.contour_names        = ['lv_lax_endo', 'lv_lax_myo', 'rv_lax_endo', 'la', 'ra']

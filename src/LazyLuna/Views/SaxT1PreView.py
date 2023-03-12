@@ -13,6 +13,7 @@ import traceback
 
 class SAX_T1_PRE_View(View):
     def __init__(self):
+        self.name   = 'SAX T1 PRE'
         self.ll_tag = 'SAX T1 PRE'
         self.load_categories()
         self.contour_names = ['lv_myo', 'lv_endo']

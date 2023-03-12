@@ -13,6 +13,7 @@ import PIL
 
 class SAX_LGE_View(View):
     def __init__(self):
+        self.name = 'SAX LGE'
         self.load_categories()
         # contour names with scars
         self.contour_names = ['lv_myo', 'lv_endo', 'scar', 'noreflow']

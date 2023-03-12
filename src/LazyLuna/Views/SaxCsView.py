@@ -11,6 +11,7 @@ import traceback
 class SAX_CS_View(SAX_CINE_View):
     def __init__(self):
         super().__init__()
+        self.name = 'SAX CS'
 
     def initialize_case(self, case, debug=False):
         if debug: st=time()
