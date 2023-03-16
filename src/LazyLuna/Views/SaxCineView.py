@@ -77,7 +77,7 @@ class SAX_CINE_View(View):
         # attach CRs
         case.attach_clinical_results([LVSAX_ESV, LVSAX_EDV, RVSAX_ESV, RVSAX_EDV,
                                       LVSAX_SV, LVSAX_EF, RVSAX_SV, RVSAX_EF,
-                                      LVSAX_MYO, RVSAX_MYO, LVSAX_ESPAMUM, LVSAX_EDPAMUM,
+                                      LVSAX_MYO, RVSAX_MYO, LVSAX_ESPAPMUM, LVSAX_EDPAPMUM,
                                       LVSAX_ESPHASE, RVSAX_ESPHASE, LVSAX_EDPHASE, RVSAX_EDPHASE,
                                       NR_SLICES])
         # set new type

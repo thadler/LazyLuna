@@ -341,14 +341,14 @@ class LVSAX_EF(Clinical_Result):
 
 
 
-class LVSAX_ESPAMUM(Clinical_Result):
+class LVSAX_ESPAPMUM(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
         self.tol_range = np.nan
 
     def set_CR_information(self):
-        self.name = 'LVESPAMUM'
+        self.name = 'LVESPAPMUM'
         self.unit = '[g]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ES_Category)][0]
 
@@ -362,14 +362,14 @@ class LVSAX_ESPAMUM(Clinical_Result):
         return "{:.2f}".format(cr_diff) if string else cr_diff
 
     
-class LVSAX_EDPAMUM(Clinical_Result):
+class LVSAX_EDPAPMUM(Clinical_Result):
     def __init__(self, case):
         self.case = case
         self.set_CR_information()
         self.tol_range = np.nan
 
     def set_CR_information(self):
-        self.name = 'LVEDPAMUM'
+        self.name = 'LVEDPAPMUM'
         self.unit = '[g]'
         self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LV_ED_Category)][0]
 
