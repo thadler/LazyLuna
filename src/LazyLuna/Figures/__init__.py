@@ -30,3 +30,4 @@ from LazyLuna.Figures.Mapping_ReferencePointDistance_Boxplot import *
 from LazyLuna.Figures.Mapping_DiceBySlice import *
 from LazyLuna.Figures.LGE_Overview import *
 from LazyLuna.Figures.LGE_Overview_BySlice import *
+from LazyLuna.Figures.SideBySide_Figure import *
