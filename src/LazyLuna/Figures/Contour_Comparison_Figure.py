@@ -8,7 +8,9 @@ from mpl_interactions import ioff, panhandler, zoom_factory
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from PyQt5.QtCore import pyqtSignal
+from PyQt5.QtCore import pyqtSignal, QPointF
+from PyQt5.QtGui import QPainter, QBrush, QPen, QPolygonF, QColor
+from PyQt5.Qt import Qt
 
 import pyqtgraph as pg
 
@@ -32,7 +34,11 @@ class ContourComparison_PlotWidget(pg.PlotWidget):
         self.setAspectLocked()
         self.getPlotItem().hideAxis('bottom'); self.getPlotItem().hideAxis('left')
         #self.invertY(True) # vertical axis counts top to bottom
-        self.pen = pg.mkPen('w', width=2)
+        self.pen1 = pg.mkPen('r', width=3)
+        self.pen2 = pg.mkPen('b', width=3)
+        
+        self.poly=[]
+        
         self.text_item = pg.TextItem(''); self.text_item.setPos(5, 5); self.text_item.setParentItem(self.getPlotItem())
         self.tags = pg.TextItem(''); self.tags.setPos(5, 85); self.tags.setParentItem(self.getPlotItem())
         for i in range(4): self.getPlotItem().vb.menu.removeAction(self.getPlotItem().vb.menu.actions()[0])
@@ -86,8 +92,8 @@ class ContourComparison_PlotWidget(pg.PlotWidget):
     def set_case_comparison(self, cc):
         self.cc = cc
         self.cat1  = cc.case1.categories[0]
-        self.cat1  = cc.case2.categories[0]
-        self.d, self.p     = 0, 0
+        self.cat2  = cc.case2.categories[0]
+        self.d = self.p1 = self.p2 = 0
         self.show()
         
     def keyPressEvent(self, event):
@@ -99,8 +105,8 @@ class ContourComparison_PlotWidget(pg.PlotWidget):
         if key == up:   self.d = (self.d-1)%self.cat1.nr_slices
         if key == down: self.d = (self.d+1)%self.cat1.nr_slices
         if not self.reader_phases:
-            if key == left:  self.p = (self.p-1)%self.cat1.nr_phases
-            if key == right: self.p = (self.p+1)%self.cat1.nr_phases
+            if key == left:  self.p1 = self.p2 = (self.p1-1)%self.cat1.nr_phases
+            if key == right: self.p1 = self.p2 = (self.p1+1)%self.cat1.nr_phases
         else:
             idx = self.cc.case1.categories.index(self.cat)
             if key == left:  
@@ -115,34 +121,22 @@ class ContourComparison_PlotWidget(pg.PlotWidget):
         
         
     def show(self):
-        img = self.cat.get_img(self.d, self.p)
+        img = self.cat1.get_img(self.d, self.p1)
         self.img_item = pg.ImageItem(img, levels=(np.min(img),np.max(img)))
         self.img_item.setLookupTable(self.lutable)
         self.clear()
         self.addItem(self.img_item)
         
         if self.with_anno:
-            anno = self.cat.get_anno(self.d, self.p)
-            for cname in anno.available_contour_names():
-                geo = anno.get_contour(cname)
-                if geo.geom_type=='Polygon':
-                    xx, yy = geo.exterior.coords.xy
-                    self.plot(xx,yy, pen=self.pen)
-                    for ring in geo.interiors:
-                        xx, yy = ring.coords.xy
-                        self.plot(xx,yy, pen=self.pen)
-                if geo.geom_type=='MultiPolygon':
-                    for poly in geo.geoms:
-                        xx, yy = poly.exterior.coords.xy
-                        self.plot(xx,yy, pen=self.pen)
-                        for ring in poly.interiors:
-                            xx, yy = ring.coords.xy
-                            self.plot(xx,yy, pen=self.pen)
+            self.plot_contours()
+            #self.plot_area_comparison()
         
-        info = self.case.reader_name
-        info += '\nPhase: ' + str(self.p)
+        info = 'Comparison'
+        info += '\nPhases: (' + str(self.p1) + ', ' + str(self.p2) + ')'
         info += '\nSlice: ' + str(self.d)
         self.text_item.setText(info)
+        
+        # add information on which phases have contours (ES, ED)
         
         dcmtags = ''
         if self.with_tags:
@@ -150,3 +144,70 @@ class ContourComparison_PlotWidget(pg.PlotWidget):
             dcm    = self.cat.get_dcm(self.d, self.p)
             dcmtags += '\nSeriesDescr: ' + str(dcm.SeriesDescription)
         self.tags.setText(dcmtags)
+        
+        
+    def plot_contours(self):
+        anno1 = self.cat1.get_anno(self.d, self.p1)
+        anno2 = self.cat2.get_anno(self.d, self.p2)
+        for cname in anno1.available_contour_names():
+            geo = anno1.get_contour(cname)
+            if geo.geom_type=='Polygon':
+                xx, yy = geo.exterior.coords.xy
+                self.plot(xx,yy, pen=self.pen1, fillLevel=1, fillBrush=(255,255,255,255))
+                for ring in geo.interiors:
+                    xx, yy = ring.coords.xy
+                    self.plot(xx,yy, pen=self.pen1)
+            if geo.geom_type=='MultiPolygon':
+                for poly in geo.geoms:
+                    xx, yy = poly.exterior.coords.xy
+                    self.plot(xx,yy, pen=self.pen1, fillLevel=1, fillBrush=(255,255,255,255))
+                    for ring in poly.interiors:
+                        xx, yy = ring.coords.xy
+                        self.plot(xx,yy, pen=self.pen1)
+        for cname in anno2.available_contour_names():
+            geo = anno2.get_contour(cname)
+            if geo.geom_type=='Polygon':
+                xx, yy = geo.exterior.coords.xy
+                self.plot(xx,yy, pen=self.pen2)
+                for ring in geo.interiors:
+                    xx, yy = ring.coords.xy
+                    self.plot(xx,yy, pen=self.pen2)
+            if geo.geom_type=='MultiPolygon':
+                for poly in geo.geoms:
+                    xx, yy = poly.exterior.coords.xy
+                    self.plot(xx,yy, pen=self.pen2)
+                    for ring in poly.interiors:
+                        xx, yy = ring.coords.xy
+                        self.plot(xx,yy, pen=self.pen2)
+    
+    def plot_area_comparison(self):
+        try:
+            
+            self.pen = QPen(QColor(0,0,0))
+            self.pen.setWidth(3)
+            self.brush = QBrush(QColor(155,55,55,255))
+            
+            anno1 = self.cat1.get_anno(self.d, self.p1)
+            for cname in anno1.available_contour_names():
+                geo = anno1.get_contour(cname)
+                if geo.geom_type=='Polygon':
+                    xx, yy = geo.exterior.coords.xy
+                    self.poly = QPolygonF([QPointF(x,y) for x,y in zip(xx,yy)])
+                    #painter.drawPolygon(poly)
+            self.update()
+        except Exception as e:
+            print(e)
+            
+    
+    def paintEvent(self, event):
+        img = self.cat1.get_img(self.d, self.p1)
+        self.img_item = pg.ImageItem(img, levels=(np.min(img),np.max(img)))
+        self.img_item.setLookupTable(self.lutable)
+        self.clear()
+        self.addItem(self.img_item)
+        painter = QPainter(self)
+        painter.setPen(self.pen)
+        painter.setBrush(self.brush)
+        painter.drawPolygon(self.poly)
+    
+        
