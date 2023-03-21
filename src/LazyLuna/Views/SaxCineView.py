@@ -27,13 +27,9 @@ class SAX_CINE_View(View):
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab             as tab2
         import LazyLuna.Guis.Addable_Tabs.CCs_Qualitative_Correlationplot_Tab as tab3
         import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab                     as tab4
-        import LazyLuna.Guis.Addable_Tabs.CC_Overview_Tab_NEW                 as tab5
-        import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab_NEW                  as tab6
         
         self.case_tabs  = {'Metrics and Figure':          tab1.CC_Metrics_Tab, 
-                           #'Clinical Results and Images': tab4.CC_CRs_Images_Tab,
-                           'Clinfdjslkfjkldsjflsdfj':     tab5.CC_CRs_Images_Tab_NEW,
-                           'Metrics and Fig 2':            tab6.CC_Metrics_Tab_NEW}
+                           'Clinical Results and Images': tab4.CC_CRs_Images_Tab}
         self.stats_tabs = {'Clinical Results':            tab2.CCs_ClinicalResults_Tab, 
                            'Qualitative Metrics Correlation Plot': tab3.CCs_Qualitative_Correlationplot_Tab}
         
