@@ -229,7 +229,7 @@ class SAX_T2_View(View):
         
         try:
             overviewtab = findCCsOverviewTab()
-            view_name = type(self).__name__
+            view_name = type(self).__name__.replace('_View','').replace('_',' ')
             if len(overviewtab.qualitative_figures[view_name])!=0:
                 pdf.add_page()
                 pdf.prepare_pretty_format(icon_path)

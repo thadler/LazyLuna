@@ -2,6 +2,7 @@ import os
 import traceback
 
 from matplotlib import gridspec, colors, cm
+from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
 from matplotlib.collections import PathCollection
 from mpl_interactions import ioff, panhandler, zoom_factory
@@ -27,7 +28,10 @@ class Basic_Presenter(Visualization):
         self.cc     = cc
         self.view   = view
         self.canvas = canvas
-        self.add_annotation = True
+        self.add_annotation  = True
+        self.cmap            = 'gray'
+        self.dcm_tags        = False
+        self.info            = True
     
     def visualize(self, slice_nr, category, debug=False):
         """Takes a case_comparison and presents the annotations of both readers side by side
@@ -53,8 +57,10 @@ class Basic_Presenter(Visualization):
         anno2  = cat2.get_anno(slice_nr, cat2.get_phase())
         h, w   = img1.shape
         extent = (0, w, h, 0)
-        ax1.imshow(img1,'gray', extent=extent); ax2.imshow(img2,'gray', extent=extent)
-        self.suptitle('Category: ' + cat1.name + ', slice: ' + str(slice_nr))
+        vmin, vmax = (None, None) if self.cmap=='gray' else (0, 2000)
+        ax1.imshow(img1, self.cmap, extent=extent, vmin=vmin, vmax=vmax)
+        ax2.imshow(img2, self.cmap, extent=extent, vmin=vmin, vmax=vmax)
+        #self.suptitle('Category: ' + cat1.name + ', slice: ' + str(slice_nr))
         if self.add_annotation:
             anno1.plot_contours(ax1) # looks like overlooked slices when different phases for RV and LV
             anno2.plot_contours(ax2)
@@ -65,12 +71,45 @@ class Basic_Presenter(Visualization):
         for ax in [ax1, ax2]: ax.set_xticks([]); ax.set_yticks([])
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
         
+        if self.dcm_tags:
+            dcm = cat1.get_dcm(slice_nr, cat1.get_phase())
+            s  = 'Series Descr.:   ' + dcm.SeriesDescription+'\n'
+            s += 'Slice Thickness: ' + f"{dcm.SliceThickness:.2f}"+'\n'
+            s += 'Slice Position:  ' + f"{dcm.SliceLocation:.2f}"+'\n'
+            s += 'Pixel Size:      ' + str([float(f"{ps:.2f}") for ps in dcm.PixelSpacing])
+            ax1.text(x=2, y=h-2, s=s, c='w', fontsize=8, bbox=dict(facecolor='k', edgecolor='w', linewidth=1))
+        
+        if self.info:
+            s  = 'Label: ' + cat1.name + '\nSlice: ' + str(slice_nr) + '\nPhase: ' + str(cat1.get_phase())
+            ax1.text(x=2, y=h-2, s=s, c='w', fontsize=8)
+            s  = 'Label: ' + cat2.name + '\nSlice: ' + str(slice_nr) + '\nPhase: ' + str(cat2.get_phase())
+            ax2.text(x=2, y=h-2, s=s, c='w', fontsize=8)
+
+        
         def onclick(event):
-            if event.dblclick:
+            if event.dblclick: # image storing with LL
                 try:
                     overviewtab = findCCsOverviewTab()
                     overviewtab.open_title_and_comments_popup(self, fig_name=self.cc.case1.case_name+' category: ' + cat1.name + ', slice: ' + str(slice_nr) + ' annotation comparison')
                 except: print(traceback.format_exc()); pass
+                
+            if event.button == 3: # right click
+                try:
+                    from PyQt5.QtGui import QCursor
+                    from PyQt5 import QtWidgets
+                    
+                    pos = QCursor.pos()
+                    self.menu = QtWidgets.QMenu()
+                    self.menu.addAction("Show Dicom Tags", self.present_dicom_tags)
+                    self.menu.addAction("Zoom")
+                    self.menu.addSeparator()
+                    self.menu.addAction("Select Colormap", self.select_cmap)
+                    self.menu.addAction("Reader / All Phases")
+                    self.menu.move(pos)
+                    self.menu.show()
+                    
+                except: print(traceback.format_exc()); pass
+                
         self.canvas.mpl_connect('button_press_event', onclick)
         
         self.tight_layout()
@@ -89,9 +128,33 @@ class Basic_Presenter(Visualization):
         if event.key == 'right': category = categories[(idx+1)%len(categories)]
         #print('In key press: ', slice_nr, category)
         self.visualize(slice_nr, category)
+        
+    
+    def select_cmap(self):
+        if self.cmap != 'gray': self.cmap = 'gray'; return
+        colors = np.array([[  0,   0,   0, 255], [  0,   0,  33, 255], [ 96,   0, 226, 255], [161,   0, 190, 255],
+                           [229,  56,   7, 255], [255, 135,   0, 255], [255, 200,   0, 255], [253, 251,  48, 255],
+                           [255, 255, 237, 255]])
+        values = np.array([[0,     650], [650,   950], [950,  1000], [1000, 1340],
+                           [1340, 1500], [1500, 1600], [1600, 1800], [1800, 2000]])
+        new_colors = []
+        for v_i, v in enumerate(values):
+            (st, end), c1, c2 = v, colors[v_i], colors[v_i+1]
+            for i in range(st, end, 10):
+                w1 = 1 - (i-st)/(end-st)
+                new_colors.append(w1*c1 + (1-w1)*c2)
+        colors = np.asarray(new_colors)
+        self.cmap = LinearSegmentedColormap.from_list('', colors / 255, 256)
+        self.visualize(self.slice_nr, self.category)
+        
+    def present_dicom_tags(self):
+        self.dcm_tags = not self.dcm_tags
+        self.visualize(self.slice_nr, self.category)
+        
 
     def store(self, storepath, figurename='_basic_presentation.png'):
         self.tight_layout()
         figname = self.cc.case1.case_name+'_Category_' + self.category.name + '_slice_' + str(self.slice_nr)+figurename
         self.savefig(os.path.join(storepath, figname), dpi=300, facecolor="#FFFFFF")
         return os.path.join(storepath, figname)
+    
