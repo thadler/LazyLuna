@@ -66,10 +66,11 @@ class Basic_Presenter(Visualization):
             anno2.plot_contours(ax2)
             anno1.plot_points(ax1)
             anno2.plot_points(ax2)
-        ax1.set_title(self.cc.case1.reader_name)
-        ax2.set_title(self.cc.case2.reader_name)
         for ax in [ax1, ax2]: ax.set_xticks([]); ax.set_yticks([])
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
+        
+        ax1.text(x=w//2, y=5, s=self.cc.case1.reader_name, c='w', fontsize=8)
+        ax2.text(x=w//2, y=5, s=self.cc.case2.reader_name, c='w', fontsize=8)
         
         if self.dcm_tags:
             dcm = cat1.get_dcm(slice_nr, cat1.get_phase())
@@ -81,9 +82,9 @@ class Basic_Presenter(Visualization):
         
         if self.info:
             s  = 'Label: ' + cat1.name + '\nSlice: ' + str(slice_nr) + '\nPhase: ' + str(cat1.get_phase())
-            ax1.text(x=2, y=h-2, s=s, c='w', fontsize=8)
+            ax1.text(x=2, y=5, s=s, c='w', fontsize=8)
             s  = 'Label: ' + cat2.name + '\nSlice: ' + str(slice_nr) + '\nPhase: ' + str(cat2.get_phase())
-            ax2.text(x=2, y=h-2, s=s, c='w', fontsize=8)
+            ax2.text(x=2, y=5, s=s, c='w', fontsize=8)
 
         
         def onclick(event):
