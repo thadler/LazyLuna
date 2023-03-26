@@ -92,7 +92,8 @@ class T1_diff_bullseye_plot(Visualization):
             if event.dblclick:
                 try:
                     overviewtab = findCCsOverviewTab()
-                    overviewtab.open_title_and_comments_popup(self, fig_name=self.case.case_name+'_mapping_difference_bullseye')
+                    overviewtab.open_title_and_comments_popup(self, 
+                                                              fig_name=self.cc.case1.case_name+'_mapping_difference_bullseye')
                 except Exception as e: print(traceback.format_exc())
         self.canvas.mpl_connect('button_press_event', onclick)
         
@@ -102,6 +103,6 @@ class T1_diff_bullseye_plot(Visualization):
         self.canvas.flush_events()
         
     def store(self, storepath, figurename='_mapping_difference_bullseye.png'):
-        p = self.case.case_name+'_mapping_difference_bullseye.png'
+        p = self.cc.case1.case_name+'_mapping_difference_bullseye.png'
         self.savefig(os.path.join(storepath, p), dpi=200, facecolor="#FFFFFF")
         return os.path.join(storepath, p)
