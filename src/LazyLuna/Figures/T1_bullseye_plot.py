@@ -12,6 +12,7 @@ import numpy as np
 import pandas
 
 from LazyLuna.Figures.Visualization import *
+from LazyLuna.utils import findMainWindow, findCCsOverviewTab
 
 
 class T1_bullseye_plot(Visualization):
@@ -84,10 +85,20 @@ class T1_bullseye_plot(Visualization):
         ys = [25,71,169,215,169,71,  55,90,150,185,150,90,  85,120,155,120]
         for mean,std, x,y in zip(means, stds, xs,ys): self.write_val(ax, mean, std, x, y)
         
-        ax.set_title('AHA Model [ms]: '+self.case.reader_name)
+        def onclick(event):
+            if event.dblclick:
+                try:
+                    overviewtab = findCCsOverviewTab()
+                    overviewtab.open_title_and_comments_popup(self, fig_name=self.case.case_name+'_'+self.case.reader_name+'_mapping_bullseye')
+                except Exception as e: print(traceback.format_exc())
+        self.canvas.mpl_connect('button_press_event', onclick)
+        
+        ax.set_title('AHA Model [ms]: '+self.case.case_name + ' - ' + self.case.reader_name)
+        self.subplots_adjust(top=0.93, bottom=0.01, left=0.0, right=0.99)
         self.canvas.draw()
+        self.canvas.flush_events()
         
-        
-    def store(self, storepath, figurename='_Mapping_Bullseye.png'):
-        self.savefig(os.path.join(storepath, self.case.reader_name+figurename), dpi=100, facecolor="#FFFFFF")
-        return os.path.join(storepath, figurename)
+    def store(self, storepath, figurename='_mapping_bullseye.png'):
+        p = self.case.case_name+'_'+self.case.reader_name+figurename
+        self.savefig(os.path.join(storepath, p), dpi=200, facecolor="#FFFFFF")
+        return os.path.join(storepath, p)

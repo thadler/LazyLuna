@@ -24,6 +24,7 @@ class LAX_CINE_View(View):
         """
         self.contour_names        = ['la', 'ra']
         self.contour2categorytype = {None : self.all, 'la': self.la_cats, 'ra': self.ra_cats}
+        self.cmap = 'gray'
         
         # register tabs here:
         """

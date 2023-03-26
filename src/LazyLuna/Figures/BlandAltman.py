@@ -117,6 +117,7 @@ class BlandAltman(Visualization):
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
+        self.tight_layout()
         self.canvas.draw()
     
     def store(self, storepath, figurename='_bland_altman.png'):

@@ -12,6 +12,7 @@ class SAX_CS_View(SAX_CINE_View):
     def __init__(self):
         super().__init__()
         self.name = 'SAX CS'
+        self.cmap = 'gray'
 
     def initialize_case(self, case, debug=False):
         if debug: st=time()

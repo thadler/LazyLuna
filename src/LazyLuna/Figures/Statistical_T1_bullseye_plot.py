@@ -91,7 +91,9 @@ class Statistical_T1_bullseye_plot(Visualization):
         for mean,std,n, x,y in zip(means, stds, nonnans, xs,ys): self.write_val(ax, mean, std, n, x, y)
         
         ax.set_title(self.cases[0].reader_name + ' Average AHA Model (mean±std [ms] (n))')
+        self.subplots_adjust(top=0.93, bottom=0.01, left=0.0, right=0.99)
         self.canvas.draw()
+        self.canvas.flush_events()
     
     def store(self, storepath, figurename='_Averages_AHA_model.png'):
         self.savefig(os.path.join(storepath, self.cases[0].reader_name+figurename), dpi=300, facecolor="#FFFFFF")

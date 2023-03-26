@@ -106,8 +106,8 @@ class QQPlot(Visualization):
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
+        self.tight_layout()
         self.canvas.draw()
-        #self.tight_layout()
     
     def store(self, storepath, figurename='_qq_plot.png'):
         self.savefig(os.path.join(storepath, self.cr_name+figurename), dpi=100, facecolor="#FFFFFF")

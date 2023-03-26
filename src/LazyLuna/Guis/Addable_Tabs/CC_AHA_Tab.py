@@ -45,8 +45,6 @@ class CC_AHA_Tab(QWidget):
         
             self.figure = T1_bullseye_plot()
             self.canvas = FigureCanvas(self.figure)
-            #self.figure.set_values(view, cc.case1, self.canvas)
-            #self.figure.visualize()
             self.canvas.setFocusPolicy(Qt.Qt.ClickFocus)
             self.canvas.setFocus()
             self.toolbar = NavigationToolbar(self.canvas, gui)
@@ -69,6 +67,8 @@ class CC_AHA_Tab(QWidget):
             if reader=='R2':
                 self.figure.set_values(self.view, self.cc.case2, self.canvas)
                 self.figure.visualize()
+            self.canvas.setFocusPolicy(Qt.Qt.ClickFocus)
+            self.canvas.setFocus()
         except Exception as e:
             print(traceback.format_exc())
         

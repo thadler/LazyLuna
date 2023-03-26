@@ -111,11 +111,10 @@ class Mapping_ReferencePointAngleDiff_Boxplot(Visualization):
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
-        self.canvas.draw()
-        
         ax.tick_params(axis='both', which='major', labelsize=ticksize)
-        sns.despine()
-        self.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.25)
+        self.subplots_adjust(top=0.85, bottom=0.25, left=0.07, right=0.93)
+        self.canvas.draw()
+        self.canvas.flush_events()
     
     def store(self, storepath, figurename='Reference_AngleDiff_Boxplot.png'):
         self.tight_layout()

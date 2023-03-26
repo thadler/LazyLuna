@@ -21,6 +21,7 @@ class SAX_LGE_View(View):
             cont_name = 'scar_fwhm' + ('_excluded_area' if exclude else '')
             self.contour_names += [cont_name]
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
+        self.cmap = 'gray'
         
         # register tabs here:
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab          as tab1

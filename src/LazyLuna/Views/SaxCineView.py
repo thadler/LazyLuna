@@ -22,6 +22,7 @@ class SAX_CINE_View(View):
                                      'rv_epi'  : self.rvcats, 'rv_pamu' : self.rvcats,  'rv_myo'  : self.rvcats}
         self.contour_names = ['lv_endo', 'lv_epi', 'lv_pamu', 'lv_myo',
                               'rv_endo', 'rv_epi', 'rv_pamu', 'rv_myo']
+        self.cmap = 'gray'
         
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab                      as tab1
         import LazyLuna.Guis.Addable_Tabs.CCs_ClinicalResults_tab             as tab2

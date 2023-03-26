@@ -66,15 +66,12 @@ class Mapping_DiceBySlice(Visualization):
         ax.set_title('Dice (by slice)', fontsize=titlesize)
         sns.boxplot  (ax=ax, x="Dice", y="conttype", data=df, palette=custom_palette, width=0.4, orient='h')
         sns.swarmplot(ax=ax, x="Dice", y="conttype", data=df, palette=swarm_palette, dodge=True, orient='h')
-        ax.set_ylabel('Dice [%]', fontsize=labelsize)
-        ax.set_xlabel("", fontsize=labelsize)
+        ax.set_xlabel('Dice [%]', fontsize=labelsize)
+        ax.set_ylabel("", fontsize=labelsize)
         xmin = np.max([np.min(df['Dice']) - 5, 0])
-        ax.set_xlim(xmin=xmin, xmax=101)
+        ax.set_xlim(xmin=xmin, xmax=111)
         ax.tick_params(axis='both', which='major', labelsize=ticksize)
         sns.despine()
-        self.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.25)
-        
-        print(df)
         
         studyuids  = list(set(df['studyuid'].tolist()))
         suids_myo  = df[df['conttype']=='lv_myo' ].sort_values('Dice')['studyuid'].tolist()
@@ -130,9 +127,10 @@ class Mapping_DiceBySlice(Visualization):
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
+        ax.tick_params(axis='both', which='major', labelsize=ticksize)
+        self.subplots_adjust(top=0.90, bottom=0.15, left=0.15, right=0.93)
         self.canvas.draw()
-        
-        self.tight_layout()
+        self.canvas.flush_events()
     
         
     

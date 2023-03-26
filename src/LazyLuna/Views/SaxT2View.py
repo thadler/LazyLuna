@@ -19,6 +19,7 @@ class SAX_T2_View(View):
         self.contour_names = ['lv_myo', 'lv_endo']
         self.point_names   = ['sacardialRefPoint']
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
+        self.cmap = 'gray'
         
         # register tabs here:
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab               as tab1

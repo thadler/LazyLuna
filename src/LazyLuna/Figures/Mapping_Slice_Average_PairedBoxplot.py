@@ -88,9 +88,6 @@ class Mapping_Slice_Average_PairedBoxplot(Visualization):
             y = [locs1[i, 1], locs2_sorted[i, 1]]
             ax.plot(x, y, color="black", alpha=0.4, linewidth=0.3)
         
-        ax.tick_params(axis='both', which='major', labelsize=ticksize)
-        sns.despine()
-        self.subplots_adjust(left=0.075, bottom=0.05, right=0.95, top=0.95, wspace=0.15, hspace=0.25)
         
         df_sorted_r1 = df[df['Reader']==case_comparisons[0].case1.reader_name].sort_values(name)
         df_sorted_r2 = df[df['Reader']==case_comparisons[0].case2.reader_name].sort_values(name)
@@ -147,9 +144,9 @@ class Mapping_Slice_Average_PairedBoxplot(Visualization):
 
         self.canvas.mpl_connect("motion_notify_event", hover)
         self.canvas.mpl_connect('button_press_event', onclick)
+        self.subplots_adjust(top=0.90, bottom=0.15, left=0.15, right=0.93)
         self.canvas.draw()
-        
-        self.tight_layout()
+        self.canvas.flush_events()
     
         
     
