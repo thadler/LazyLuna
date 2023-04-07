@@ -19,7 +19,7 @@ class SAX_T1_PRE_View(View):
         self.contour_names = ['lv_myo', 'lv_endo']
         self.point_names   = ['sacardialRefPoint']
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
-        self.cmap = self.make_cmap()
+        self.cmap, self.cmap_vlims = self.make_cmap()
         
         # register tabs here:
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab               as tab1
@@ -58,7 +58,7 @@ class SAX_T1_PRE_View(View):
                 new_colors.append(w1*c1 + (1-w1)*c2)
         colors = np.asarray(new_colors)
         cmap = LinearSegmentedColormap.from_list('', colors / 255, 256)
-        return cmap
+        return cmap, (0, 2000)
         
     def load_categories(self):
         self.all = [SAX_T1_Category]

@@ -19,7 +19,7 @@ class SAX_T2_View(View):
         self.contour_names = ['lv_myo', 'lv_endo']
         self.point_names   = ['sacardialRefPoint']
         self.contour2categorytype = {cname:self.all for cname in self.contour_names}
-        self.cmap = 'gray'
+        self.cmap, self.cmap_vlims = self.make_cmap()
         
         # register tabs here:
         import LazyLuna.Guis.Addable_Tabs.CC_Metrics_Tab               as tab1
@@ -42,7 +42,26 @@ class SAX_T2_View(View):
                            'Averaged AHA Tab' : tab7.CCs_AHA_Tab,
                            'Averaged AHA Diff Tab' : tab8.CCs_AHA_Diff_Tab, 
                            'Mapping Slice Analysis' : tab9.CCs_MappingSliceAnalysis_Tab}
-        
+                
+    
+    def make_cmap(self):
+        from matplotlib.colors import LinearSegmentedColormap
+        colors = np.array([[  0,   0,   0, 255], [ 78,   0, 197, 255], [ 87,   0, 252, 255], [161,   0, 194, 255],
+                   [181,   0, 128, 255], [233,  62,   1, 255], [242, 107,  11, 255], [255, 173,   0, 255],
+                   [252, 202,  47, 255], [254, 255,  114, 255], [255, 255, 255, 255]])
+        values = np.array([[0,      18], [ 18,    29], [29,   35], [35, 44],
+                           [44, 60], [60, 71], [71, 87], [87, 93], [93, 110], [110, 120]])
+        new_colors = []
+        for v_i, v in enumerate(values):
+            (st, end), c1, c2 = v, colors[v_i], colors[v_i+1]
+            for i in range(st, end, 1):
+                w1 = 1 - (i-st)/(end-st)
+                new_colors.append(w1*c1 + (1-w1)*c2)
+        colors = np.asarray(new_colors)
+        cmap = LinearSegmentedColormap.from_list('', colors / 255, 256)
+        return cmap, (0, 120)
+    
+    
     def load_categories(self):
         self.all = [SAX_T2_Category]
 

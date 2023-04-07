@@ -64,7 +64,7 @@ class Annotation_Comparison(Visualization):
         anno2 = cat2.get_anno(slice_nr, cat2.get_phase())
         h, w  = img1.shape
         extent=(0, w, h, 0)
-        vmin, vmax = (min(np.min(img1), np.min(img2)), max(np.max(img1), np.max(img2))) if self.cmap=='gray' else (0, 2000)
+        vmin, vmax = (min(np.min(img1), np.min(img2)), max(np.max(img1), np.max(img2))) if self.cmap=='gray' else self.view.cmap_vlims
         self.ax1.imshow(img1, self.cmap, extent=extent, vmin=vmin, vmax=vmax)
         self.ax2.imshow(img1, self.cmap, extent=extent, vmin=vmin, vmax=vmax)
         self.ax3.imshow(img2, self.cmap, extent=extent, vmin=vmin, vmax=vmax)
