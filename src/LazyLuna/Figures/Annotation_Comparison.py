@@ -36,6 +36,8 @@ class Annotation_Comparison(Visualization):
         self.dcm_tags       = False
         self.info           = True
         self.zoom           = False
+        self.all_phases     = False
+        self.p1, self.p2    = 0, 0
     
     def visualize(self, slice_nr, category, contour_name, debug=False):
         """Takes a case_comparison and presents a colourful annotation comparison on their respective images
@@ -58,10 +60,11 @@ class Annotation_Comparison(Visualization):
         self.ax2  = self.add_subplot(spec[0,1], sharex=self.ax1, sharey=self.ax1)
         self.ax3  = self.add_subplot(spec[0,2], sharex=self.ax1, sharey=self.ax1)
         self.ax4  = self.add_subplot(spec[0,3], sharex=self.ax1, sharey=self.ax1)
-        img1  = cat1.get_img (slice_nr, cat1.get_phase())
-        img2  = cat2.get_img (slice_nr, cat2.get_phase())
-        anno1 = cat1.get_anno(slice_nr, cat1.get_phase())
-        anno2 = cat2.get_anno(slice_nr, cat2.get_phase())
+        p1, p2 = (self.p1, self.p2) if self.all_phases else (cat1.get_phase(), cat2.get_phase())
+        img1  = cat1.get_img (slice_nr, p1)
+        img2  = cat2.get_img (slice_nr, p2)
+        anno1 = cat1.get_anno(slice_nr, p1)
+        anno2 = cat2.get_anno(slice_nr, p2)
         h, w  = img1.shape
         extent=(0, w, h, 0)
         vmin, vmax = (min(np.min(img1), np.min(img2)), max(np.max(img1), np.max(img2))) if self.cmap=='gray' else self.view.cmap_vlims
@@ -69,7 +72,6 @@ class Annotation_Comparison(Visualization):
         self.ax2.imshow(img1, self.cmap, extent=extent, vmin=vmin, vmax=vmax)
         self.ax3.imshow(img2, self.cmap, extent=extent, vmin=vmin, vmax=vmax)
         self.ax4.imshow(img1, self.cmap, extent=extent, vmin=vmin, vmax=vmax)
-        #self.suptitle('Category: ' + cat1.name + ', slice: ' + str(slice_nr))
         if self.add_annotation:
             if self.cmap=='gray':
                 anno1.plot_face           (self.ax1,        contour_name, alpha=0.4, c='r')
@@ -86,21 +88,20 @@ class Annotation_Comparison(Visualization):
         d = shapely.geometry.Polygon([[0,0],[1,1],[1,0]])
         if self.cmap=='gray': patches = [PolygonPatch(d, c=c, alpha=0.4) for c in ['red', 'green', 'blue']]
         else:                 patches = [PolygonPatch(d, c=c, alpha=1.0) for c in ['white', 'green', 'black']]
-        handles = [self.cc.case1.reader_name,
-                   self.cc.case1.reader_name+' & '+self.cc.case2.reader_name,
+        handles = [self.cc.case1.reader_name, self.cc.case1.reader_name+' & '+self.cc.case2.reader_name,
                    self.cc.case2.reader_name]
         self.ax4.legend(patches, handles)
         
         if self.zoom: 
             for ax in [self.ax1, self.ax2, self.ax3, self.ax4]: 
                 ax.set_xlim(self.xlims); ax.set_ylim(self.ylims); ax.invert_yaxis()
-                
+        
         if self.info:
             xx, yy = (self.xlims[0] if self.zoom else 2), (self.ylims[0]+3 if self.zoom else 0)
-            s  = 'Label: ' + cat1.name + '\nSlice: ' + str(slice_nr) + '\nPhase: ' + str(cat1.get_phase())
+            s  = 'Slice: ' + str(slice_nr) + '\nPhase: ' + str(p1)
             self.ax1.text(x=xx, y=yy, s=s, c='w', fontsize=8, bbox=dict(facecolor='k'),
                           horizontalalignment='left', verticalalignment='top')
-            s  = 'Label: ' + cat2.name + '\nSlice: ' + str(slice_nr) + '\nPhase: ' + str(cat2.get_phase())
+            s  = 'Slice: ' + str(slice_nr) + '\nPhase: ' + str(p2)
             self.ax3.text(x=xx, y=yy, s=s, c='w', fontsize=8, bbox=dict(facecolor='k'),
                           horizontalalignment='left', verticalalignment='top')
         
@@ -131,7 +132,7 @@ class Annotation_Comparison(Visualization):
                         self.menu.addAction("Zoom", self.set_zoom)
                         self.menu.addSeparator()
                         self.menu.addAction("Select Colormap", self.select_cmap)
-                        self.menu.addAction("Reader / All Phases")
+                        self.menu.addAction("Reader / All Phases", self.set_phase_choice)
                         self.menu.move(pos)
                     self.menu.show()
                 except: print(traceback.format_exc()); pass
@@ -143,16 +144,23 @@ class Annotation_Comparison(Visualization):
         self.canvas.flush_events()
         if debug: print('Took: ', time()-st)
         
+    
     def keyPressEvent(self, event):
         slice_nr, category, contour_name = self.slice_nr, self.category, self.contour_name
         categories = self.view.get_categories(self.cc.case1, self.contour_name)
         idx = categories.index(category)
         if event.key == 'shift': self.add_annotation = not self.add_annotation
+        if event.key == 'z'    : self.set_zoom()
         if event.key == 'up'   : slice_nr = (slice_nr-1) % category.nr_slices
         if event.key == 'down' : slice_nr = (slice_nr+1) % category.nr_slices
-        if event.key == 'left' : category = categories[(idx-1)%len(categories)]
-        if event.key == 'right': category = categories[(idx+1)%len(categories)]
-        if event.key == 'z'    : self.set_zoom()
+        if not self.all_phases:
+            if event.key == 'left' : category = categories[(idx-1)%len(categories)]
+            if event.key == 'right': category = categories[(idx+1)%len(categories)]
+            cat1, cat2 = self.cc.get_categories_by_example(category)
+            self.p1, self.p2 = cat1.get_phase(), cat2.get_phase()
+        else:
+            if event.key == 'left' : self.p1 = self.p2 = (self.p1-1)%category.nr_phases
+            if event.key == 'right': self.p1 = self.p2 = (self.p1+1)%category.nr_phases
         self.visualize(slice_nr, category, contour_name)
         
     def select_cmap(self):
@@ -180,6 +188,11 @@ class Annotation_Comparison(Visualization):
         self.xlims, self.ylims = (max(xmin-10,0), min(xmax+10,w)), (max(ymin-10,0), min(ymax+10,h))
         self.visualize(self.slice_nr, self.category, self.contour_name)
 
+    def set_phase_choice(self):
+        self.all_phases = not self.all_phases
+        if self.all_phases: self.p1 = self.p2 = 0
+        else: self.p1, self.p2 = self.cc.case1.categories[0].get_phase(), self.cc.case2.categories[0].get_phase()
+        self.visualize(self.slice_nr, self.category, self.contour_name)
     
     def store(self, storepath, figurename='_annotation_comparison.png'):
         self.tight_layout()
