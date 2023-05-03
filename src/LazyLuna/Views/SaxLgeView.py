@@ -90,7 +90,7 @@ class SAX_LGE_View(View):
         return case
 
 
-    def store_information(self, ccs, path, icon_path):
+    def store_information(self, ccs, path, icon_path, storage_version=0):
         try:
             overview_fig = LGE_Overview()
             overview_fig.visualize(ccs)
@@ -103,6 +103,11 @@ class SAX_LGE_View(View):
             ovbs_p = overview_fig.store(os.path.join(path))
         except Exception as e:
             print('Mapping Overview By Slice store exeption: ', traceback.print_exc())
+        try:
+            cr_table = CC_ClinicalResultsAveragesTable()
+            cr_table.calculate(ccs)
+            crtol_p = cr_table.store(os.path.join(path, 'clinical_results_overview.csv'))
+        except Exception as e: print(traceback.print_exc())
         try:
             cr_table = CCs_ClinicalResultsTable()
             cr_table.calculate(ccs)
@@ -118,6 +123,22 @@ class SAX_LGE_View(View):
         
             
         pdf = PDF(orientation='P', unit='mm', format='A4')
+        
+        if storage_version>=0:
+            try:
+                pdf.add_page()
+                pdf.prepare_pretty_format(icon_path)
+                # CRs TABLE
+                data = [l[1:] for l in csv.reader(open(os.path.join(path, 'clinical_results_overview.csv')), delimiter=';')]
+                for i in range(len(data)):
+                    for j in range(len(data[i])):
+                        try:    data[i][j] = "{:10.2f}".format(float(data[i][j].replace(',','.')))
+                        except: data[i][j] = data[i][j]
+                pdf.set_title('Clinical Parameter Means and Tolerance Ranges')
+                pdf.set_table(data[0:], x=15, y=30, col_widths=[40.0]+[30 for i in range(len(data[0])-2)]+[40.0])
+                pdf.set_text("Table. 1 This table shows the clinical parameter names in the first column. The other columns show statistics concerning the parameters. The first and second readers' means (stds) are shown in the second and third column, respectively. The mean and std of the differences between both readers is presented in the fourth column. The mean difference of both readers ± 95% confidence intervals are shown in parentheses with ±tolerance ranges thereafter. This provides information on whether the 95% estimate of the mean difference between both readers is within an acceptable limit.", 10, 192)
+                pdf.set_text('Tolerance range paper: Zange L, Muehlberg F, Blaszczyk E, Schwenke S, Traber J, Funk S, et al. Quantification in cardiovascular magnetic resonance: agreement of software from three different vendors on assessment of left ventricular function, 2D flow and parametric mapping. J Cardiovasc Magn Reson. 2019 Dec;21(1):12.', 10, 215)
+            except: print(traceback.print_exc())
         
         try:
             pdf.add_page()

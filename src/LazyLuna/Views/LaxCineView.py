@@ -151,12 +151,12 @@ class LAX_CINE_View(View):
                        LAX_4CV_ESPericardialFatArea, LAX_4CV_EDPericardialFatArea])
         """
         case.attach_clinical_results([LAX_4CV_RAESAREA,   LAX_4CV_RAEDAREA,
-                                      LAX_4CV_RAESV,      LAX_4CV_RAEDV,
+                                      #LAX_4CV_RAESV,      LAX_4CV_RAEDV,
                                       LAX_4CV_LAESAREA,   LAX_4CV_LAEDAREA,
-                                      LAX_4CV_LAESV,      LAX_4CV_LAEDV,
+                                      #LAX_4CV_LAESV,      LAX_4CV_LAEDV,
                                       LAX_2CV_LAESAREA,   LAX_2CV_LAEDAREA,
-                                      LAX_2CV_LAESV,      LAX_2CV_LAEDV,
-                                      LAX_BIPLANAR_LAESV, LAX_BIPLANAR_LAEDV,
+                                      #LAX_2CV_LAESV,      LAX_2CV_LAEDV,
+                                      #LAX_BIPLANAR_LAESV, LAX_BIPLANAR_LAEDV,
                                       LAX_4CV_LAESPHASE,  LAX_4CV_LAEDPHASE,
                                       LAX_2CV_LAESPHASE,  LAX_2CV_LAEDPHASE,
                                       LAX_4CV_RAESPHASE,  LAX_4CV_RAEDPHASE])

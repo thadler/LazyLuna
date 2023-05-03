@@ -43,7 +43,7 @@ class LGE_Overview(Visualization):
         cols = ['Scar Mass', 'Scar Fraction', 'No Reflow Mass', 'No Reflow Fraction', 'LV Volume', 'LVM Mass']
         cols = [s + ' ' + t for s in cols for t in ['avg', 'diff']]
         cols = ['casename', 'studyuid'] + cols
-        cr_names = ['SCARM', 'SCARF', 'NOREFLOWVOL', 'NOREFLOWF', 'LVV', 'LVMMASS']
+        cr_names = ['SCARM', 'SCARF', 'NOREFLOWVOL', 'NOREFLOWF', 'LVV', 'LVM']
         for cc in case_comparisons:
             row = [cc.case1.case_name, cc.case1.studyinstanceuid]
             for crname in cr_names:

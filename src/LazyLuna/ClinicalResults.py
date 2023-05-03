@@ -1443,7 +1443,7 @@ class SAXLGE_LVMYOMASS(Clinical_Result):
         self.set_CR_information()
         
     def set_CR_information(self):
-        self.name = 'LVMMASS'
+        self.name = 'LVM'
         self.unit = '[g]'
         #self.cat  = [c for c in self.case.categories if isinstance(c, SAX_LGE_Category)][0]
         self.cat  = self.case.categories[0]
