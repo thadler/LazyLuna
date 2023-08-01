@@ -619,10 +619,10 @@ class SAX_T1_Category(SAX_slice_phase_Category):
             return self.mindists_slices_lax_extpoint
         except: print(self.case.case_name, traceback.format_exc()); return None
     
-    def calc_mapping_aha_model(self):
+    def calc_mapping_aha_model(self, debug=False):
         # returns means and stds
         if self.nr_slices == 1:
-            print('AHA assuming single midv slice.')
+            if debug: print('AHA assuming single midv slice.')
             img, anno = self.get_img(0,0,True,False), self.get_anno(0,0)
             m = anno.get_myo_mask_by_angles(img, nr_bins=6)
             m_m = np.asarray([np.mean(v) for v in m.values()])
@@ -632,7 +632,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
         
         if self.nr_slices == 3:
             # assume 3 of 5 so: 0:base, 1:midv, 2:apex
-            print('AHA as three individual slices.')
+            if debug: print('AHA as three individual slices.')
             try:
                 img, anno = self.get_img(0,0,True,False), self.get_anno(0,0)
                 b = anno.get_myo_mask_by_angles(img, nr_bins=6)
@@ -663,7 +663,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
         # else nr slices > 3 OR nr slices == 2
         min_dists = self.get_slice_distances_to_extent_points()
         if min_dists is None: 
-            print('No extent & apical points in long axis views. No AHA possible.')
+            if debug: print('No extent & apical points in long axis views. No AHA possible.')
             return ([np.full(6,np.nan), np.full(6,np.nan), np.full(4,np.nan)], 
                     [np.full(6,np.nan), np.full(6,np.nan), np.full(4,np.nan)])
         idxs      = np.argmin(min_dists, axis=1)
@@ -693,7 +693,7 @@ class SAX_T1_Category(SAX_slice_phase_Category):
         for idx in set(idxs):
             means[idx] = np.asarray([np.mean(v) for v in vals_by_idx[idx].values()])
             stds [idx] = np.asarray([np.std(v)  for v in vals_by_idx[idx].values()])
-        print('AHA via extent & apical points in long axis view.')
+        if debug: print('AHA via extent & apical points in long axis view.')
         return ([np.roll(r,1) for r in means],[np.roll(r,1) for r in stds])
     
     
