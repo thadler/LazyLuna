@@ -116,7 +116,7 @@ class SAX_slice_phase_Category:
         areas = [a.get_contour(cont_name).area*pixel_area if a is not None else 0.0 for a in annos]
         has_conts = [a!=0 for a in areas]
         if True not in has_conts: return 0
-        base_idx, apex_idx  = has_conts.index(True), has_conts[::-1].index(True)
+        base_idx, apex_idx  = has_conts.index(True), self.nr_slices - has_conts[::-1].index(True) - 1
         vol = 0
         for d in range(self.nr_slices):
             pixel_depth = (self.spacing_between_slices + self.slice_thickness)/2.0 if d in [base_idx, apex_idx] else self.spacing_between_slices

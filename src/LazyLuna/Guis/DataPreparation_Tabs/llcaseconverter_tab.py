@@ -12,7 +12,7 @@ import inspect
 from LazyLuna.Tables import Table
 from LazyLuna import Views
 from LazyLuna.loading_functions import *
-from LazyLuna.Mini_LL import Case
+from LazyLuna.Containers import Case
 
 
 class LL_CaseConverter_TabWidget(QWidget):
